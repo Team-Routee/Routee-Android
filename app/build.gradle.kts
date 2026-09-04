@@ -1,3 +1,13 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val f = project.rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+fun localProperty(key: String): String = localProperties.getProperty(key)
+    ?: error("Missing '$key' in local.properties.")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,8 +29,31 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/routee-debug-key.jks")
+            storePassword = localProperty("debug.store.password")
+            keyAlias = localProperty("debug.key.alias")
+            keyPassword = localProperty("debug.key.password")
+        }
+
+        create("release") {
+            storeFile = rootProject.file("keystore/routee-release-key.jks")
+            storePassword = localProperty("release.store.password")
+            keyAlias = localProperty("release.key.alias")
+            keyPassword = localProperty("release.key.password")
+        }
+    }
+
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("debug")
+        }
+
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
