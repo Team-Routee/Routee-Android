@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+language: "ko-KR"
+tone_instructions: "Jetpack Compose, Navigation 3, Hilt(KSP), minSdk 26 Android 앱. Google 권장 아키텍처 기반(domain 레이어는 선택), UI 패턴은 MVVM/MVI 혼용. 간결하게. 칭찬·요약·인사 없이 문제와 근거, 수정안만. 확신 없는 지적은 생략. 포맷·스타일은 ktlint 담당이므로 지적하지 않는다."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: false
+  collapse_walkthrough: true
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  poem: false
+  in_progress_fortune: false
+  review_status: false
+  suggested_labels: false
+  suggested_reviewers: false
+  related_issues: false
+  related_prs: false
+  assess_linked_issues: true
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: false
+    drafts: false
+    base_branches: ["develop"]
+    ignore_title_keywords: ["WIP", "DO NOT REVIEW"]
+
+  path_filters:
+    - "!**/build/**"
+    - "!**/.idea/**"
+    - "!gradle/wrapper/**"
+    - "!gradlew"
+    - "!gradlew.bat"
+    - "!**/*.png"
+    - "!**/*.webp"
+
+  path_instructions:
+    - path: "{feature,core}/**/*.kt"
+      instructions: "색상·크기·글꼴은 하드코딩하지 않고 RouteeTheme 토큰을 쓴다."
+    - path: "feature/**"
+      instructions: "feature 모듈끼리 직접 의존하지 않는다."
+    - path: "**/*.gradle.kts"
+      instructions: "비밀번호·API 키를 평문으로 쓰지 않는다. 서명 정보는 local.properties에서 읽는다."
+
+  tools:
+    gitleaks:
+      enabled: true
+    actionlint:
+      enabled: true
+    detekt:
+      enabled: false
+    markdownlint:
+      enabled: false
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+chat:
+  auto_reply: true
