@@ -23,5 +23,10 @@ dependencyResolutionManagement {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "Routee-Android"
 include(":app")
+
+include(":core:designsystem")
+include(":core:data")
