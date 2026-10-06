@@ -35,6 +35,10 @@ gradlePlugin {
             id = libs.plugins.routee.android.compose.get().pluginId
             implementationClass = "AndroidComposeConventionPlugin"
         }
+        register("androidFeature") {
+            id = libs.plugins.routee.android.feature.get().pluginId
+            implementationClass = "AndroidFeatureConventionPlugin"
+        }
         register("hilt") {
             id = libs.plugins.routee.hilt.get().pluginId
             implementationClass = "HiltConventionPlugin"
