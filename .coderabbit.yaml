@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
 language: "ko-KR"
-tone_instructions: "Jetpack Compose, Navigation 3, Hilt(KSP), minSdk 26 Android 앱. Google 권장 아키텍처 기반(domain 레이어는 선택), UI 패턴은 MVVM/MVI 혼용. 간결하게. 칭찬·요약·인사 없이 문제와 근거, 수정안만. 확신 없는 지적은 생략. 포맷·스타일은 ktlint 담당이므로 지적하지 않는다."
+tone_instructions: "간결하게. 칭찬·요약·인사 없이 문제와 근거, 수정안만. 확신 없는 지적은 생략. 포맷·스타일은 ktlint 담당이므로 지적하지 않는다."
 
 reviews:
   profile: "chill"
