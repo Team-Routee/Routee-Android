@@ -17,6 +17,7 @@ composeBom = "2026.09.00"
 ksp = "2.3.12"
 hilt = "2.60.1"
 androidxHilt = "1.4.0"
+ktlint = "14.2.0"
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -48,6 +49,7 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 
 routee-android-application = { id = "routee.android.application", version = "unspecified" }
 routee-android-library = { id = "routee.android.library", version = "unspecified" }
