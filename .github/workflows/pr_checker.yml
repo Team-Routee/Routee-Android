@@ -22,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@v6
         with:
@@ -30,19 +32,17 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Restore signing config
-        env:
-          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
-          DEBUG_STORE_PASSWORD: ${{ secrets.DEBUG_STORE_PASSWORD }}
-          DEBUG_KEY_ALIAS: ${{ secrets.DEBUG_KEY_ALIAS }}
-          DEBUG_KEY_PASSWORD: ${{ secrets.DEBUG_KEY_PASSWORD }}
+      - name: Create CI debug keystore
         run: |
           mkdir -p keystore
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 --decode > keystore/routee-debug-key.jks
+          PASSWORD=$(openssl rand -hex 16)
+          keytool -genkeypair -keystore keystore/routee-debug-key.jks \
+            -storepass "$PASSWORD" -keypass "$PASSWORD" -alias ci-debug \
+            -keyalg RSA -keysize 2048 -validity 1 -dname "CN=CI"
           {
-            echo "debug.store.password=$DEBUG_STORE_PASSWORD"
-            echo "debug.key.alias=$DEBUG_KEY_ALIAS"
-            echo "debug.key.password=$DEBUG_KEY_PASSWORD"
+            echo "debug.store.password=$PASSWORD"
+            echo "debug.key.alias=ci-debug"
+            echo "debug.key.password=$PASSWORD"
             echo "release.store.password=unused"
             echo "release.key.alias=unused"
             echo "release.key.password=unused"
