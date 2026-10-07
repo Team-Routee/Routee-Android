@@ -1,0 +1,52 @@
+name: PR Checker
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Create CI debug keystore
+        run: |
+          mkdir -p keystore
+          PASSWORD=$(openssl rand -hex 16)
+          keytool -genkeypair -keystore keystore/routee-debug-key.jks \
+            -storepass "$PASSWORD" -keypass "$PASSWORD" -alias ci-debug \
+            -keyalg RSA -keysize 2048 -validity 1 -dname "CN=CI"
+          {
+            echo "debug.store.password=$PASSWORD"
+            echo "debug.key.alias=ci-debug"
+            echo "debug.key.password=$PASSWORD"
+            echo "release.store.password=unused"
+            echo "release.key.alias=unused"
+            echo "release.key.password=unused"
+          } > local.properties
+
+      - name: Build
+        run: ./gradlew assembleDebug
