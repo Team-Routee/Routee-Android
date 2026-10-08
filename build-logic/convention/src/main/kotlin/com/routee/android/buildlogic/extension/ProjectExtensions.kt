@@ -10,3 +10,6 @@ val Project.libs: VersionCatalog
 
 fun VersionCatalog.version(alias: String): Int =
     findVersion(alias).get().requiredVersion.toInt()
+
+fun VersionCatalog.pluginId(alias: String): String =
+    findPlugin(alias).get().get().pluginId
