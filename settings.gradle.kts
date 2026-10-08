@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -22,5 +23,17 @@ dependencyResolutionManagement {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "Routee-Android"
 include(":app")
+
+include(":core:designsystem")
+include(":core:data")
+
+include(":feature:onboarding")
+include(":feature:record-edit")
+include(":feature:timeline")
+include(":feature:archive")
+include(":feature:workout")
+include(":feature:setting")
