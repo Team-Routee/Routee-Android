@@ -16,8 +16,9 @@ internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension) {
         }
 
         compileOptions.apply {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+            val jvmTarget = JavaVersion.toVersion(libs.findVersion("jvmTarget").get().requiredVersion)
+            sourceCompatibility = jvmTarget
+            targetCompatibility = jvmTarget
         }
     }
 }

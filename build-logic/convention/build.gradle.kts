@@ -6,14 +6,16 @@ plugins {
 
 group = "com.routee.android.buildlogic"
 
+val jvmTargetVersion = libs.versions.jvmTarget.get()
+
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.toVersion(jvmTargetVersion)
+    targetCompatibility = JavaVersion.toVersion(jvmTargetVersion)
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
+        jvmTarget = JvmTarget.fromTarget(jvmTargetVersion)
     }
 }
 
