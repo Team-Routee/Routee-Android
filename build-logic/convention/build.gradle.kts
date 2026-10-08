@@ -26,16 +26,20 @@ dependencies {
 gradlePlugin {
     plugins {
         register("androidApplication") {
-            id = libs.plugins.routee.android.application.get().pluginId
+            id = libs.plugins.routee.android.application.asProvider().get().pluginId
             implementationClass = "AndroidApplicationConventionPlugin"
         }
         register("androidLibrary") {
-            id = libs.plugins.routee.android.library.get().pluginId
+            id = libs.plugins.routee.android.library.asProvider().get().pluginId
             implementationClass = "AndroidLibraryConventionPlugin"
         }
-        register("androidCompose") {
-            id = libs.plugins.routee.android.compose.get().pluginId
-            implementationClass = "AndroidComposeConventionPlugin"
+        register("androidLibraryCompose") {
+            id = libs.plugins.routee.android.library.compose.get().pluginId
+            implementationClass = "AndroidLibraryComposeConventionPlugin"
+        }
+        register("androidApplicationCompose") {
+            id = libs.plugins.routee.android.application.compose.get().pluginId
+            implementationClass = "AndroidApplicationComposeConventionPlugin"
         }
         register("androidFeature") {
             id = libs.plugins.routee.android.feature.get().pluginId

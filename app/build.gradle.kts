@@ -9,8 +9,7 @@ fun localProperty(key: String): String = localProperties.getProperty(key)
     ?: error("Missing '$key' in local.properties.")
 
 plugins {
-    alias(libs.plugins.routee.android.application)
-    alias(libs.plugins.routee.android.compose)
+    alias(libs.plugins.routee.android.application.compose)
     alias(libs.plugins.routee.hilt)
 }
 

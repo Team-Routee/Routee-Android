@@ -7,8 +7,7 @@ import org.gradle.kotlin.dsl.dependencies
 class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            pluginManager.apply(libs.pluginId("routee-android-library"))
-            pluginManager.apply(libs.pluginId("routee-android-compose"))
+            pluginManager.apply(libs.pluginId("routee-android-library-compose"))
             pluginManager.apply(libs.pluginId("routee-hilt"))
 
             dependencies {

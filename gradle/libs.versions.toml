@@ -54,6 +54,7 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 
 routee-android-application = { id = "routee.android.application", version = "unspecified" }
 routee-android-library = { id = "routee.android.library", version = "unspecified" }
-routee-android-compose = { id = "routee.android.compose", version = "unspecified" }
+routee-android-library-compose = { id = "routee.android.library.compose", version = "unspecified" }
+routee-android-application-compose = { id = "routee.android.application.compose", version = "unspecified" }
 routee-android-feature = { id = "routee.android.feature", version = "unspecified" }
 routee-hilt = { id = "routee.hilt", version = "unspecified" }
