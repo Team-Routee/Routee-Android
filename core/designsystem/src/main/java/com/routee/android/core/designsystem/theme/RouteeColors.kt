@@ -1,22 +1,9 @@
 package com.routee.android.core.designsystem.theme
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 
 internal object RouteePalette {
     // color/mint
@@ -113,6 +100,7 @@ data class RouteeColors(
     // Component
     val bgCtaPrimary: Color,
     val bgCtaSecondary: Color,
+    val bgHighlight: Brush,
     val recapOrange: Color,
     val recapLime: Color,
     val recapGreen: Color,
@@ -191,6 +179,9 @@ val DefaultRouteeColors = RouteeColors(
     bgCtaPrimary = RouteePalette.Mint300,
     bgCtaSecondary = Color(0x1A34E5F2),
 
+    // Component — bg-highlight
+    bgHighlight = OvalRadialGradient(listOf(RouteePalette.Lime300, RouteePalette.Mint500)),
+
     // Component — recap-color-palette
     recapOrange = Color(0xFFF8591F),
     recapLime = RouteePalette.Lime300,
@@ -203,66 +194,3 @@ val DefaultRouteeColors = RouteeColors(
 )
 
 internal val LocalRouteeColors = staticCompositionLocalOf { DefaultRouteeColors }
-
-@Preview(
-    name = "Routee Colors",
-    widthDp = 480,
-    heightDp = 560,
-    showBackground = true,
-    backgroundColor = 0xFF101113,
-)
-@Composable
-private fun RouteeColorsPreview() {
-    RouteeTheme {
-        val colors = with(RouteeTheme.colors) {
-            listOf(
-                brandPrimary,
-                brandSecondary,
-                bgPrimary,
-                surfaceTinted,
-                dimPrimary,
-                dimSecondary,
-                statusError,
-                statusWarning,
-                statusSuccess,
-                statusInfo,
-                bgCtaPrimary,
-                bgCtaSecondary,
-                recapOrange,
-                recapLime,
-                recapGreen,
-                recapMint,
-                recapPurple,
-                recapPink,
-                recapWhite,
-                recapNavy,
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .background(RouteeTheme.colors.bgPrimary)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = "Color System",
-                style = RouteeTheme.typography.titleSb24,
-                color = RouteePalette.Mint100,
-            )
-            colors.chunked(4).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    row.forEach { color -> ColorPreviewItem(color) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColorPreviewItem(color: Color) = Box(
-    modifier = Modifier
-        .width(96.dp)
-        .height(48.dp)
-        .background(color, RoundedCornerShape(8.dp)),
-)
