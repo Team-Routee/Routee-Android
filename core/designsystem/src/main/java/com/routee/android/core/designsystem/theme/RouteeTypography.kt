@@ -130,7 +130,7 @@ private fun RouteeTypographyPreview() {
             Text(
                 text = "Typography System",
                 style = typography.titleSb24,
-                color = RouteePalette.Mint100,
+                color = RouteeTheme.colors.mint100,
             )
             listOf(
                 "display_52" to typography.display52,
@@ -156,7 +156,7 @@ private fun RouteeTypographyPreview() {
                 Text(
                     text = "$name  $sample",
                     style = style,
-                    color = RouteePalette.White,
+                    color = RouteeTheme.colors.white,
                 )
             }
         }

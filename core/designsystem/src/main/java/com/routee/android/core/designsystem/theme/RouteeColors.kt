@@ -65,6 +65,40 @@ internal object RouteePalette {
 
 @Immutable
 data class RouteeColors(
+    // Primitive
+    val mint100: Color,
+    val mint200: Color,
+    val mint300: Color,
+    val mint400: Color,
+    val mint500: Color,
+    val mint600: Color,
+    val mint700: Color,
+    val mint800: Color,
+    val mint900: Color,
+    val lime100: Color,
+    val lime200: Color,
+    val lime300: Color,
+    val lime400: Color,
+    val grey50: Color,
+    val grey200: Color,
+    val grey300: Color,
+    val grey400: Color,
+    val grey500: Color,
+    val grey600: Color,
+    val grey800: Color,
+    val grey900: Color,
+    val white: Color,
+    val black: Color,
+    val white60: Color,
+    val white30: Color,
+    val white10: Color,
+    val black80: Color,
+    val black60: Color,
+    val black50: Color,
+    val black40: Color,
+    val black30: Color,
+
+    // Semantic
     val brandPrimary: Color,
     val brandSecondary: Color,
     val bgPrimary: Color,
@@ -75,6 +109,8 @@ data class RouteeColors(
     val statusWarning: Color,
     val statusSuccess: Color,
     val statusInfo: Color,
+
+    // Component
     val bgCtaPrimary: Color,
     val bgCtaSecondary: Color,
     val recapOrange: Color,
@@ -87,9 +123,50 @@ data class RouteeColors(
     val recapNavy: Color,
 )
 
-private val SurfaceTinted = Color(0x1A34E5F2)
-
 val DefaultRouteeColors = RouteeColors(
+    // Primitive — color/mint
+    mint100 = RouteePalette.Mint100,
+    mint200 = RouteePalette.Mint200,
+    mint300 = RouteePalette.Mint300,
+    mint400 = RouteePalette.Mint400,
+    mint500 = RouteePalette.Mint500,
+    mint600 = RouteePalette.Mint600,
+    mint700 = RouteePalette.Mint700,
+    mint800 = RouteePalette.Mint800,
+    mint900 = RouteePalette.Mint900,
+
+    // Primitive — color/lime
+    lime100 = RouteePalette.Lime100,
+    lime200 = RouteePalette.Lime200,
+    lime300 = RouteePalette.Lime300,
+    lime400 = RouteePalette.Lime400,
+
+    // Primitive — color/grayscale
+    grey50 = RouteePalette.Grey50,
+    grey200 = RouteePalette.Grey200,
+    grey300 = RouteePalette.Grey300,
+    grey400 = RouteePalette.Grey400,
+    grey500 = RouteePalette.Grey500,
+    grey600 = RouteePalette.Grey600,
+    grey800 = RouteePalette.Grey800,
+    grey900 = RouteePalette.Grey900,
+
+    // Primitive — color/static
+    white = RouteePalette.White,
+    black = RouteePalette.Black,
+
+    // Primitive — color/alpha/white
+    white60 = RouteePalette.White60,
+    white30 = RouteePalette.White30,
+    white10 = RouteePalette.White10,
+
+    // Primitive — color/alpha/black
+    black80 = RouteePalette.Black80,
+    black60 = RouteePalette.Black60,
+    black50 = RouteePalette.Black50,
+    black40 = RouteePalette.Black40,
+    black30 = RouteePalette.Black30,
+
     // Semantic — color/brand
     brandPrimary = RouteePalette.Mint500,
     brandSecondary = RouteePalette.Lime300,
@@ -98,7 +175,7 @@ val DefaultRouteeColors = RouteeColors(
     bgPrimary = RouteePalette.Black,
 
     // Semantic — color/surface
-    surfaceTinted = SurfaceTinted,
+    surfaceTinted = Color(0x1A34E5F2),
 
     // Semantic — color/dim
     dimPrimary = RouteePalette.Black60,
@@ -112,7 +189,7 @@ val DefaultRouteeColors = RouteeColors(
 
     // Component — color/bg (bg-cta)
     bgCtaPrimary = RouteePalette.Mint300,
-    bgCtaSecondary = SurfaceTinted,
+    bgCtaSecondary = Color(0x1A34E5F2),
 
     // Component — recap-color-palette
     recapOrange = Color(0xFFF8591F),
