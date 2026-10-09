@@ -3,6 +3,7 @@ package com.routee.android.core.designsystem.theme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,8 +15,6 @@ import androidx.compose.ui.unit.dp
     name = "Routee Typography",
     widthDp = 480,
     heightDp = 1040,
-    showBackground = true,
-    backgroundColor = 0xFF101113,
 )
 @Composable
 private fun RouteeTypographyPreview() {
@@ -23,6 +22,7 @@ private fun RouteeTypographyPreview() {
         val typography = RouteeTheme.typography
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .background(RouteeTheme.colors.bgPrimary)
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
