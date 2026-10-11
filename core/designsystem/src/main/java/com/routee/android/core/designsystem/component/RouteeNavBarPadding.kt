@@ -23,7 +23,7 @@ val LocalRouteeNavBarPadding = compositionLocalOf { 0.dp }
  * Button(modifier = Modifier.padding(bottom = routeeNavBarPadding(16.dp))) { ... }
  * ```
  *
- * @param extra 탭 바 위 디자인 간격
+ * @param extra 탭 바 위 간격
  */
 @Composable
 @ReadOnlyComposable
