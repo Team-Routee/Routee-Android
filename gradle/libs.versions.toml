@@ -98,8 +98,8 @@ navigation3-key = [
     "androidx-navigation3-runtime",
     "kotlinx-serialization-core",
 ]
-# feature 화면 모듈
-navigation3-feature = [
+# feature 화면 모듈, app
+navigation3 = [
     "androidx-navigation3-runtime",
     "androidx-navigation3-ui",
     "androidx-lifecycle-viewmodel-navigation3",
@@ -120,5 +120,6 @@ routee-android-application = { id = "routee.android.application", version = "uns
 routee-android-library = { id = "routee.android.library", version = "unspecified" }
 routee-android-library-compose = { id = "routee.android.library.compose", version = "unspecified" }
 routee-android-application-compose = { id = "routee.android.application.compose", version = "unspecified" }
-routee-android-feature = { id = "routee.android.feature", version = "unspecified" }
+routee-android-feature-impl = { id = "routee.android.feature.impl", version = "unspecified" }
+routee-android-feature-api = { id = "routee.android.feature.api", version = "unspecified" }
 routee-hilt = { id = "routee.hilt", version = "unspecified" }
