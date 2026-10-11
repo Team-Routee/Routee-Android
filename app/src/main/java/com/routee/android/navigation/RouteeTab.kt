@@ -4,11 +4,11 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.routee.android.R
+import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.feature.archive.api.ArchiveNavKey
 import com.routee.android.feature.recordedit.api.RecordEditMainNavKey
 import com.routee.android.feature.setting.api.SettingNavKey
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
-import com.routee.android.core.designsystem.R as DesignSystemR
 
 internal enum class RouteeTab(
     val navKey: NavKey,
