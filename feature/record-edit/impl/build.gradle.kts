@@ -1,0 +1,11 @@
+plugins {
+    alias(libs.plugins.routee.android.feature.impl)
+}
+
+android {
+    namespace = "com.routee.android.feature.recordedit"
+}
+
+dependencies {
+    implementation(projects.feature.recordEdit.api)
+}
