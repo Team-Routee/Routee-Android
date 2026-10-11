@@ -1,14 +1,8 @@
 package com.routee.android.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -22,7 +16,7 @@ import com.routee.android.feature.recordedit.navigation.recordEditEntries
 import com.routee.android.feature.setting.navigation.settingEntries
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
 import com.routee.android.feature.workout.navigation.workoutEntries
-import com.routee.android.navigation.RouteeTab
+import com.routee.android.navigation.rememberRouteeTabSceneDecorator
 
 @Composable
 internal fun RouteeApp(
@@ -31,53 +25,25 @@ internal fun RouteeApp(
     // TODO 로그인 연결 필요. 토큰 여부로 시작 화면 결정 (없으면 LoginNavKey)
     val backStack = rememberNavBackStack(WorkoutMainNavKey)
     val navigator = rememberRouteeNavigator(backStack)
-    val currentTab = RouteeTab.find(backStack.lastOrNull())
 
-    Scaffold(
-        modifier = modifier,
-        bottomBar = {
-            if (currentTab != null) {
-                RouteeBottomBar(
-                    currentTab = currentTab,
-                    onTabClick = { tab -> navigator.clearAndNavigateTo(tab.navKey) },
-                )
-            }
+    NavDisplay(
+        backStack = backStack,
+        modifier = modifier.fillMaxSize(),
+        onBack = navigator::navigateBack,
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+            rememberResultEventBusNavEntryDecorator(),
+        ),
+        sceneDecoratorStrategies = listOf(
+            rememberRouteeTabSceneDecorator(backStack, navigator),
+        ),
+        entryProvider = entryProvider {
+            onboardingEntries(navigator)
+            workoutEntries(navigator)
+            recordEditEntries(navigator)
+            archiveEntries(navigator)
+            settingEntries(navigator)
         },
-    ) { innerPadding ->
-        NavDisplay(
-            backStack = backStack,
-            modifier = Modifier.padding(innerPadding),
-            onBack = navigator::navigateBack,
-            entryDecorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator(),
-                rememberResultEventBusNavEntryDecorator(),
-            ),
-            entryProvider = entryProvider {
-                onboardingEntries(navigator)
-                workoutEntries(navigator)
-                recordEditEntries(navigator)
-                archiveEntries(navigator)
-                settingEntries(navigator)
-            },
-        )
-    }
-}
-
-// TODO global_nav_bar 컴포넌트로 교체
-@Composable
-private fun RouteeBottomBar(
-    currentTab: RouteeTab,
-    onTabClick: (RouteeTab) -> Unit,
-) {
-    NavigationBar {
-        RouteeTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = tab == currentTab,
-                onClick = { onTabClick(tab) },
-                icon = { Box {} },
-                label = { Text(text = stringResource(tab.labelRes)) },
-            )
-        }
-    }
+    )
 }
