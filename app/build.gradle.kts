@@ -16,6 +16,10 @@ plugins {
 android {
     namespace = "com.routee.android"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.routee.android"
         versionCode = libs.versions.versionCode.get().toInt()
@@ -55,10 +59,12 @@ android {
 
 dependencies {
     implementation(projects.core.designsystem)
+    implementation(projects.core.network)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.timber)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
