@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -76,26 +76,24 @@ internal fun BrightnessSlider(
             .fillMaxWidth()
             .clipToBounds()
             .background(colors.black80)
-            .drawWithContent {
-                drawContent()
+            .drawWithCache {
                 val fadeWidthPx = SideFadeWidth.toPx()
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(fadeColor, Color.Transparent),
-                        startX = 0f,
-                        endX = fadeWidthPx,
-                    ),
-                    size = Size(fadeWidthPx, size.height),
+                val fadeSize = Size(fadeWidthPx, size.height)
+                val startFadeBrush = Brush.horizontalGradient(
+                    colors = listOf(fadeColor, Color.Transparent),
+                    startX = 0f,
+                    endX = fadeWidthPx,
                 )
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(Color.Transparent, fadeColor),
-                        startX = size.width - fadeWidthPx,
-                        endX = size.width,
-                    ),
-                    topLeft = Offset(size.width - fadeWidthPx, 0f),
-                    size = Size(fadeWidthPx, size.height),
+                val endFadeBrush = Brush.horizontalGradient(
+                    colors = listOf(Color.Transparent, fadeColor),
+                    startX = size.width - fadeWidthPx,
+                    endX = size.width,
                 )
+                onDrawWithContent {
+                    drawContent()
+                    drawRect(brush = startFadeBrush, size = fadeSize)
+                    drawRect(brush = endFadeBrush, topLeft = Offset(size.width - fadeWidthPx, 0f), size = fadeSize)
+                }
             }
             .pointerInput(Unit) {
                 var draggingValue = currentValue
