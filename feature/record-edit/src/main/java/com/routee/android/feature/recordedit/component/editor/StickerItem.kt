@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.extension.noRippleSelectable
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.StickerType
 
@@ -76,12 +77,11 @@ private class StickerItemPreviewParameterProvider : PreviewParameterProvider<Boo
 private fun StickerItemPreview(
     @PreviewParameter(StickerItemPreviewParameterProvider::class) isSelected: Boolean,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         StickerItem(
             stickerType = StickerType.PHOTO_TIMELINE,
             isSelected = isSelected,
             onClick = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

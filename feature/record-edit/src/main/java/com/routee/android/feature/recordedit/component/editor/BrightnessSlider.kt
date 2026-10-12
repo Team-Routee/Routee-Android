@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
@@ -225,11 +226,10 @@ private class BrightnessSliderPreviewParameterProvider : PreviewParameterProvide
 private fun BrightnessSliderPreview(
     @PreviewParameter(BrightnessSliderPreviewParameterProvider::class) value: Float,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         BrightnessSlider(
             value = value,
             onValueChange = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

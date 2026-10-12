@@ -1,6 +1,5 @@
 package com.routee.android.feature.recordedit.component.main
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.extension.noRippleClickable
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapItemUiModel
 import kotlinx.collections.immutable.toImmutableList
@@ -100,14 +100,13 @@ private fun WorkoutRecapItemPreview(
     )
     val editingTitleState = rememberTextFieldState(item.title)
 
-    RouteeTheme {
+    RouteePreviewTheme {
         WorkoutRecapItem(
             item = item,
             editingTitleState = if (param.isEditingTitle) editingTitleState else null,
             onItemClick = {},
             onEditTitleClick = {},
             onEditTitleDone = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

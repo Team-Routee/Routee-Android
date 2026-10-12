@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapThumbnailType
 import kotlinx.collections.immutable.ImmutableList
@@ -197,10 +198,9 @@ private class RecapThumbnailPreviewParameterProvider : PreviewParameterProvider<
 private fun RecapThumbnailPreview(
     @PreviewParameter(RecapThumbnailPreviewParameterProvider::class) thumbnailUrls: ImmutableList<String>,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         RecapThumbnail(
             thumbnailUrls = thumbnailUrls,
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

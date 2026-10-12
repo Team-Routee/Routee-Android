@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.extension.noRippleSelectable
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.color
@@ -72,12 +73,11 @@ private class ColorChipPreviewParameterProvider : PreviewParameterProvider<Boole
 private fun ColorChipPreview(
     @PreviewParameter(ColorChipPreviewParameterProvider::class) isSelected: Boolean,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         ColorChip(
             recapColor = RecapColor.ORANGE,
             isSelected = isSelected,
             onClick = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

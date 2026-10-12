@@ -1,6 +1,5 @@
 package com.routee.android.feature.recordedit.component.editor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -15,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.color
@@ -84,7 +84,7 @@ private class RouteStickerPreviewParameterProvider : PreviewParameterProvider<Re
 private fun RouteStickerPreview(
     @PreviewParameter(RouteStickerPreviewParameterProvider::class) recapColor: RecapColor,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         RouteSticker(
             routeNames = persistentListOf(
                 "창의문",
@@ -94,7 +94,6 @@ private fun RouteStickerPreview(
                 "오늘의 등산 완료!",
             ),
             recapColor = recapColor,
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

@@ -1,6 +1,5 @@
 package com.routee.android.feature.recordedit.component.main
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +38,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.extension.noRippleClickable
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
@@ -171,13 +171,12 @@ private fun RecapTitleTextFieldPreview(
     val title = "숭실대 동기모임 북악산 등산"
     val editingState = rememberTextFieldState(title)
 
-    RouteeTheme {
+    RouteePreviewTheme {
         RecapTitleTextField(
             title = title,
             editingState = if (isEditing) editingState else null,
             onEditClick = {},
             onEditDone = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

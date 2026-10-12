@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapColor
 
@@ -61,11 +62,10 @@ private class ColorPalettePreviewParameterProvider : PreviewParameterProvider<Re
 private fun ColorPalettePreview(
     @PreviewParameter(ColorPalettePreviewParameterProvider::class) selectedColor: RecapColor,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         ColorPalette(
             selectedColor = selectedColor,
             onColorClick = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

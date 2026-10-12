@@ -1,7 +1,6 @@
 package com.routee.android.feature.recordedit.component.main
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -12,6 +11,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
@@ -42,7 +42,7 @@ internal fun RecordEditEmptyContent(
 @Preview
 @Composable
 private fun RecordEditEmptyContentPreview() {
-    RouteeTheme {
-        RecordEditEmptyContent(modifier = Modifier.background(RouteeTheme.colors.bgPrimary))
+    RouteePreviewTheme {
+        RecordEditEmptyContent()
     }
 }

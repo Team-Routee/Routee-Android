@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapEditTab
 
@@ -54,11 +55,10 @@ private class RecapEditNavBarPreviewParameterProvider : PreviewParameterProvider
 private fun RecapEditNavBarPreview(
     @PreviewParameter(RecapEditNavBarPreviewParameterProvider::class) selectedTab: RecapEditTab?,
 ) {
-    RouteeTheme {
+    RouteePreviewTheme {
         RecapEditNavBar(
             selectedTab = selectedTab,
             onTabClick = {},
-            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }
