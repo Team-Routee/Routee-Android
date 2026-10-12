@@ -98,12 +98,18 @@ internal fun BrightnessSlider(
                 )
             }
             .pointerInput(Unit) {
-                detectHorizontalDragGestures { change, dragAmount ->
+                var draggingValue = currentValue
+                detectHorizontalDragGestures(
+                    onDragStart = { draggingValue = currentValue },
+                ) { change, dragAmount ->
                     val rangeWidth = tickRangeWidth(size.width.toFloat(), TickSpacing.toPx(), TickWidth.toPx())
                     if (rangeWidth <= 0f) return@detectHorizontalDragGestures
                     change.consume()
-                    val newValue = (currentValue + dragAmount / rangeWidth).coerceIn(MIN_VALUE, MAX_VALUE)
-                    if (newValue != currentValue) currentOnValueChange(newValue)
+                    val newValue = (draggingValue + dragAmount / rangeWidth).coerceIn(MIN_VALUE, MAX_VALUE)
+                    if (newValue != draggingValue) {
+                        draggingValue = newValue
+                        currentOnValueChange(newValue)
+                    }
                 }
             }
             .semantics {
