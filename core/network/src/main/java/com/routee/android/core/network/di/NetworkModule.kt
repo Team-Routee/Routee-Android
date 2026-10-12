@@ -60,17 +60,17 @@ internal object NetworkModule {
         .addInterceptor(loggingInterceptor)
         .build()
 
+    /**
+     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고, 인터셉터 맨 앞에 [AuthInterceptor]를 추가한다
+     */
     @Auth
     @Provides
     @Singleton
     fun provideAuthOkHttpClient(
+        @NoAuth client: OkHttpClient,
         authInterceptor: AuthInterceptor,
-        timeZoneInterceptor: TimeZoneInterceptor,
-        loggingInterceptor: HttpLoggingInterceptor,
-    ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
-        .addInterceptor(timeZoneInterceptor)
-        .addInterceptor(loggingInterceptor)
+    ): OkHttpClient = client.newBuilder()
+        .apply { interceptors().add(0, authInterceptor) }
         .build()
 
     @NoAuth
