@@ -37,7 +37,9 @@ private class RouteeTabSceneDecorator(
     private val navigator: RouteeNavigator,
 ) : SceneDecoratorStrategy<NavKey> {
     override fun SceneDecoratorStrategyScope<NavKey>.decorateScene(scene: Scene<NavKey>): Scene<NavKey> {
-        val currentTab = backStack.takeLast(scene.entries.size)
+        val currentTab = backStack
+            .drop(scene.previousEntries.size)
+            .take(scene.entries.size)
             .asReversed()
             .firstNotNullOfOrNull(RouteeTab::find)
             ?: return scene
@@ -53,6 +55,7 @@ private class RouteeTabScene(
     override val key: Any get() = delegate.key
     override val entries get() = delegate.entries
     override val previousEntries get() = delegate.previousEntries
+    override val metadata get() = delegate.metadata
 
     override val content: @Composable () -> Unit = {
         Scaffold(
