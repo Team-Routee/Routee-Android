@@ -65,6 +65,7 @@ fun Modifier.noRippleSelectable(
     onClick = onClick,
 )
 
+// TODO: 화면 작업 시 imePadding + 스크롤 컨테이너로 부족한 경우에만 적용 (적용 전 코드 재검토)
 /**
  * 포커스된 컴포저블을 키보드에 가리지 않도록 컴포넌트 영역 안으로 이동시키는 함수
  * @param isFocused  bring-into-view 동작 실행 여부를 결정하는 상태 값
@@ -123,6 +124,7 @@ fun Modifier.clearFocus(
         )
     }
 
+// TODO: 화면 작업 시 imePadding + 스크롤 컨테이너로 부족한 경우에만 적용 (적용 전 코드 재검토)
 /**
  * 텍스트 입력 시 커서 위치로 인한 자동 스크롤을 방지
  * BasicTextField의 기본 bringIntoView 동작을 차단
