@@ -22,7 +22,7 @@ import com.routee.android.navigation.rememberRouteeTabSceneDecorator
 internal fun RouteeApp(
     modifier: Modifier = Modifier,
 ) {
-    // TODO 로그인 연결 필요. 토큰 여부로 시작 화면 결정 (없으면 LoginNavKey)
+    // TODO 시작 화면 결정: 토큰 없음 -> LoginNavKey / 진행 중인 운동 있음 -> 운동 중(정지) 화면 / 그 외 -> WorkoutMainNavKey
     val backStack = rememberNavBackStack(WorkoutMainNavKey)
     val navigator = rememberRouteeNavigator(backStack)
 
