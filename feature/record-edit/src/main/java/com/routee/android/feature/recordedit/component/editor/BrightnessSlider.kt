@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
@@ -65,93 +66,140 @@ internal fun BrightnessSlider(
     val currentValue by rememberUpdatedState(value.coerceIn(MIN_VALUE, MAX_VALUE))
     val currentOnValueChange by rememberUpdatedState(onValueChange)
     val sliderDescription = stringResource(R.string.record_edit_editor_brightness_slider_a11y)
-
     val colors = RouteeTheme.colors
-    val accentTickColor = colors.white
-    val tickColor = colors.grey400
-    val fadeColor = colors.black
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clipToBounds()
             .background(colors.black80)
-            .drawWithCache {
-                val fadeWidthPx = SideFadeWidth.toPx()
-                val fadeSize = Size(fadeWidthPx, size.height)
-                val startFadeBrush = Brush.horizontalGradient(
-                    colors = listOf(fadeColor, Color.Transparent),
-                    startX = 0f,
-                    endX = fadeWidthPx,
-                )
-                val endFadeBrush = Brush.horizontalGradient(
-                    colors = listOf(Color.Transparent, fadeColor),
-                    startX = size.width - fadeWidthPx,
-                    endX = size.width,
-                )
-                onDrawWithContent {
-                    drawContent()
-                    drawRect(brush = startFadeBrush, size = fadeSize)
-                    drawRect(brush = endFadeBrush, topLeft = Offset(size.width - fadeWidthPx, 0f), size = fadeSize)
-                }
-            }
-            .pointerInput(Unit) {
-                var draggingValue = currentValue
-                detectHorizontalDragGestures(
-                    onDragStart = { draggingValue = currentValue },
-                ) { change, dragAmount ->
-                    val rangeWidth = tickRangeWidth(size.width.toFloat(), TickSpacing.toPx(), TickWidth.toPx())
-                    if (rangeWidth <= 0f) return@detectHorizontalDragGestures
-                    change.consume()
-                    val newValue = (draggingValue + dragAmount / rangeWidth).coerceIn(MIN_VALUE, MAX_VALUE)
-                    if (newValue != draggingValue) {
-                        draggingValue = newValue
-                        currentOnValueChange(newValue)
-                    }
-                }
-            }
-            .semantics {
-                contentDescription = sliderDescription
-                progressBarRangeInfo = ProgressBarRangeInfo(currentValue, MIN_VALUE..MAX_VALUE)
-                setProgress { target ->
-                    currentOnValueChange(target.coerceIn(MIN_VALUE, MAX_VALUE))
-                    true
-                }
-            },
+            .sideFade(color = colors.black, width = SideFadeWidth)
+            .brightnessDrag(value = { currentValue }, onValueChange = { currentOnValueChange(it) })
+            .brightnessSemantics(
+                value = currentValue,
+                description = sliderDescription,
+                onValueChange = currentOnValueChange,
+            ),
     ) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = TickTopPadding)
-                .height(TickHeight),
-        ) {
-            val spacingPx = TickSpacing.toPx()
-            val strokeWidthPx = TickWidth.toPx()
-            val rangeWidth = tickRangeWidth(size.width, spacingPx, strokeWidthPx)
-            val tickCount = (rangeWidth / spacingPx).toInt()
-            val firstTickX = (size.width - rangeWidth) / 2 + (0.5f - currentValue) * rangeWidth
-            val halfStroke = strokeWidthPx / 2
-            for (index in 0..tickCount) {
-                val x = firstTickX + index * spacingPx
-                drawLine(
-                    color = if (index % ACCENT_TICK_INTERVAL == 0) accentTickColor else tickColor,
-                    start = Offset(x, halfStroke),
-                    end = Offset(x, size.height - halfStroke),
-                    strokeWidth = strokeWidthPx,
-                    cap = StrokeCap.Round,
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(bottom = RouteeTheme.spacing.Spacing16)
-                .width(IndicatorWidth)
-                .height(IndicatorHeight)
-                .clip(RoundedCornerShape(IndicatorWidth / 2))
-                .background(accentTickColor),
+        BrightnessTicks(
+            value = currentValue,
+            accentTickColor = colors.white,
+            tickColor = colors.grey400,
         )
+        CenterIndicator(
+            color = colors.white,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+    }
+}
+
+@Composable
+private fun BrightnessTicks(
+    value: Float,
+    accentTickColor: Color,
+    tickColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = TickTopPadding)
+            .height(TickHeight),
+    ) {
+        val spacingPx = TickSpacing.toPx()
+        val strokeWidthPx = TickWidth.toPx()
+        val rangeWidth = tickRangeWidth(size.width, spacingPx, strokeWidthPx)
+        val tickCount = (rangeWidth / spacingPx).toInt()
+        val firstTickX = (size.width - rangeWidth) / 2 + (0.5f - value) * rangeWidth
+        val halfStroke = strokeWidthPx / 2
+        for (index in 0..tickCount) {
+            val x = firstTickX + index * spacingPx
+            drawLine(
+                color = if (index % ACCENT_TICK_INTERVAL == 0) accentTickColor else tickColor,
+                start = Offset(x, halfStroke),
+                end = Offset(x, size.height - halfStroke),
+                strokeWidth = strokeWidthPx,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CenterIndicator(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .padding(bottom = RouteeTheme.spacing.Spacing16)
+            .width(IndicatorWidth)
+            .height(IndicatorHeight)
+            .clip(RoundedCornerShape(IndicatorWidth / 2))
+            .background(color),
+    )
+}
+
+/**
+ * 좌우 끝을 [color]에서 투명으로 흐리게 덮는다
+ */
+private fun Modifier.sideFade(
+    color: Color,
+    width: Dp,
+): Modifier = drawWithCache {
+    val fadeWidthPx = width.toPx()
+    val fadeSize = Size(fadeWidthPx, size.height)
+    val startFadeBrush = Brush.horizontalGradient(
+        colors = listOf(color, Color.Transparent),
+        startX = 0f,
+        endX = fadeWidthPx,
+    )
+    val endFadeBrush = Brush.horizontalGradient(
+        colors = listOf(Color.Transparent, color),
+        startX = size.width - fadeWidthPx,
+        endX = size.width,
+    )
+    onDrawWithContent {
+        drawContent()
+        drawRect(brush = startFadeBrush, size = fadeSize)
+        drawRect(brush = endFadeBrush, topLeft = Offset(size.width - fadeWidthPx, 0f), size = fadeSize)
+    }
+}
+
+/**
+ * 가로 드래그 이동량을 눈금 폭 비율로 환산해 값을 바꾼다
+ *
+ * @param value 드래그 시작 시점의 값을 읽는 함수
+ */
+private fun Modifier.brightnessDrag(
+    value: () -> Float,
+    onValueChange: (Float) -> Unit,
+): Modifier = pointerInput(Unit) {
+    var draggingValue = value()
+    detectHorizontalDragGestures(
+        onDragStart = { draggingValue = value() },
+    ) { change, dragAmount ->
+        val rangeWidth = tickRangeWidth(size.width.toFloat(), TickSpacing.toPx(), TickWidth.toPx())
+        if (rangeWidth <= 0f) return@detectHorizontalDragGestures
+        change.consume()
+        val newValue = (draggingValue + dragAmount / rangeWidth).coerceIn(MIN_VALUE, MAX_VALUE)
+        if (newValue != draggingValue) {
+            draggingValue = newValue
+            onValueChange(newValue)
+        }
+    }
+}
+
+private fun Modifier.brightnessSemantics(
+    value: Float,
+    description: String,
+    onValueChange: (Float) -> Unit,
+): Modifier = semantics {
+    contentDescription = description
+    progressBarRangeInfo = ProgressBarRangeInfo(value, MIN_VALUE..MAX_VALUE)
+    setProgress { target ->
+        onValueChange(target.coerceIn(MIN_VALUE, MAX_VALUE))
+        true
     }
 }
 
