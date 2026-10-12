@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.routee.android.core.designsystem"
 }
+
+dependencies {
+    implementation(libs.coil.compose)
+}

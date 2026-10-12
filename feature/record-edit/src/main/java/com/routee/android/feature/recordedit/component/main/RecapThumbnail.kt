@@ -15,8 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.painter.ColorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,8 +22,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.RouteeAsyncImage
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapThumbnailType
@@ -117,8 +115,9 @@ private fun PhotoStack(
     val mainShape = RoundedCornerShape(RouteeTheme.radius.Radius16)
 
     Box(modifier = modifier) {
-        ThumbnailImage(
+        RouteeAsyncImage(
             url = mainPhotoUrl,
+            contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
                 .clip(mainShape)
@@ -141,31 +140,14 @@ private fun SmallPhoto(
 ) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius8)
 
-    ThumbnailImage(
+    RouteeAsyncImage(
         url = url,
+        contentDescription = null,
         modifier = modifier
             .placeInParent(placement)
             .rotate(placement.rotationDegrees)
             .clip(shape)
             .border(SmallPhotoBorderThickness, RouteeTheme.colors.white, shape),
-    )
-}
-
-@Composable
-private fun ThumbnailImage(
-    url: String,
-    modifier: Modifier = Modifier,
-) {
-    val placeholderColor = RouteeTheme.colors.grey800
-    val placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) }
-
-    AsyncImage(
-        model = url,
-        contentDescription = null,
-        modifier = modifier,
-        placeholder = placeholder,
-        error = placeholder,
-        contentScale = ContentScale.Crop,
     )
 }
 
