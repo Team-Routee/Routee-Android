@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.relocation.BringIntoViewModifierNode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -38,6 +40,28 @@ fun Modifier.noRippleClickable(
     interactionSource = null,
     indication = null,
     enabled = enabled,
+    onClick = onClick,
+)
+
+/**
+ * 리플 효과 없이 선택 가능하게 만드는 Modifier
+ *
+ * @param selected 선택 여부
+ * @param role 접근성 역할 (예: [Role.RadioButton], [Role.Tab])
+ * @param enabled 선택 가능 여부
+ * @param onClick 클릭 시 실행될 콜백
+ */
+fun Modifier.noRippleSelectable(
+    selected: Boolean,
+    role: Role? = null,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+): Modifier = selectable(
+    selected = selected,
+    interactionSource = null,
+    indication = null,
+    enabled = enabled,
+    role = role,
     onClick = onClick,
 )
 

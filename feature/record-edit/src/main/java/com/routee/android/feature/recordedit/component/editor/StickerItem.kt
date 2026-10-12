@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -20,6 +19,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import com.routee.android.core.designsystem.extension.noRippleSelectable
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.StickerType
 
@@ -39,13 +39,7 @@ internal fun StickerItem(
         modifier = modifier
             .clip(RoundedCornerShape(RouteeTheme.radius.Radius8))
             .background(if (isSelected) RouteeTheme.colors.white10 else Color.Transparent)
-            .selectable(
-                selected = isSelected,
-                interactionSource = null,
-                indication = null,
-                role = Role.RadioButton,
-                onClick = onClick,
-            )
+            .noRippleSelectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
             .padding(
                 PaddingValues(
                     start = spacing.Spacing8,

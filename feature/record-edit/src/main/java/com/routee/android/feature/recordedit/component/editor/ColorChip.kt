@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import com.routee.android.core.designsystem.extension.noRippleSelectable
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.color
@@ -50,13 +50,7 @@ internal fun ColorChip(
                 color = if (isSelected) RouteeTheme.colors.white else Color.Transparent,
                 shape = CircleShape,
             )
-            .selectable(
-                selected = isSelected,
-                interactionSource = null,
-                indication = null,
-                role = Role.RadioButton,
-                onClick = onClick,
-            )
+            .noRippleSelectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
             .semantics { contentDescription = colorName }
             .padding(RouteeTheme.spacing.Spacing4)
             .clip(CircleShape)
