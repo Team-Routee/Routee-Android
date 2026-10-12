@@ -18,7 +18,6 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -65,13 +64,12 @@ fun Modifier.bringIntoViewOnFocus(
 
             delay(delayMillis)
 
-            val original = coords.boundsInParent()
             val targetRect =
                 Rect(
-                    left = original.left,
-                    top = original.top,
-                    right = original.right,
-                    bottom = original.bottom + extraBottomPx,
+                    left = 0f,
+                    top = 0f,
+                    right = coords.size.width.toFloat(),
+                    bottom = coords.size.height + extraBottomPx,
                 )
 
             bringIntoViewRequester.bringIntoView(targetRect)
