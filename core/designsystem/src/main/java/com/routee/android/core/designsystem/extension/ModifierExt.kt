@@ -1,6 +1,5 @@
 package com.routee.android.core.designsystem.extension
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,7 +18,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -102,18 +103,22 @@ fun Modifier.clearFocus(
  * 텍스트 입력 시 커서 위치로 인한 자동 스크롤을 방지
  * BasicTextField의 기본 bringIntoView 동작을 차단
  */
-@OptIn(ExperimentalFoundationApi::class)
-fun Modifier.preventCursorScroll(): Modifier =
-    this.then(
-        object : androidx.compose.ui.layout.LayoutModifier {
-            override fun androidx.compose.ui.layout.MeasureScope.measure(
-                measurable: androidx.compose.ui.layout.Measurable,
-                constraints: androidx.compose.ui.unit.Constraints,
-            ): androidx.compose.ui.layout.MeasureResult {
-                val placeable = measurable.measure(constraints)
-                return layout(placeable.width, placeable.height) {
-                    placeable.place(0, 0)
-                }
-            }
-        },
-    )
+fun Modifier.preventCursorScroll(): Modifier = this then PreventBringIntoViewElement
+
+private data object PreventBringIntoViewElement : ModifierNodeElement<PreventBringIntoViewNode>() {
+    override fun create(): PreventBringIntoViewNode = PreventBringIntoViewNode()
+
+    override fun update(node: PreventBringIntoViewNode) = Unit
+}
+
+/**
+ * 자식의 bringIntoView 요청을 받아 부모로 전달하지 않는다
+ */
+private class PreventBringIntoViewNode :
+    Modifier.Node(),
+    BringIntoViewModifierNode {
+    override suspend fun bringIntoView(
+        childCoordinates: LayoutCoordinates,
+        boundsProvider: () -> Rect?,
+    ) = Unit
+}
