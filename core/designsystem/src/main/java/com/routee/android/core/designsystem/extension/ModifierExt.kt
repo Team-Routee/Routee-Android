@@ -89,7 +89,7 @@ fun Modifier.clearFocus(
     focusManager: FocusManager,
     doOnClear: () -> Unit = {},
 ): Modifier =
-    this.pointerInput(Unit) {
+    this.pointerInput(focusManager, doOnClear) {
         detectTapGestures(
             onTap = {
                 doOnClear()
