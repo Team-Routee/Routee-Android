@@ -30,6 +30,7 @@ include(":app")
 
 include(":core:designsystem")
 include(":core:data")
+include(":core:network")
 
 include(":feature:onboarding")
 include(":feature:record-edit")
