@@ -1,6 +1,8 @@
 package com.routee.android.navigation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -73,7 +75,9 @@ private class RouteeTabScene(
             },
         ) { innerPadding ->
             CompositionLocalProvider(LocalRouteeNavBarPadding provides innerPadding.calculateBottomPadding()) {
-                delegate.content()
+                Box(Modifier.consumeWindowInsets(innerPadding)) {
+                    delegate.content()
+                }
             }
         }
     }
