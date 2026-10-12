@@ -73,7 +73,7 @@ private class ColorChipPreviewParameterProvider : PreviewParameterProvider<Boole
     override val values = sequenceOf(false, true)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113)
+@Preview
 @Composable
 private fun ColorChipPreview(
     @PreviewParameter(ColorChipPreviewParameterProvider::class) isSelected: Boolean,
@@ -83,6 +83,7 @@ private fun ColorChipPreview(
             recapColor = RecapColor.ORANGE,
             isSelected = isSelected,
             onClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

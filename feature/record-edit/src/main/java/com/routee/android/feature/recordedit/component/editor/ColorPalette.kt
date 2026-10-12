@@ -56,7 +56,7 @@ private class ColorPalettePreviewParameterProvider : PreviewParameterProvider<Re
     override val values = sequenceOf(RecapColor.DEFAULT, RecapColor.ORANGE, RecapColor.NAVY)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 360)
+@Preview(widthDp = 360)
 @Composable
 private fun ColorPalettePreview(
     @PreviewParameter(ColorPalettePreviewParameterProvider::class) selectedColor: RecapColor,
@@ -65,6 +65,7 @@ private fun ColorPalettePreview(
         ColorPalette(
             selectedColor = selectedColor,
             onColorClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

@@ -77,7 +77,7 @@ private class StickerItemPreviewParameterProvider : PreviewParameterProvider<Boo
     override val values = sequenceOf(false, true)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113)
+@Preview
 @Composable
 private fun StickerItemPreview(
     @PreviewParameter(StickerItemPreviewParameterProvider::class) isSelected: Boolean,
@@ -87,6 +87,7 @@ private fun StickerItemPreview(
             stickerType = StickerType.PHOTO_TIMELINE,
             isSelected = isSelected,
             onClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

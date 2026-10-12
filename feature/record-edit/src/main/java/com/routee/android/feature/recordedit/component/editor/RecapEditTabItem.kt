@@ -85,7 +85,7 @@ private class RecapEditTabItemPreviewParameterProvider : PreviewParameterProvide
     override val values = sequenceOf(false, true)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113)
+@Preview
 @Composable
 private fun RecapEditTabItemPreview(
     @PreviewParameter(RecapEditTabItemPreviewParameterProvider::class) isSelected: Boolean,
@@ -95,6 +95,7 @@ private fun RecapEditTabItemPreview(
             tab = RecapEditTab.BACKGROUND,
             isSelected = isSelected,
             onClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

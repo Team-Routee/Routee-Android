@@ -52,7 +52,7 @@ private class StickerPalettePreviewParameterProvider : PreviewParameterProvider<
     override val values = sequenceOf(null) + StickerType.entries.asSequence()
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 360)
+@Preview(widthDp = 360)
 @Composable
 private fun StickerPalettePreview(
     @PreviewParameter(StickerPalettePreviewParameterProvider::class) selectedSticker: StickerType?,
@@ -61,6 +61,7 @@ private fun StickerPalettePreview(
         StickerPalette(
             selectedSticker = selectedSticker,
             onStickerClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

@@ -192,12 +192,15 @@ private class RecapThumbnailPreviewParameterProvider : PreviewParameterProvider<
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 144)
+@Preview(widthDp = 144)
 @Composable
 private fun RecapThumbnailPreview(
     @PreviewParameter(RecapThumbnailPreviewParameterProvider::class) thumbnailUrls: ImmutableList<String>,
 ) {
     RouteeTheme {
-        RecapThumbnail(thumbnailUrls = thumbnailUrls)
+        RecapThumbnail(
+            thumbnailUrls = thumbnailUrls,
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
+        )
     }
 }

@@ -174,7 +174,7 @@ private class BrightnessSliderPreviewParameterProvider : PreviewParameterProvide
     override val values = sequenceOf(0f, 0.5f, 1f)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 360)
+@Preview(widthDp = 360)
 @Composable
 private fun BrightnessSliderPreview(
     @PreviewParameter(BrightnessSliderPreviewParameterProvider::class) value: Float,
@@ -183,6 +183,7 @@ private fun BrightnessSliderPreview(
         BrightnessSlider(
             value = value,
             onValueChange = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

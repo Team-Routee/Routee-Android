@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.component.main
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -162,7 +163,7 @@ private class RecapTitleTextFieldPreviewParameterProvider : PreviewParameterProv
     override val values = sequenceOf(false, true)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 144)
+@Preview(widthDp = 144)
 @Composable
 private fun RecapTitleTextFieldPreview(
     @PreviewParameter(RecapTitleTextFieldPreviewParameterProvider::class) isEditing: Boolean,
@@ -176,6 +177,7 @@ private fun RecapTitleTextFieldPreview(
             editingState = if (isEditing) editingState else null,
             onEditClick = {},
             onEditDone = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

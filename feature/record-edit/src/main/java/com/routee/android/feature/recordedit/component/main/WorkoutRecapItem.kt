@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.component.main
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -86,7 +87,7 @@ private class WorkoutRecapItemPreviewParameterProvider : PreviewParameterProvide
     )
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 144)
+@Preview(widthDp = 144)
 @Composable
 private fun WorkoutRecapItemPreview(
     @PreviewParameter(WorkoutRecapItemPreviewParameterProvider::class) param: WorkoutRecapItemPreviewParam,
@@ -106,6 +107,7 @@ private fun WorkoutRecapItemPreview(
             onItemClick = {},
             onEditTitleClick = {},
             onEditTitleDone = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

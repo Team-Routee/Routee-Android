@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.component.editor
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -76,7 +77,7 @@ private class RouteStickerPreviewParameterProvider : PreviewParameterProvider<Re
     override val values = sequenceOf(RecapColor.DEFAULT, RecapColor.ORANGE, RecapColor.WHITE)
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113)
+@Preview
 @Composable
 private fun RouteStickerPreview(
     @PreviewParameter(RouteStickerPreviewParameterProvider::class) recapColor: RecapColor,
@@ -91,6 +92,7 @@ private fun RouteStickerPreview(
                 "오늘의 등산 완료!",
             ),
             recapColor = recapColor,
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }

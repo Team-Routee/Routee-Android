@@ -49,7 +49,7 @@ private class RecapEditNavBarPreviewParameterProvider : PreviewParameterProvider
     override val values = sequenceOf(null) + RecapEditTab.entries.asSequence()
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF101113, widthDp = 360)
+@Preview(widthDp = 360)
 @Composable
 private fun RecapEditNavBarPreview(
     @PreviewParameter(RecapEditNavBarPreviewParameterProvider::class) selectedTab: RecapEditTab?,
@@ -58,6 +58,7 @@ private fun RecapEditNavBarPreview(
         RecapEditNavBar(
             selectedTab = selectedTab,
             onTabClick = {},
+            modifier = Modifier.background(RouteeTheme.colors.bgPrimary),
         )
     }
 }
