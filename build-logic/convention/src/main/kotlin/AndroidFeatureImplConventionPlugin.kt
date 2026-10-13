@@ -17,6 +17,7 @@ class AndroidFeatureImplConventionPlugin : Plugin<Project> {
                 "implementation"(project(":core:designsystem"))
                 "implementation"(project(":core:data"))
                 "implementation"(project(":core:navigation"))
+                "implementation"(project(":core:ui"))
 
                 "implementation"(libs.findBundle("feature-lifecycle").get())
                 "implementation"(libs.findBundle("navigation3").get())
