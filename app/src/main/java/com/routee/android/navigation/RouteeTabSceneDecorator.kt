@@ -66,6 +66,7 @@ private class RouteeTabScene(
             bottomBar = {
                 RouteeBottomBar(
                     currentTab = currentTab,
+                    // TODO 탭별 상태 유지 여부 기획 확인 후 반영 필수
                     onTabClick = { tab -> navigator.clearAndNavigateTo(tab.navKey) },
                     modifier = Modifier
                         .fillMaxWidth()
