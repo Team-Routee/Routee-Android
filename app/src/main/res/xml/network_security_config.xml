@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 서버가 HTTP로 운영되어 평문 통신을 허용한다. HTTPS 전환 시 제거 -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
