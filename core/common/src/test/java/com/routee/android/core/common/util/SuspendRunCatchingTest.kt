@@ -1,4 +1,4 @@
-package com.routee.android.core.network.util
+package com.routee.android.core.common.util
 
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
