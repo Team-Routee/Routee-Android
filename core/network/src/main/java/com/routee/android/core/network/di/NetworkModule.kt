@@ -1,7 +1,6 @@
 package com.routee.android.core.network.di
 
 import com.routee.android.core.network.BuildConfig
-import com.routee.android.core.network.constant.AUTHORIZATION
 import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
@@ -24,8 +23,6 @@ import timber.log.Timber
 internal object NetworkModule {
     private const val CONTENT_TYPE = "application/json"
     private const val LOGGING_TAG = "OkHttp"
-    private const val MASKED_VALUE = "****"
-    private val TokenFieldRegex = Regex("\"(\\w*[Tt]oken)\"\\s*:\\s*\"[^\"]*\"")
 
     @Provides
     @Singleton
@@ -44,11 +41,9 @@ internal object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor { message ->
-            val maskedMessage = message.replace(TokenFieldRegex, "\"$1\":\"$MASKED_VALUE\"")
-            Timber.tag(LOGGING_TAG).d(maskedMessage.toPrettyJsonOrSelf())
+            Timber.tag(LOGGING_TAG).d(message.toPrettyJsonOrSelf())
         }.apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
-            redactHeader(AUTHORIZATION)
         }
 
     @NoAuth
