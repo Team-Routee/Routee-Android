@@ -15,5 +15,5 @@ KDoc only on public API (Korean noun phrase, how to use it). `//` only for short
 
 ## Security (public repository)
 
-Never commit `local.properties`, `keystore/`, `google-services.json`, API keys, or Coolvetica font files.
+Never commit `local.properties`, `keystore/`, `google-services.json`, or API keys.
 Do not read or print secrets. Never log tokens or personal data.
