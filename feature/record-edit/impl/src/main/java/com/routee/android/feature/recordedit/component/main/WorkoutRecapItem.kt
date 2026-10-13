@@ -27,7 +27,7 @@ import kotlinx.collections.immutable.toImmutableList
  * @param editingTitleState 제목 편집 중일 때의 입력 상태. null이면 편집 중이 아니다
  * @param onItemClick 썸네일 클릭 시 호출
  * @param onEditTitleClick 제목 옆 연필 아이콘 클릭 시 호출
- * @param onEditTitleDone 제목 편집 완료 시 호출
+ * @param onEditTitleComplete 제목 편집 완료 시 호출
  */
 @Composable
 internal fun WorkoutRecapItem(
@@ -35,7 +35,7 @@ internal fun WorkoutRecapItem(
     editingTitleState: TextFieldState?,
     onItemClick: () -> Unit,
     onEditTitleClick: () -> Unit,
-    onEditTitleDone: () -> Unit,
+    onEditTitleComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // 썸네일-제목 간격(10)과 제목-날짜 간격(2)이 달라, 중첩 Column 대신 각 항목의 top padding으로 처리한다
@@ -53,7 +53,7 @@ internal fun WorkoutRecapItem(
             title = item.title,
             editingState = editingTitleState,
             onEditClick = onEditTitleClick,
-            onEditDone = onEditTitleDone,
+            onEditComplete = onEditTitleComplete,
             modifier = Modifier
                 .padding(top = RouteeTheme.spacing.Spacing10)
                 .fillMaxWidth(),
@@ -106,7 +106,7 @@ private fun WorkoutRecapItemPreview(
             editingTitleState = if (param.isEditingTitle) editingTitleState else null,
             onItemClick = {},
             onEditTitleClick = {},
-            onEditTitleDone = {},
+            onEditTitleComplete = {},
         )
     }
 }

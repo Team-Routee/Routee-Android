@@ -52,14 +52,14 @@ private val EditingUnderlineThickness = 1.dp
  * @param title 저장된 제목. 편집 중이 아닐 때 표시한다
  * @param editingState 편집 중인 제목 상태. null이면 편집 중이 아니다
  * @param onEditClick 연필 아이콘 클릭 시 호출. 호출하는 쪽에서 [editingState]를 만들어 넘긴다
- * @param onEditDone 키보드 완료 버튼 클릭 시 호출
+ * @param onEditComplete 키보드 완료 버튼 클릭 시 호출
  */
 @Composable
 internal fun RecapTitleTextField(
     title: String,
     editingState: TextFieldState?,
     onEditClick: () -> Unit,
-    onEditDone: () -> Unit,
+    onEditComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (editingState == null) {
@@ -71,7 +71,7 @@ internal fun RecapTitleTextField(
     } else {
         RecapTitleEditor(
             state = editingState,
-            onEditDone = onEditDone,
+            onEditComplete = onEditComplete,
             modifier = modifier,
         )
     }
@@ -121,7 +121,7 @@ private fun RecapTitleDisplay(
 @Composable
 private fun RecapTitleEditor(
     state: TextFieldState,
-    onEditDone: () -> Unit,
+    onEditComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -153,7 +153,7 @@ private fun RecapTitleEditor(
         inputTransformation = InputTransformation.maxLength(RECAP_TITLE_MAX_LENGTH),
         textStyle = RouteeTheme.typography.bodySb14.copy(color = RouteeTheme.colors.white),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        onKeyboardAction = { onEditDone() },
+        onKeyboardAction = { onEditComplete() },
         lineLimits = TextFieldLineLimits.SingleLine,
         cursorBrush = SolidColor(RouteeTheme.colors.white),
     )
@@ -176,7 +176,7 @@ private fun RecapTitleTextFieldPreview(
             title = title,
             editingState = if (isEditing) editingState else null,
             onEditClick = {},
-            onEditDone = {},
+            onEditComplete = {},
         )
     }
 }
