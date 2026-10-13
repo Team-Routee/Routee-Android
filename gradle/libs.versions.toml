@@ -12,6 +12,8 @@ agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"
 ktlint = "14.2.0"
+ktlintEngine = "1.8.0"
+composeRules = "0.6.8"
 
 # AndroidX
 coreKtx = "1.19.1"
@@ -44,6 +46,8 @@ espressoCore = "3.7.0"
 [libraries]
 # Build
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint" }
+compose-rules-ktlint = { group = "io.nlopez.compose.rules", name = "ktlint", version.ref = "composeRules" }
 
 # AndroidX
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
