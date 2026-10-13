@@ -2,6 +2,7 @@ package com.routee.android.core.network.di
 
 import com.routee.android.core.network.BuildConfig
 import com.routee.android.core.network.constant.AUTHORIZATION
+import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
 import dagger.Module
@@ -43,7 +44,8 @@ internal object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor { message ->
-            Timber.tag(LOGGING_TAG).d(message.replace(TokenFieldRegex, "\"$1\":\"$MASKED_VALUE\""))
+            val maskedMessage = message.replace(TokenFieldRegex, "\"$1\":\"$MASKED_VALUE\"")
+            Timber.tag(LOGGING_TAG).d(maskedMessage.toPrettyJsonOrSelf())
         }.apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
             redactHeader(AUTHORIZATION)
