@@ -2,7 +2,7 @@
 
 Workout recap app. Kotlin, Jetpack Compose, single activity, Navigation 3, Hilt.
 Versions in `gradle/libs.versions.toml`. AGP 9 (new DSL), minSdk 26.
-Modules: `app`, `core/{designsystem,navigation,data,network}`, `feature/<x>/{api,impl}`.
+Modules: `app`, `core/{designsystem,navigation,ui,data,network}`, `feature/<x>/{api,impl}`.
 Commands: compile `./gradlew :<module>:compileDebugKotlin`, format `ktlintFormat`, lint `ktlintCheck`, build `assembleDebug`.
 
 ## Before editing
