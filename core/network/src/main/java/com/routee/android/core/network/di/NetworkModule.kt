@@ -56,12 +56,12 @@ internal object NetworkModule {
         timeZoneInterceptor: TimeZoneInterceptor,
         loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(timeZoneInterceptor)
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(timeZoneInterceptor)
         .build()
 
     /**
-     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고, 인터셉터 맨 앞에 [AuthInterceptor]를 추가한다
+     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor]를 추가한다
      */
     @Auth
     @Provides
@@ -70,7 +70,7 @@ internal object NetworkModule {
         @NoAuth client: OkHttpClient,
         authInterceptor: AuthInterceptor,
     ): OkHttpClient = client.newBuilder()
-        .apply { interceptors().add(0, authInterceptor) }
+        .addInterceptor(authInterceptor)
         .build()
 
     @NoAuth
