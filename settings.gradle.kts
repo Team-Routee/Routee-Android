@@ -28,8 +28,10 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "Routee-Android"
 include(":app")
 
+include(":core:common")
 include(":core:designsystem")
 include(":core:data")
+include(":core:network")
 include(":core:navigation")
 
 include(":feature:onboarding:api")

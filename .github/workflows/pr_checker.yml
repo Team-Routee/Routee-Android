@@ -46,6 +46,8 @@ jobs:
             echo "release.store.password=unused"
             echo "release.key.alias=unused"
             echo "release.key.password=unused"
+            echo "test.base.url=https://localhost/"
+            echo "prod.base.url=https://localhost/"
           } > local.properties
 
       - name: Lint
