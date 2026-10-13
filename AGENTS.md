@@ -1,0 +1,18 @@
+# Routee Android
+
+Workout recap app. Kotlin, Jetpack Compose, single activity, Navigation 3, Hilt.
+Versions in `gradle/libs.versions.toml`. AGP 9 (new DSL), minSdk 26.
+Modules: `app`, `core/{designsystem,navigation,data,network}`, `feature/<x>/{api,impl}`.
+
+## Before editing
+
+Find the area in [docs/index.md](docs/index.md) and read that page first.
+
+## Comments
+
+KDoc only on public API (Korean noun phrase, how to use it). `//` only for short labels, `TODO`, and Figma labels. No comments that repeat the code.
+
+## Security (public repository)
+
+Never commit `local.properties`, `keystore/`, `google-services.json`, API keys, or Coolvetica font files.
+Do not read or print secrets. Never log tokens or personal data.
