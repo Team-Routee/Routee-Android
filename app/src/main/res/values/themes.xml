@@ -3,4 +3,9 @@
     <style name="Theme.RouteeAndroid" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/bg_primary</item>
     </style>
+
+    <style name="Theme.RouteeAndroid.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/bg_primary</item>
+        <item name="postSplashScreenTheme">@style/Theme.RouteeAndroid</item>
+    </style>
 </resources>
