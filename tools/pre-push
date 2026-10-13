@@ -2,4 +2,12 @@
 # Setup (once): git config core.hooksPath tools
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
-./gradlew ktlintCheck -q
+
+start=$(mktemp)
+if ! ./gradlew ktlintCheck --continue; then
+    # 리포트 직접 출력
+    find . -path "*/build/reports/ktlint/*.txt" -newer "$start" -exec cat {} + >&2
+    rm -f "$start"
+    exit 1
+fi
+rm -f "$start"
