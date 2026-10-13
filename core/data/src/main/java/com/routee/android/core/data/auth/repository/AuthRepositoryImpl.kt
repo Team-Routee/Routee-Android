@@ -7,12 +7,12 @@ import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.remote.dto.request.AgreementsRequest
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
-import com.routee.android.core.data.auth.remote.dto.response.TokenResponse
 import com.routee.android.core.data.auth.remote.service.AuthService
 import com.routee.android.core.data.local.TokenLocalDataSource
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.util.ApiResponseHandler
+import com.routee.android.core.network.util.suspendRunCatching
 import javax.inject.Inject
 
 internal class AuthRepositoryImpl @Inject constructor(
@@ -26,16 +26,21 @@ internal class AuthRepositoryImpl @Inject constructor(
         provider: SocialProvider,
     ): Result<LoginResult> = apiResponseHandler.safeApiCall {
         authService.login(LoginRequest(idToken = idToken, provider = provider.name))
-    }.mapCatching<LoginResult, TokenResponse> { token ->
-        tokenLocalDataSource.saveTokens(accessToken = token.accessToken, refreshToken = token.refreshToken)
-        LoginResult.Success
-    }.recoverCatching { throwable ->
-        if (throwable is ApiException.NotFound && throwable.serverCode == MEMBER_NOT_FOUND) {
-            LoginResult.NeedRegister(idToken = idToken, provider = provider)
-        } else {
-            throw throwable
-        }
-    }.mapApiException(::mapAuthException)
+    }.fold(
+        onSuccess = { token ->
+            suspendRunCatching {
+                tokenLocalDataSource.saveTokens(accessToken = token.accessToken, refreshToken = token.refreshToken)
+                LoginResult.Success
+            }
+        },
+        onFailure = { throwable ->
+            if (throwable is ApiException.NotFound && throwable.serverCode == MEMBER_NOT_FOUND) {
+                Result.success(LoginResult.NeedRegister(idToken = idToken, provider = provider))
+            } else {
+                Result.failure(throwable)
+            }
+        },
+    ).mapApiException(::mapAuthException)
 
     override suspend fun register(
         nickname: String,
