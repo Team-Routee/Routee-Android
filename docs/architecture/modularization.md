@@ -5,6 +5,7 @@
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
+| `core:ui` | `UiState` and other shared UI code |
 | `core:data` | Repository, DataSource, DTO, model |
 | `core:network` | Retrofit, `ApiResponseHandler`, `ApiException` |
 | `feature:<x>:api` | `NavKey`, result types |

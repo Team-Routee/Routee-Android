@@ -5,6 +5,7 @@
 | Modules, dependencies, file locations | [modularization](architecture/modularization.md) |
 | NavKey, entries, moving between screens, tabs | [navigation](architecture/navigation.md) |
 | Repository, Service, DTO, DataStore, Retrofit qualifiers | [data-layer](architecture/data-layer.md) |
+| Screen state class, loading/empty/success/failure field | [ui-state](architecture/ui-state.md) |
 | Failures, server error codes, logging | [error-handling](architecture/error-handling.md) |
 | Status bar, navigation bar, tab bar, keyboard padding | [window-insets](conventions/window-insets.md) |
 | Drawable and string names | [resources](conventions/resources.md) |
