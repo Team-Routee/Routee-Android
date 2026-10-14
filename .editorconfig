@@ -16,3 +16,10 @@ ij_kotlin_imports_layout = *
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
 max_line_length = 120
+
+# compose-rules
+ktlint_compose_compositionlocal-allowlist = disabled
+compose_disallow_material2 = true
+compose_preview_naming_enabled = true
+compose_preview_naming_strategy = suffix
+compose_check_modifiers_for_visibility = public_and_internal

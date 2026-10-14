@@ -9,9 +9,12 @@ import androidx.compose.ui.Modifier
  * Preview 전용 테마. [RouteeTheme]을 적용하고 앱 기본 배경색을 깔아준다
  */
 @Composable
-fun RouteePreviewTheme(content: @Composable () -> Unit) {
+fun RouteePreviewTheme(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     RouteeTheme {
-        Box(modifier = Modifier.background(RouteeTheme.colors.bgPrimary)) {
+        Box(modifier = modifier.background(RouteeTheme.colors.bgPrimary)) {
             content()
         }
     }

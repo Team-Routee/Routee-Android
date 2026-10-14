@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.routee.android.buildlogic.configure.configureKotlinAndroid
+import com.routee.android.buildlogic.configure.configureKtlint
 import com.routee.android.buildlogic.extension.libs
 import com.routee.android.buildlogic.extension.version
 import org.gradle.api.Plugin
@@ -10,7 +11,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.application")
-            pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+            configureKtlint()
 
             extensions.configure<ApplicationExtension> {
                 configureKotlinAndroid(this)
