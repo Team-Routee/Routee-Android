@@ -5,26 +5,25 @@
 | Item | Rule |
 | --- | --- |
 | Location | 1 feature → `feature/<x>/impl/.../component/<screen>/`, `internal`. 2+ features → `core/designsystem/.../component/`, `Routee` prefix ([modularization](../architecture/modularization.md)) |
-| Name | Figma name in PascalCase. Add the shape when it helps (`RouteeWorkoutMetricCard`) |
-| Fixed content | Take values, not a slot (`distance`, `duration`) when Figma never changes the items |
+| Name | Figma name in PascalCase. Add the shape when it helps (`Card`, `Chip`, `Bar`) |
+| Fixed content | Take values, not a slot, when Figma never changes the items |
 | Screen | Route, Screen, events ([screen](../architecture/screen.md)) |
 
 ```kotlin
-// workout_metric_android         ← Figma 이름. designsystem은 주석, feature는 KDoc 괄호
-private val MetricItemSpacing = 4.dp // 토큰에 없는 값만 private 상수
+// feature_card_android            ← Figma 이름. designsystem은 주석, feature는 KDoc 괄호
+private val ItemSpacing = 4.dp     // 토큰에 없는 값만 private 상수
 
 /**
- * 운동 수치 카드
+ * 기능 카드
  *
- * 거리, 시간, 최고 고도를 세 칸에 같은 폭으로 나눠 보여준다. 카드 폭은 [modifier]로 정한다
+ * 제목과 값을 한 줄로 보여준다. 카드 폭은 [modifier]로 정한다
  *
- * @param distance 거리(km). 화면에 보일 문자열 (예: "15.53")
+ * @param value 화면에 보일 문자열 (예: "15.53")
  */
 @Composable
-fun RouteeWorkoutMetricCard(
-    distance: String,              // 필수 → modifier → 선택 → content 순서
-    duration: String,
-    maxElevation: String,
+fun RouteeFeatureCard(
+    title: String,                 // 필수 → modifier → 선택 → content 순서
+    value: String,
     modifier: Modifier = Modifier,
 )
 ```
@@ -44,7 +43,7 @@ fun RouteeWorkoutMetricCard(
 
 | Text | Use | Example |
 | --- | --- | --- |
-| Must keep meaning, one line in a fixed cell | `RouteeAutoSizeText` | Workout values, metric labels |
+| Must keep meaning, one line in a fixed cell | `RouteeAutoSizeText` | Numbers in a card, short labels |
 | Must keep meaning, free height | `Text` (wrap) | Guide text, dialog body |
 | Can be cut | `Text` + `maxLines = 1` + `TextOverflow.Ellipsis` | Chip, button, address, tab |
 
@@ -64,11 +63,11 @@ RouteeAutoSizeText(text = value, style = RouteeTheme.typography.display30) // �
 // 컴포넌트: @Preview 대신. 폰트 크기 확인용
 @PreviewFontSizes
 @Composable
-private fun WorkoutStopButtonPreview() {
+private fun FeatureButtonPreview() {
     RouteePreviewTheme {
         Column { // 상태가 여러 개면 한 Preview에 나열
-            WorkoutStopButton(isStopped = false, onClick = {})
-            WorkoutStopButton(isStopped = true, onClick = {})
+            FeatureButton(isSelected = false, onClick = {})
+            FeatureButton(isSelected = true, onClick = {})
         }
     }
 }
