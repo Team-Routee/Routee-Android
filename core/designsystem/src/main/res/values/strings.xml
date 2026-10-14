@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 입력창 -->
+    <string name="designsystem_text_field_length_counter">%1$d/%2$d</string>
+</resources>
