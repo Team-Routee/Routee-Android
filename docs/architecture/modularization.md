@@ -3,6 +3,7 @@
 | Module | Contains |
 | --- | --- |
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
+| `core:common` | Kotlin utilities (`suspendRunCatching`) |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
 | `core:ui` | `UiState` and other shared UI code |

@@ -2,7 +2,7 @@
 
 Workout recap app. Kotlin, Jetpack Compose, single activity, Navigation 3, Hilt.
 Versions in `gradle/libs.versions.toml`. AGP 9 (new DSL), minSdk 26.
-Modules: `app`, `core/{designsystem,navigation,ui,data,network}`, `feature/<x>/{api,impl}`.
+Modules: `app`, `core/{common,designsystem,navigation,ui,data,network}`, `feature/<x>/{api,impl}`.
 Commands: compile `./gradlew :<module>:compileDebugKotlin`, format `ktlintFormat`, lint `ktlintCheck`, build `assembleDebug`.
 
 ## Before editing
@@ -16,4 +16,4 @@ KDoc only on public API (Korean noun phrase, how to use it). `//` only for short
 ## Security (public repository)
 
 Never commit `local.properties`, `keystore/`, `google-services.json`, or API keys.
-Do not read or print secrets. Never log tokens or personal data.
+Do not read or print secrets.

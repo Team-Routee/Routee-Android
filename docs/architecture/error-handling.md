@@ -24,7 +24,7 @@ fun loadRecap(id: Long) {
         recapRepository.getRecap(id)
             .onSuccess { recap -> _uiState.update { it.copy(recap = UiState.Success(recap)) } }
             .onFailure { e ->
-                Timber.e(e) // 에러 로그는 ViewModel에서 한 번만. 토큰, 개인정보 금지
+                Timber.e(e) // 에러 로그는 ViewModel에서 한 번만
                 _uiState.update { it.copy(recap = UiState.Failure(e)) }
             }
     }
