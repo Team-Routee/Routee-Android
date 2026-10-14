@@ -22,6 +22,8 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private const val ROTATION_DEGREES = 90
 private val BorderLineThickness = 1.dp
@@ -47,6 +49,8 @@ enum class RouteeCropAspectRatio(
 @Stable
 class RouteeImageCropperState internal constructor() {
     internal var cropImageView: CropImageView? = null
+    internal var isImageLoaded: Boolean = false
+    private val mutex = Mutex()
 
     fun rotateLeft() {
         cropImageView?.rotateImage(-ROTATION_DEGREES)
@@ -60,9 +64,12 @@ class RouteeImageCropperState internal constructor() {
         cropImageView?.resetCropRect()
     }
 
-    suspend fun crop(): Result<Uri> {
+    suspend fun crop(): Result<Uri> = mutex.withLock {
         val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
-        return suspendCancellableCoroutine { continuation ->
+        if (!isImageLoaded || view.imageUri == null) {
+            return Result.failure(IllegalStateException("Image is not loaded"))
+        }
+        suspendCancellableCoroutine { continuation ->
             view.setOnCropImageCompleteListener { _, result ->
                 view.setOnCropImageCompleteListener(null)
                 val uri = result.uriContent
@@ -122,20 +129,34 @@ fun RouteeImageCropper(
 
     AndroidView(
         factory = { context ->
-            CropImageView(context).also { state.cropImageView = it }
+            CropImageView(context).also { view ->
+                state.cropImageView = view
+                view.setOnSetImageUriCompleteListener { _, _, error ->
+                    state.isImageLoaded = error == null
+                }
+            }
         },
         update = { view ->
+            state.cropImageView = view
             if (view.tag != options) {
                 view.setImageCropOptions(options)
                 view.tag = options
             }
             if (isPreview) {
                 view.setImageBitmap(BitmapFactory.decodeResource(view.resources, R.drawable.img_bg_login))
+                state.isImageLoaded = true
+            } else if (imageUri == null) {
+                view.clearImage()
+                state.isImageLoaded = false
             } else if (view.imageUri != imageUri) {
+                state.isImageLoaded = false
                 view.setImageUriAsync(imageUri)
             }
         },
-        onRelease = { state.cropImageView = null },
+        onRelease = {
+            state.cropImageView = null
+            state.isImageLoaded = false
+        },
         modifier = modifier,
     )
 }
