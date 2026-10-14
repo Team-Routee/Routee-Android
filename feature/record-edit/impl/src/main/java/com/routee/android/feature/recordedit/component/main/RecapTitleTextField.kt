@@ -4,12 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -23,7 +19,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -37,12 +32,12 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
-// 기록 제목 최대 길이 (화면설계서 RT-EDIT-001: 17자 이상 입력 시도 시 추가 입력 차단)
 private const val RECAP_TITLE_MAX_LENGTH = 16
 private val EditingUnderlineThickness = 1.dp
 
@@ -131,8 +126,12 @@ private fun RecapTitleEditor(
         focusRequester.requestFocus()
     }
 
-    BasicTextField(
+    RouteeBasicTextField(
         state = state,
+        textStyle = RouteeTheme.typography.bodySb14,
+        maxLength = RECAP_TITLE_MAX_LENGTH,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        onKeyboardAction = { onEditComplete() },
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
@@ -150,12 +149,6 @@ private fun RecapTitleEditor(
                 horizontal = RouteeTheme.spacing.Spacing4,
                 vertical = RouteeTheme.spacing.Spacing2,
             ),
-        inputTransformation = InputTransformation.maxLength(RECAP_TITLE_MAX_LENGTH),
-        textStyle = RouteeTheme.typography.bodySb14.copy(color = RouteeTheme.colors.white),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        onKeyboardAction = { onEditComplete() },
-        lineLimits = TextFieldLineLimits.SingleLine,
-        cursorBrush = SolidColor(RouteeTheme.colors.white),
     )
 }
 
