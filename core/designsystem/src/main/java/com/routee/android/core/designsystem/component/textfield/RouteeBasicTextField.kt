@@ -104,11 +104,15 @@ private fun combineTransformations(
     else -> first.then(second)
 }
 
-private class MaxGraphemeLengthTransformation(
+internal class MaxGraphemeLengthTransformation(
     private val maxLength: Int,
 ) : InputTransformation {
     override fun TextFieldBuffer.transformInput() {
-        if (asCharSequence().graphemeLength() > maxLength) revertAllChanges()
+        if (asCharSequence().graphemeLength() > maxLength &&
+            asCharSequence().graphemeLength() >= originalText.graphemeLength()
+        ) {
+            revertAllChanges()
+        }
     }
 }
 
