@@ -56,16 +56,12 @@ class RouteeImageCropperState internal constructor() {
         cropImageView?.rotateImage(ROTATION_DEGREES)
     }
 
-    /**
-     * 회전과 자르기 영역을 처음 상태로 되돌린다
-     */
+
     fun reset() {
         cropImageView?.resetCropRect()
     }
 
-    /**
-     * 현재 자르기 영역으로 이미지를 잘라 캐시 파일로 저장하고 그 Uri를 반환한다
-     */
+  
     suspend fun crop(): Result<Uri> {
         val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
         return suspendCancellableCoroutine { continuation ->
