@@ -37,6 +37,8 @@ dependencies {
     api(libs.retrofit.core)
     api(libs.kotlinx.serialization.json)
 
+    implementation(projects.core.common)
+
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)

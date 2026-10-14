@@ -1,5 +1,6 @@
 package com.routee.android.core.data.auth.repository
 
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
@@ -12,7 +13,6 @@ import com.routee.android.core.data.local.TokenLocalDataSource
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.util.ApiResponseHandler
-import com.routee.android.core.network.util.suspendRunCatching
 import javax.inject.Inject
 
 internal class AuthRepositoryImpl @Inject constructor(

@@ -1,7 +1,7 @@
 package com.routee.android.core.network.di
 
 import com.routee.android.core.network.BuildConfig
-import com.routee.android.core.network.constant.AUTHORIZATION
+import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
 import dagger.Module
@@ -23,8 +23,6 @@ import timber.log.Timber
 internal object NetworkModule {
     private const val CONTENT_TYPE = "application/json"
     private const val LOGGING_TAG = "OkHttp"
-    private const val MASKED_VALUE = "****"
-    private val TokenFieldRegex = Regex("\"(\\w*[Tt]oken)\"\\s*:\\s*\"[^\"]*\"")
 
     @Provides
     @Singleton
@@ -43,10 +41,9 @@ internal object NetworkModule {
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor { message ->
-            Timber.tag(LOGGING_TAG).d(message.replace(TokenFieldRegex, "\"$1\":\"$MASKED_VALUE\""))
+            Timber.tag(LOGGING_TAG).d(message.toPrettyJsonOrSelf())
         }.apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
-            redactHeader(AUTHORIZATION)
         }
 
     @NoAuth
@@ -56,12 +53,12 @@ internal object NetworkModule {
         timeZoneInterceptor: TimeZoneInterceptor,
         loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(timeZoneInterceptor)
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(timeZoneInterceptor)
         .build()
 
     /**
-     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고, 인터셉터 맨 앞에 [AuthInterceptor]를 추가한다
+     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor]를 추가한다
      */
     @Auth
     @Provides
@@ -70,7 +67,7 @@ internal object NetworkModule {
         @NoAuth client: OkHttpClient,
         authInterceptor: AuthInterceptor,
     ): OkHttpClient = client.newBuilder()
-        .apply { interceptors().add(0, authInterceptor) }
+        .addInterceptor(authInterceptor)
         .build()
 
     @NoAuth

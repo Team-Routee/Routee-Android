@@ -59,16 +59,29 @@ android {
 
 dependencies {
     implementation(projects.core.designsystem)
-    implementation(projects.core.data)
     implementation(projects.core.network)
+    implementation(projects.core.navigation)
+
+    implementation(projects.feature.onboarding.api)
+    implementation(projects.feature.onboarding.impl)
+    implementation(projects.feature.workout.api)
+    implementation(projects.feature.workout.impl)
+    implementation(projects.feature.timeline.impl)
+    implementation(projects.feature.recordEdit.api)
+    implementation(projects.feature.recordEdit.impl)
+    implementation(projects.feature.archive.api)
+    implementation(projects.feature.archive.impl)
+    implementation(projects.feature.setting.api)
+    implementation(projects.feature.setting.impl)
+
+    implementation(libs.bundles.navigation3)
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.timber)
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.bundles.android.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
