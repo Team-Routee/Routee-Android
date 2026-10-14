@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 운동 수치 -->
+    <string name="designsystem_workout_metric_distance">거리(km)</string>
+    <string name="designsystem_workout_metric_duration">시간</string>
+    <string name="designsystem_workout_metric_max_elevation">최고 고도(m)</string>
+</resources>
