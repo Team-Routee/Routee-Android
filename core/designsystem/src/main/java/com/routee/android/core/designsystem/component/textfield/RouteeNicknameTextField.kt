@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
+import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -41,7 +43,7 @@ private val BorderThickness = 1.dp
 /**
  * 닉네임 입력창
  *
- * 테두리 색과 우측 아이콘은 포커스 여부와 [validation]으로 정해진다. 최대 12자까지 입력된다
+ * 테두리 색과 우측 아이콘은 포커스 여부와 [validation]으로 정해진다. 최대 12자까지 입력되며 길게 눌러도 붙여넣기 메뉴는 나오지 않는다
  *
  * @param guideText 입력창 아래 안내 문구. [RouteeTextFieldValidation.Invalid]면 빨간색으로 표시
  */
@@ -86,6 +88,7 @@ fun RouteeNicknameTextField(
                 .background(RouteeTheme.colors.black60, shape)
                 .border(BorderThickness, status.borderColor, shape)
                 .padding(horizontal = RouteeTheme.spacing.Spacing12)
+                .filterTextContextMenuComponents { it.key != TextContextMenuKeys.PasteKey }
                 .semantics { if (status == RouteeTextFieldStatus.Error) error(guideText) },
         )
         Text(
