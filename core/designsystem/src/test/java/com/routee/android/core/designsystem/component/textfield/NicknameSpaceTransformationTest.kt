@@ -73,6 +73,46 @@ class NicknameSpaceTransformationTest {
         assertEquals("관악  지기산", type(initial = "관악  지기", input = "산"))
     }
 
+    /**
+     * GIVEN: 공백 뒤 글자를 선택했을 때
+     * WHEN: 선택한 글자를 공백으로 바꾸면
+     * THEN: 바뀌지 않는다
+     */
+    @Test
+    fun `선택한 글자를 공백으로 바꿔 생기는 연속 공백은 입력되지 않는다`() {
+        assertEquals("관악 산", replace(initial = "관악 산", start = 3, end = 4, input = " "))
+    }
+
+    /**
+     * GIVEN: 공백 뒤 여러 글자를 선택했을 때
+     * WHEN: 선택한 글자를 공백 하나로 바꾸면
+     * THEN: 바뀌지 않는다
+     */
+    @Test
+    fun `여러 글자를 공백으로 바꿔 생기는 연속 공백은 입력되지 않는다`() {
+        assertEquals("관악 산지기", replace(initial = "관악 산지기", start = 3, end = 6, input = " "))
+    }
+
+    /**
+     * GIVEN: 첫 글자를 선택했을 때
+     * WHEN: 선택한 글자를 공백으로 바꾸면
+     * THEN: 바뀌지 않는다
+     */
+    @Test
+    fun `첫 글자를 공백으로 바꾸면 입력되지 않는다`() {
+        assertEquals("관악", replace(initial = "관악", start = 0, end = 1, input = " "))
+    }
+
+    /**
+     * GIVEN: 단어 사이 글자를 선택했을 때
+     * WHEN: 선택한 글자를 공백 하나로 바꾸면
+     * THEN: 바뀐다
+     */
+    @Test
+    fun `선택한 글자를 단일 공백으로 바꾸는 입력은 허용된다`() {
+        assertEquals("관 산", replace(initial = "관악산", start = 1, end = 2, input = " "))
+    }
+
     private fun type(
         initial: String,
         input: String,
@@ -80,6 +120,20 @@ class NicknameSpaceTransformationTest {
         val state = TextFieldState(initial)
         state.edit {
             append(input)
+            with(NicknameSpaceTransformation) { transformInput() }
+        }
+        return state.text.toString()
+    }
+
+    private fun replace(
+        initial: String,
+        start: Int,
+        end: Int,
+        input: String,
+    ): String {
+        val state = TextFieldState(initial)
+        state.edit {
+            replace(start, end, input)
             with(NicknameSpaceTransformation) { transformInput() }
         }
         return state.text.toString()

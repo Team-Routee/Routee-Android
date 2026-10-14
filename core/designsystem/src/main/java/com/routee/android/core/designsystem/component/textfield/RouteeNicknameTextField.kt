@@ -112,8 +112,14 @@ fun RouteeNicknameTextField(
  */
 internal object NicknameSpaceTransformation : InputTransformation {
     override fun TextFieldBuffer.transformInput() {
-        if (length <= originalText.length) return
-        if (asCharSequence().spaceViolationCount() > originalText.spaceViolationCount()) revertAllChanges()
+        val text = asCharSequence()
+        if (text.isDeletionOf(originalText)) return
+        if (text.spaceViolationCount() > originalText.spaceViolationCount()) revertAllChanges()
+    }
+
+    private fun CharSequence.isDeletionOf(original: CharSequence): Boolean {
+        if (length >= original.length) return false
+        return commonPrefixWith(original).length + commonSuffixWith(original).length >= length
     }
 
     private fun CharSequence.spaceViolationCount(): Int {
