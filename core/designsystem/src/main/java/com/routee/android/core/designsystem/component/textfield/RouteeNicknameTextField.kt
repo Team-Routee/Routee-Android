@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
@@ -46,6 +47,7 @@ private val BorderThickness = 1.dp
  * 테두리 색과 우측 아이콘은 포커스 여부와 [validation]으로 정해진다. 최대 12자까지 입력되며 길게 눌러도 붙여넣기 메뉴는 나오지 않는다
  *
  * @param guideText 입력창 아래 안내 문구. [RouteeTextFieldValidation.Invalid]면 빨간색으로 표시
+ * @param showEditIcon 포커스 없고 검증 전일 때 우측에 편집 아이콘 표시 여부. 설정 화면에서 사용
  */
 @Composable
 fun RouteeNicknameTextField(
@@ -55,11 +57,17 @@ fun RouteeNicknameTextField(
     modifier: Modifier = Modifier,
     validation: RouteeTextFieldValidation = RouteeTextFieldValidation.None,
     onKeyboardAction: KeyboardActionHandler? = null,
+    showEditIcon: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
     val status = RouteeTextFieldStatus.from(isFocused = isFocused, validation = validation)
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
+    val trailingIconRes = if (showEditIcon && status == RouteeTextFieldStatus.Initial) {
+        R.drawable.ic_edit_sm_line_white
+    } else {
+        status.trailingIconRes
+    }
 
     Column(
         modifier = modifier,
@@ -73,7 +81,7 @@ fun RouteeNicknameTextField(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             onKeyboardAction = onKeyboardAction,
             interactionSource = interactionSource,
-            trailingContent = status.trailingIconRes?.let { iconRes ->
+            trailingContent = trailingIconRes?.let { iconRes ->
                 {
                     Icon(
                         painter = painterResource(iconRes),
@@ -114,6 +122,20 @@ internal object NicknameSpaceTransformation : InputTransformation {
         val leadingSpace = if (firstOrNull()?.isWhitespace() == true) 1 else 0
         val consecutiveSpaces = zipWithNext().count { (a, b) -> a.isWhitespace() && b.isWhitespace() }
         return leadingSpace + consecutiveSpaces
+    }
+}
+
+@Preview(widthDp = 360)
+@Composable
+private fun RouteeNicknameTextFieldEditIconPreview() {
+    RouteePreviewTheme {
+        RouteeNicknameTextField(
+            state = rememberTextFieldState("관악산 날다람쥐"),
+            placeholder = "닉네임을 입력해주세요",
+            guideText = "한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)",
+            showEditIcon = true,
+            modifier = Modifier.padding(RouteeTheme.spacing.Spacing32),
+        )
     }
 }
 
