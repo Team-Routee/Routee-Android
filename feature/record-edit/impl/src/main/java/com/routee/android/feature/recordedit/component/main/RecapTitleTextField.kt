@@ -39,7 +39,6 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
 private const val RECAP_TITLE_MAX_LENGTH = 16
-private val EditingUnderlineThickness = 1.dp
 
 /**
  * 기록 카드의 제목 영역 (textfield_recap_title)
@@ -136,7 +135,7 @@ private fun RecapTitleEditor(
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .drawBehind {
-                val strokeWidth = EditingUnderlineThickness.toPx()
+                val strokeWidth = RouteeTheme.border.Thickness.toPx()
                 val y = size.height - strokeWidth / 2
                 drawLine(
                     color = underlineColor,

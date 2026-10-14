@@ -38,8 +38,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 private const val NICKNAME_MAX_LENGTH = 12
-private val FieldMinHeight = 50.dp
-private val BorderThickness = 1.dp
 
 /**
  * 닉네임 입력창
@@ -92,9 +90,9 @@ fun RouteeNicknameTextField(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = FieldMinHeight)
+                .defaultMinSize(minHeight = RouteeTheme.field.MinHeight)
                 .background(RouteeTheme.colors.black60, shape)
-                .border(BorderThickness, status.borderColor, shape)
+                .border(RouteeTheme.border.Thickness, status.borderColor, shape)
                 .padding(horizontal = RouteeTheme.spacing.Spacing12)
                 .filterTextContextMenuComponents { it.key != TextContextMenuKeys.PasteKey }
                 .semantics { if (status == RouteeTextFieldStatus.Error) error(guideText) },

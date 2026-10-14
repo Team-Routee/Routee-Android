@@ -34,7 +34,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 private const val LOCATION_MAX_LENGTH = 16
-private val BorderThickness = 1.dp
 
 /**
  * 위치 입력창
@@ -77,7 +76,7 @@ fun RouteeLocationTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(RouteeTheme.colors.black60, shape)
-                .border(BorderThickness, status.borderColor, shape)
+                .border(RouteeTheme.border.Thickness, status.borderColor, shape)
                 .padding(RouteeTheme.spacing.Spacing16),
         )
         Text(

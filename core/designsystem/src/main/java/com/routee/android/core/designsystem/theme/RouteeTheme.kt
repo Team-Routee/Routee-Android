@@ -22,6 +22,12 @@ object RouteeTheme {
 
     val radius: RouteeRadius
         get() = RouteeRadius
+
+    val field: RouteeField
+        get() = RouteeField
+
+    val border: RouteeBorder
+        get() = RouteeBorder
 }
 
 @Composable
