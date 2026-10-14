@@ -1,6 +1,6 @@
 package com.routee.android.core.data.di
 
-import com.routee.android.core.data.local.TokenLocalDataSource
+import com.routee.android.core.data.auth.local.TokenLocalDataSource
 import com.routee.android.core.network.token.TokenProvider
 import dagger.Binds
 import dagger.Module

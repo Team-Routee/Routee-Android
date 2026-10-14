@@ -1,4 +1,4 @@
-package com.routee.android.core.data.local
+package com.routee.android.core.data.auth.local
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

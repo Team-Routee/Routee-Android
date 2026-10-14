@@ -2,6 +2,7 @@ package com.routee.android.core.data.auth.repository
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.routee.android.core.data.auth.exception.AuthException
+import com.routee.android.core.data.auth.local.TokenLocalDataSource
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
@@ -9,7 +10,6 @@ import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
 import com.routee.android.core.data.auth.remote.dto.response.TokenResponse
 import com.routee.android.core.data.auth.remote.service.AuthService
-import com.routee.android.core.data.local.TokenLocalDataSource
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.model.BaseResponse
 import com.routee.android.core.network.util.ApiResponseHandler
