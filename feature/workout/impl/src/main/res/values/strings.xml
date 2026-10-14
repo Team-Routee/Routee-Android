@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 운동 메인 -->
+    <string name="workout_main_stop">정지</string>
+    <string name="workout_main_restart">다시 시작</string>
+    <string name="workout_main_info_distance">거리</string>
+    <string name="workout_main_info_duration">시간</string>
+    <string name="workout_main_info_max_elevation">최고 고도</string>
+    <string name="workout_main_location_permission_required">위치 권한 허용이 필요합니다.</string>
+</resources>
