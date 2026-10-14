@@ -4,5 +4,5 @@
     <string name="designsystem_text_field_length_counter">%1$d/%2$d</string>
 
     <!-- 기록 제목 헤더 -->
-    <string name="designsystem_record_summary_card_edit_a11y">기록 제목 편집</string>
+    <string name="designsystem_record_summary_text_field_edit_a11y">기록 제목 편집</string>
 </resources>

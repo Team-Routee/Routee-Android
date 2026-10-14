@@ -46,7 +46,7 @@ private const val RECORD_TITLE_MAX_LENGTH = 16
  * @param isEditing 편집 중 여부. [onEditClick]에서 true로, [onEditComplete]에서 false로 바꾼다
  */
 @Composable
-fun RouteeRecordSummaryCard(
+fun RouteeRecordSummaryTextField(
     state: TextFieldState,
     isEditing: Boolean,
     onEditClick: () -> Unit,
@@ -73,7 +73,7 @@ fun RouteeRecordSummaryCard(
         }
         Icon(
             painter = painterResource(R.drawable.ic_edit_sm_line_white),
-            contentDescription = stringResource(R.string.designsystem_record_summary_card_edit_a11y),
+            contentDescription = stringResource(R.string.designsystem_record_summary_text_field_edit_a11y),
             tint = Color.Unspecified,
             modifier = Modifier
                 .noRippleClickable(onClick = onEditClick)
@@ -113,17 +113,17 @@ private fun RecordTitleEditor(
     )
 }
 
-private class RouteeRecordSummaryCardPreviewParameterProvider : PreviewParameterProvider<Boolean> {
+private class RouteeRecordSummaryTextFieldPreviewParameterProvider : PreviewParameterProvider<Boolean> {
     override val values = sequenceOf(false, true)
 }
 
 @Preview(widthDp = 360)
 @Composable
-private fun RouteeRecordSummaryCardPreview(
-    @PreviewParameter(RouteeRecordSummaryCardPreviewParameterProvider::class) isEditing: Boolean,
+private fun RouteeRecordSummaryTextFieldPreview(
+    @PreviewParameter(RouteeRecordSummaryTextFieldPreviewParameterProvider::class) isEditing: Boolean,
 ) {
     RouteePreviewTheme {
-        RouteeRecordSummaryCard(
+        RouteeRecordSummaryTextField(
             state = rememberTextFieldState("2026.07.18 기록"),
             isEditing = isEditing,
             onEditClick = {},
