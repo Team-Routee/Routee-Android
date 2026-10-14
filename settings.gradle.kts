@@ -33,6 +33,7 @@ include(":core:designsystem")
 include(":core:data")
 include(":core:network")
 include(":core:navigation")
+include(":core:ui")
 
 include(":feature:onboarding:api")
 include(":feature:onboarding:impl")

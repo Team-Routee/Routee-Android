@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
@@ -28,7 +29,7 @@ import com.routee.android.core.navigation.RouteeNavigator
  */
 @Composable
 internal fun rememberRouteeTabSceneDecorator(
-    backStack: List<NavKey>,
+    backStack: NavBackStack<NavKey>,
     navigator: RouteeNavigator,
 ): SceneDecoratorStrategy<NavKey> = remember(backStack, navigator) {
     RouteeTabSceneDecorator(backStack, navigator)
