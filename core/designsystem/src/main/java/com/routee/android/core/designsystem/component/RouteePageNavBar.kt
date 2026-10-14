@@ -28,7 +28,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
  * 뒤로 가기 버튼이 있는 상단 바
  *
  * @param title 가운데 페이지 제목. null이면 표시하지 않음
- * @param actions 우측 영역. 완료, 확인, 삭제 같은 [RouteeTextButton]을 넣는다
+ * @param actions 우측 영역. 완료, 확인, 삭제 같은 텍스트 버튼을 넣는다
  */
 @Composable
 fun RouteePageNavBar(
@@ -102,12 +102,24 @@ private fun RouteePageNavBarPreview(
             title = "페이지 제목".takeIf { type == RouteePageNavBarPreviewType.Title },
             actions = {
                 when (type) {
-                    RouteePageNavBarPreviewType.Finish -> RouteeTextButton(text = "완료", onClick = {})
+                    RouteePageNavBarPreviewType.Finish -> Text(
+                        text = "완료",
+                        style = RouteeTheme.typography.labelSb18,
+                        color = RouteeTheme.colors.white,
+                        modifier = Modifier
+                            .noRippleClickable(onClick = {})
+                            .semantics { role = Role.Button }
+                            .padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    )
 
-                    RouteePageNavBarPreviewType.Delete -> RouteeTextButton(
+                    RouteePageNavBarPreviewType.Delete -> Text(
                         text = "삭제",
-                        onClick = {},
-                        role = RouteeTextButtonRole.Destructive,
+                        style = RouteeTheme.typography.labelSb18,
+                        color = RouteeTheme.colors.statusError,
+                        modifier = Modifier
+                            .noRippleClickable(onClick = {})
+                            .semantics { role = Role.Button }
+                            .padding(horizontal = RouteeTheme.spacing.Spacing16),
                     )
 
                     else -> Unit

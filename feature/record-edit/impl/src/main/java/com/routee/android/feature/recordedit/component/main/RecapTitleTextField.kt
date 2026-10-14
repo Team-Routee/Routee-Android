@@ -42,7 +42,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
-// 기록 제목 최대 길이 (화면설계서 RT-EDIT-001: 17자 이상 입력 시도 시 추가 입력 차단)
 private const val RECAP_TITLE_MAX_LENGTH = 16
 private val EditingUnderlineThickness = 1.dp
 
