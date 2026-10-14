@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
@@ -65,6 +67,7 @@ fun RouteeNicknameTextField(
             state = state,
             placeholder = placeholder,
             maxLength = NICKNAME_MAX_LENGTH,
+            inputTransformation = NicknameSpaceTransformation,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             onKeyboardAction = onKeyboardAction,
             interactionSource = interactionSource,
@@ -90,6 +93,24 @@ fun RouteeNicknameTextField(
             style = RouteeTheme.typography.labelR12,
             color = status.feedbackColor,
         )
+    }
+}
+
+/**
+ * 앞 공백, 연속 공백을 넣는 입력을 막는다 (RT-AUTH-003 입력 규칙)
+ *
+ * 글자를 지워서 생기는 연속 공백은 막지 않는다. 막으면 단어 사이 글자를 지울 수 없다
+ */
+internal object NicknameSpaceTransformation : InputTransformation {
+    override fun TextFieldBuffer.transformInput() {
+        if (length <= originalText.length) return
+        if (asCharSequence().spaceViolationCount() > originalText.spaceViolationCount()) revertAllChanges()
+    }
+
+    private fun CharSequence.spaceViolationCount(): Int {
+        val leadingSpace = if (firstOrNull()?.isWhitespace() == true) 1 else 0
+        val consecutiveSpaces = zipWithNext().count { (a, b) -> a.isWhitespace() && b.isWhitespace() }
+        return leadingSpace + consecutiveSpaces
     }
 }
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.then
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
  * @param state 입력값. 호출하는 쪽에서 rememberTextFieldState 또는 ViewModel의 [TextFieldState]를 넘긴다
  * @param placeholder 입력값이 비어 있을 때 표시할 문구
  * @param maxLength 최대 글자 수 넘는 입력은 막는다
+ * @param inputTransformation 글자 수 외에 추가로 입력을 막거나 바꿀 규칙
  * @param leadingContent 입력창 앞 아이콘 자리. 눌러도 입력창에 포커스된다
  * @param trailingContent 입력창 뒤 아이콘 자리. 눌러도 입력창에 포커스된다
  */
@@ -49,6 +51,7 @@ fun RouteeBasicTextField(
     placeholder: String? = null,
     placeholderColor: Color = RouteeTheme.colors.white30,
     maxLength: Int? = null,
+    inputTransformation: InputTransformation? = null,
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onKeyboardAction: KeyboardActionHandler? = null,
@@ -60,7 +63,10 @@ fun RouteeBasicTextField(
         state = state,
         modifier = modifier,
         enabled = enabled,
-        inputTransformation = maxLength?.let { MaxGraphemeLengthTransformation(it) },
+        inputTransformation = combineTransformations(
+            maxLength?.let { MaxGraphemeLengthTransformation(it) },
+            inputTransformation,
+        ),
         textStyle = textStyle.copy(color = textColor),
         keyboardOptions = keyboardOptions,
         onKeyboardAction = onKeyboardAction,
@@ -87,6 +93,15 @@ fun RouteeBasicTextField(
             }
         },
     )
+}
+
+private fun combineTransformations(
+    first: InputTransformation?,
+    second: InputTransformation?,
+): InputTransformation? = when {
+    first == null -> second
+    second == null -> first
+    else -> first.then(second)
 }
 
 private class MaxGraphemeLengthTransformation(
