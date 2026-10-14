@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 상단 바 -->
+    <string name="designsystem_page_nav_bar_back_a11y">뒤로 가기</string>
+</resources>
