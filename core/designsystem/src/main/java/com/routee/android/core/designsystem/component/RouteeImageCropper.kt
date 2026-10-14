@@ -56,12 +56,10 @@ class RouteeImageCropperState internal constructor() {
         cropImageView?.rotateImage(ROTATION_DEGREES)
     }
 
-
     fun reset() {
         cropImageView?.resetCropRect()
     }
 
-  
     suspend fun crop(): Result<Uri> {
         val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
         return suspendCancellableCoroutine { continuation ->
