@@ -1,4 +1,4 @@
-package com.routee.android.core.designsystem.component
+package com.routee.android.core.designsystem.component.textfield
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +36,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
  *
  * @param state 입력값. 호출하는 쪽에서 rememberTextFieldState 또는 ViewModel의 [TextFieldState]를 넘긴다
  * @param placeholder 입력값이 비어 있을 때 표시할 문구
- * @param maxLength 최대 글자 수. 이모지도 1자로 세며, 넘는 입력은 막는다
+ * @param maxLength 최대 글자 수 넘는 입력은 막는다
  * @param leadingContent 입력창 앞 아이콘 자리. 눌러도 입력창에 포커스된다
  * @param trailingContent 입력창 뒤 아이콘 자리. 눌러도 입력창에 포커스된다
  */

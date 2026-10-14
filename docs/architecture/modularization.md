@@ -36,6 +36,7 @@ dependencies {
 | Component shared within a feature | `feature/<x>/impl/.../component/` |
 | Entry builder | `feature/<x>/impl/.../navigation/<X>EntryBuilder.kt` |
 | Component used in 2+ features | `core/designsystem/.../component/` |
+| Several components of one kind | `core/designsystem/.../component/<kind>/` (`textfield/`) |
 | Modifier extension | `core/designsystem/.../extension/ModifierExt.kt` |
 | Feature strings | `feature/<x>/impl/src/main/res/values/strings.xml` |
 | Repository, DTO, model | `core/data/.../<domain>/` |
