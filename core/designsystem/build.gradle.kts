@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(libs.coil.compose)
+    implementation(libs.android.image.cropper)
 }
