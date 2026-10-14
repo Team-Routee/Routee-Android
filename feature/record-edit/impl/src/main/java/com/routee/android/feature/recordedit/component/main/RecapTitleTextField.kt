@@ -19,8 +19,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -99,7 +100,7 @@ private fun RecapTitleDisplay(
             modifier = Modifier.weight(1f, fill = false),
         )
         Icon(
-            painter = painterResource(DesignSystemR.drawable.ic_edit_sm_line_grey),
+            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_grey),
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier

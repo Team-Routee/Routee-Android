@@ -21,9 +21,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -72,7 +73,7 @@ fun RouteeRecordSummaryTextField(
             )
         }
         Icon(
-            painter = painterResource(R.drawable.ic_edit_sm_line_white),
+            imageVector = ImageVector.vectorResource(R.drawable.ic_edit_sm_line_white),
             contentDescription = stringResource(R.string.designsystem_record_summary_text_field_edit_a11y),
             tint = Color.Unspecified,
             modifier = Modifier
