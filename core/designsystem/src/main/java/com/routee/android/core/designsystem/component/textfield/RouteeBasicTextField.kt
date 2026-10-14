@@ -31,7 +31,7 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 /**
- * 디자인 없이 동작만 담당하는 한 줄 입력창
+ * 디자인 없이 동작만 담당하는 입력창
  *
  * 테두리, 배경, 상태별 색은 이 컴포넌트를 감싸는 쪽에서 그린다. 포커스 여부가 필요하면 [interactionSource]를 넘겨 관찰한다
  *
@@ -39,6 +39,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
  * @param placeholder 입력값이 비어 있을 때 표시할 문구
  * @param maxLength 최대 글자 수 넘는 입력은 막는다
  * @param inputTransformation 글자 수 외에 추가로 입력을 막거나 바꿀 규칙
+ * @param lineLimits 줄 수 제한. 기본은 한 줄
  * @param leadingContent 입력창 앞 아이콘 자리. 눌러도 입력창에 포커스된다
  * @param trailingContent 입력창 뒤 아이콘 자리. 눌러도 입력창에 포커스된다
  */
@@ -52,6 +53,7 @@ fun RouteeBasicTextField(
     placeholderColor: Color = RouteeTheme.colors.white30,
     maxLength: Int? = null,
     inputTransformation: InputTransformation? = null,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onKeyboardAction: KeyboardActionHandler? = null,
@@ -70,7 +72,7 @@ fun RouteeBasicTextField(
         textStyle = textStyle.copy(color = textColor),
         keyboardOptions = keyboardOptions,
         onKeyboardAction = onKeyboardAction,
-        lineLimits = TextFieldLineLimits.SingleLine,
+        lineLimits = lineLimits,
         interactionSource = interactionSource,
         cursorBrush = SolidColor(textColor),
         decorator = TextFieldDecorator { innerTextField ->
