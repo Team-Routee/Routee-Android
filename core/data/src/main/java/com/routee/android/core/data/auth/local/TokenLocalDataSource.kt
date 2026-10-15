@@ -21,9 +21,9 @@ internal class TokenLocalDataSource @Inject constructor(
 
     override suspend fun getAccessToken(): String? = read(ACCESS_TOKEN)
 
-    suspend fun getRefreshToken(): String? = read(REFRESH_TOKEN)
+    override suspend fun getRefreshToken(): String? = read(REFRESH_TOKEN)
 
-    suspend fun saveTokens(
+    override suspend fun saveTokens(
         accessToken: String,
         refreshToken: String,
     ) {
@@ -33,7 +33,7 @@ internal class TokenLocalDataSource @Inject constructor(
         }
     }
 
-    suspend fun clearTokens() {
+    override suspend fun clearTokens() {
         dataStore.edit { it.clear() }
     }
 
