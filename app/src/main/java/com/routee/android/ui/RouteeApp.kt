@@ -10,21 +10,30 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.routee.android.core.navigation.rememberRouteeNavigator
+import com.routee.android.core.ui.collectSideEffect
 import com.routee.android.feature.archive.navigation.archiveEntries
+import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.navigation.onboardingEntries
 import com.routee.android.feature.recordedit.navigation.recordEditEntries
 import com.routee.android.feature.setting.navigation.settingEntries
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
 import com.routee.android.feature.workout.navigation.workoutEntries
 import com.routee.android.navigation.rememberRouteeTabSceneDecorator
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 internal fun RouteeApp(
+    sessionExpired: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
     // TODO 시작 화면 결정: 토큰 없음 -> LoginNavKey / 진행 중인 운동 있음 -> 운동 중(정지) 화면 / 그 외 -> WorkoutMainNavKey
     val backStack = rememberNavBackStack(WorkoutMainNavKey)
     val navigator = rememberRouteeNavigator(backStack)
+
+    sessionExpired.collectSideEffect {
+        // TODO 세션 만료 안내 문구 (기획 확인 후)
+        navigator.clearAndNavigateTo(LoginNavKey)
+    }
 
     NavDisplay(
         backStack = backStack,
