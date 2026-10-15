@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.routee.android.core.ui"
 }
+
+dependencies {
+    implementation(libs.androidx.lifecycle.runtime.compose)
+}
