@@ -1,9 +1,11 @@
 package com.routee.android.feature.onboarding.login
 
 import android.content.Context
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
@@ -11,9 +13,12 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.routee.android.feature.onboarding.BuildConfig
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-internal class GoogleLoginManager @Inject constructor() {
+internal class GoogleLoginManager @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) {
 
     suspend fun requestIdToken(activityContext: Context): Result<String> {
         return try {
@@ -37,6 +42,13 @@ internal class GoogleLoginManager @Inject constructor() {
         } catch (e: IllegalArgumentException) {
             Result.failure(GoogleLoginException.Failed(e))
         }
+    }
+
+    suspend fun clearCredential(): Result<Unit> = try {
+        CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest())
+        Result.success(Unit)
+    } catch (e: ClearCredentialException) {
+        Result.failure(e)
     }
 
     private fun googleIdRequest(): GetCredentialRequest = GetCredentialRequest.Builder()
