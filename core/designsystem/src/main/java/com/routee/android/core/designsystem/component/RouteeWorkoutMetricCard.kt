@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,8 +38,10 @@ fun RouteeWorkoutMetricCard(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(RouteeTheme.radius.Radius12))
-            .background(RouteeTheme.colors.black60)
+            .background(
+                color = RouteeTheme.colors.black60,
+                shape = RoundedCornerShape(RouteeTheme.radius.Radius12),
+            )
             .padding(vertical = RouteeTheme.spacing.Spacing16),
         horizontalArrangement = Arrangement.spacedBy(MetricItemSpacing, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
