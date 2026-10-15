@@ -19,13 +19,13 @@ suspendRunCatching { tokenLocalDataSource.saveTokens(accessToken, refreshToken) 
 ## ViewModel
 
 ```kotlin
-fun loadRecap(id: Long) {
+fun loadItem(id: Long) {
     viewModelScope.launch {
-        recapRepository.getRecap(id)
-            .onSuccess { recap -> _uiState.update { it.copy(recap = UiState.Success(recap)) } }
+        itemRepository.getItem(id)
+            .onSuccess { item -> _uiState.update { it.copy(item = UiState.Success(item)) } }
             .onFailure { e ->
                 Timber.e(e) // 에러 로그는 ViewModel에서 한 번만
-                _uiState.update { it.copy(recap = UiState.Failure(e)) }
+                _uiState.update { it.copy(item = UiState.Failure(e)) }
             }
     }
 }

@@ -21,9 +21,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 // global_nav_bar_android
@@ -88,8 +88,7 @@ fun RowScope.RouteeNavBarItem(
     }
 }
 
-@Preview(name = "RouteeNavBar", widthDp = 360)
-@Preview(name = "RouteeNavBar - 글자 200%", widthDp = 360, fontScale = 2f)
+@PreviewFontSizes
 @Composable
 private fun RouteeNavBarPreview() {
     RouteeTheme {
