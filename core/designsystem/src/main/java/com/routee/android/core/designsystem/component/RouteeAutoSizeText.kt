@@ -65,12 +65,12 @@ private fun RouteeAutoSizeTextPreview() {
         Column {
             RouteeAutoSizeText(
                 text = "03h 03m",
-                style = RouteeTheme.typography.display52,
+                style = RouteeTheme.typography.displayB42,
                 color = RouteeTheme.colors.white,
             )
             RouteeAutoSizeText(
                 text = "03h 03m",
-                style = RouteeTheme.typography.display52,
+                style = RouteeTheme.typography.displayB42,
                 color = RouteeTheme.colors.white,
                 modifier = Modifier.width(120.dp),
             )

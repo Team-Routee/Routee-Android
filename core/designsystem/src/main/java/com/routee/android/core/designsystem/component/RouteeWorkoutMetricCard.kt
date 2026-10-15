@@ -70,7 +70,7 @@ private fun RowScope.MetricItem(
         )
         RouteeAutoSizeText(
             text = value,
-            style = RouteeTheme.typography.display30,
+            style = RouteeTheme.typography.displaySb28,
             color = RouteeTheme.colors.mint300,
             textAlign = TextAlign.Center,
         )

@@ -33,10 +33,9 @@ private fun RouteeTypographyPreview() {
                 color = RouteeTheme.colors.mint100,
             )
             listOf(
-                "display_52" to typography.display52,
-                "display_40" to typography.display40,
-                "display_30" to typography.display30,
-                "display_26" to typography.display26,
+                "display_b_42" to typography.displayB42,
+                "display_sb_28" to typography.displaySb28,
+                "display_sb_22" to typography.displaySb22,
                 "title_sb_24" to typography.titleSb24,
                 "title_sb_20" to typography.titleSb20,
                 "title_sb_18" to typography.titleSb18,
