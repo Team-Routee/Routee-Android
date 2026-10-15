@@ -8,16 +8,21 @@ import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.remote.dto.request.AgreementsRequest
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
+import com.routee.android.core.data.auth.remote.dto.request.LogoutRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
 import com.routee.android.core.data.auth.remote.service.AuthService
+import com.routee.android.core.data.auth.remote.service.LogoutService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.extension.mapApiException
+import com.routee.android.core.network.session.AuthSessionManager
 import com.routee.android.core.network.util.ApiResponseHandler
 import javax.inject.Inject
 
 internal class AuthRepositoryImpl @Inject constructor(
     private val authService: AuthService,
+    private val logoutService: LogoutService,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    private val authSessionManager: AuthSessionManager,
     private val apiResponseHandler: ApiResponseHandler,
 ) : AuthRepository {
 
@@ -68,6 +73,13 @@ internal class AuthRepositoryImpl @Inject constructor(
             }
         },
     ).mapApiException(::mapAuthException)
+
+    override suspend fun logout(): Result<Unit> {
+        tokenLocalDataSource.getRefreshToken()?.let { refreshToken ->
+            apiResponseHandler.safeUnitApiCall { logoutService.logout(LogoutRequest(refreshToken = refreshToken)) }
+        }
+        return suspendRunCatching { authSessionManager.clearSession() }
+    }
 
     private suspend fun executeLogin(
         idToken: String,
