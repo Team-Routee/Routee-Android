@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -22,21 +21,19 @@ import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.feature.workout.R
 
 private val LocationIconSize = 24.dp
 
 /**
  * 현재 위치 칩 (chip_location_main)
  *
- * 위치 아이콘 옆에 주소를 한 줄로 보여준다. 길면 말줄임 처리한다
+ * 위치 아이콘 옆에 문구를 한 줄로 보여준다. 길면 말줄임 처리한다
  *
- * @param hasLocationPermission false면 [address] 대신 권한 안내 문구를 보여준다
+ * @param text 주소, 권한 안내 같은 표시할 문구. 어떤 문구를 보여줄지는 호출하는 화면이 상태를 보고 정한다
  */
 @Composable
 internal fun LocationChip(
-    address: String,
-    hasLocationPermission: Boolean,
+    text: String,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -58,13 +55,7 @@ internal fun LocationChip(
             modifier = Modifier.size(LocationIconSize),
         )
         Text(
-            text = if (hasLocationPermission) {
-                address
-            } else {
-                stringResource(
-                    R.string.workout_main_location_permission_required,
-                )
-            },
+            text = text,
             style = RouteeTheme.typography.labelM12,
             color = RouteeTheme.colors.grey50,
             maxLines = 1,
@@ -78,8 +69,8 @@ internal fun LocationChip(
 private fun LocationChipPreview() {
     RouteePreviewTheme(modifier = Modifier.padding(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            LocationChip(address = "영등포구 의사당대로 1", hasLocationPermission = true)
-            LocationChip(address = "", hasLocationPermission = false)
+            LocationChip(text = "영등포구 의사당대로 1")
+            LocationChip(text = "위치 권한 허용이 필요합니다.")
         }
     }
 }
