@@ -13,11 +13,14 @@ import com.routee.android.feature.workout.api.WorkoutMainNavKey
 
 fun EntryProviderScope<NavKey>.onboardingEntries(navigator: RouteeNavigator) {
     entry<LoginNavKey> {
-        LoginRoute(onLoginClick = { navigator.navigateTo(TermsNavKey) })
+        LoginRoute(
+            onNavigateToHome = { navigator.clearAndNavigateTo(WorkoutMainNavKey) },
+            onNavigateToTerms = { idToken -> navigator.navigateTo(TermsNavKey(idToken)) },
+        )
     }
-    entry<TermsNavKey> {
+    entry<TermsNavKey> { key ->
         TermsRoute(
-            onAgreeClick = { navigator.navigateTo(NicknameNavKey) },
+            onAgreeClick = { navigator.navigateTo(NicknameNavKey(idToken = key.idToken, marketingConsent = false)) },
             onBackClick = navigator::navigateBack,
         )
     }

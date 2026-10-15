@@ -2,4 +2,8 @@
 <resources>
     <!-- 로그인 -->
     <string name="onboarding_login_google_button">Continue with Google</string>
+    <string name="onboarding_login_terms_notice">계속 진행하면 Routee의 서비스 %1$s하게 됩니다.\n개인정보 처리 방식은 %2$s에서 확인할 수 있습니다.</string>
+    <string name="onboarding_login_terms_notice_service_link">이용약관에 동의</string>
+    <string name="onboarding_login_terms_notice_privacy_link">개인정보 처리방침</string>
+    <string name="onboarding_login_exit_toast">한 번 더 누르면 앱이 종료됩니다</string>
 </resources>

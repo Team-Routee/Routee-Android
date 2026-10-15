@@ -6,8 +6,23 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object LoginNavKey : NavKey
 
+/**
+ * 이용약관 동의 화면 키
+ *
+ * @param idToken 구글 로그인으로 받은 idToken. 회원가입 요청까지 넘긴다
+ */
 @Serializable
-data object TermsNavKey : NavKey
+data class TermsNavKey(
+    val idToken: String,
+) : NavKey
 
+/**
+ * 닉네임 작성 화면 키. 필수 약관은 모두 동의한 상태로 진입한다
+ *
+ * @param marketingConsent 선택 약관(마케팅 활용 및 광고성 정보 수신) 동의 여부
+ */
 @Serializable
-data object NicknameNavKey : NavKey
+data class NicknameNavKey(
+    val idToken: String,
+    val marketingConsent: Boolean,
+) : NavKey

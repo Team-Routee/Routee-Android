@@ -32,7 +32,9 @@ dependencies {
     implementation(projects.feature.onboarding.api)
     implementation(projects.feature.workout.api)
 
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.timber)
 }
