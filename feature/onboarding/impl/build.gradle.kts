@@ -9,6 +9,9 @@ val localProperties = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+fun localProperty(key: String, defaultValue: String = ""): String =
+    localProperties.getProperty(key, defaultValue)
+
 android {
     namespace = "com.routee.android.feature.onboarding"
 
@@ -20,7 +23,7 @@ android {
         buildConfigField(
             "String",
             "GOOGLE_WEB_CLIENT_ID",
-            "\"${localProperties.getProperty("google.web.client.id", "")}\"",
+            "\"${localProperty("google.web.client.id")}\"",
         )
     }
 }
