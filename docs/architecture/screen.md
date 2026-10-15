@@ -49,7 +49,7 @@ internal sealed interface FeatureSideEffect {
     data object ShowDeleteToast : FeatureSideEffect
 }
 
-// ViewModel: Channel이라 수집이 잠깐 멈춰도(회전, 백그라운드) 이벤트가 사라지지 않음
+// ViewModel: 수집이 멈춘 동안 보낸 이벤트는 돌아오면 전달 (최대 한 번)
 private val _sideEffect = Channel<FeatureSideEffect>(Channel.BUFFERED)
 val sideEffect = _sideEffect.receiveAsFlow()
 
