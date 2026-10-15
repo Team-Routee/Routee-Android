@@ -19,4 +19,10 @@
     <string name="onboarding_terms_item_marketing">마케팅 활용 및 광고성 정보 수신 동의</string>
     <string name="onboarding_terms_document_a11y">%1$s 보기</string>
     <string name="onboarding_terms_next_button">다음</string>
+
+    <!-- 닉네임 작성 -->
+    <string name="onboarding_nickname_title">사용할 닉네임을 설정해주세요.</string>
+    <string name="onboarding_nickname_placeholder">닉네임을 입력해주세요</string>
+    <string name="onboarding_nickname_guide">한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)</string>
+    <string name="onboarding_nickname_start_button">시작하기</string>
 </resources>

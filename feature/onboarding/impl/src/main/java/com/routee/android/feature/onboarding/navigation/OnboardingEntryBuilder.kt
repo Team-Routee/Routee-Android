@@ -9,6 +9,7 @@ import com.routee.android.feature.onboarding.api.NicknameNavKey
 import com.routee.android.feature.onboarding.api.TermsNavKey
 import com.routee.android.feature.onboarding.login.LoginRoute
 import com.routee.android.feature.onboarding.nickname.NicknameRoute
+import com.routee.android.feature.onboarding.nickname.NicknameViewModel
 import com.routee.android.feature.onboarding.terms.TermsRoute
 import com.routee.android.feature.onboarding.terms.TermsViewModel
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
@@ -29,10 +30,11 @@ fun EntryProviderScope<NavKey>.onboardingEntries(navigator: RouteeNavigator) {
             },
         )
     }
-    entry<NicknameNavKey> {
+    viewModelEntry<NicknameNavKey, NicknameViewModel, NicknameViewModel.Factory> { _, viewModel ->
         NicknameRoute(
-            onStartClick = { navigator.clearAndNavigateTo(WorkoutMainNavKey) },
+            viewModel = viewModel,
             onBackClick = navigator::navigateBack,
+            onNavigateToHome = { navigator.clearAndNavigateTo(WorkoutMainNavKey) },
         )
     }
 }
