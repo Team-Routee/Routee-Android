@@ -1,6 +1,7 @@
 package com.routee.android.core.network.di
 
 import com.routee.android.core.network.BuildConfig
+import com.routee.android.core.network.authenticator.TokenAuthenticator
 import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
@@ -60,7 +61,7 @@ internal object NetworkModule {
         .build()
 
     /**
-     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor]를 추가한다
+     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor], [TokenAuthenticator]를 추가한다
      */
     @Auth
     @Provides
@@ -68,8 +69,10 @@ internal object NetworkModule {
     fun provideAuthOkHttpClient(
         @NoAuth client: OkHttpClient,
         authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient = client.newBuilder()
         .addInterceptor(authInterceptor)
+        .authenticator(tokenAuthenticator)
         .build()
 
     @NoAuth
