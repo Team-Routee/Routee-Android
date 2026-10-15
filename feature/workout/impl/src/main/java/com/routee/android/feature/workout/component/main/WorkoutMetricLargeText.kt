@@ -37,9 +37,9 @@ internal fun WorkoutMetricLargeText(
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        MetricItem(label = stringResource(R.string.workout_main_info_distance), value = distance)
-        MetricItem(label = stringResource(R.string.workout_main_info_duration), value = duration)
-        MetricItem(label = stringResource(R.string.workout_main_info_max_elevation), value = maxElevation)
+        MetricItem(label = stringResource(R.string.workout_main_metric_distance), value = distance)
+        MetricItem(label = stringResource(R.string.workout_main_metric_duration), value = duration)
+        MetricItem(label = stringResource(R.string.workout_main_metric_max_elevation), value = maxElevation)
     }
 }
 

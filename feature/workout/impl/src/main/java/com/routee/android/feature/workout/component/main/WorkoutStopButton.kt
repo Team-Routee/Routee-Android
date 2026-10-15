@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
@@ -40,7 +41,7 @@ internal fun WorkoutStopButton(
 ) {
     val contentColor = RouteeTheme.colors.bgPrimary
     val iconRes = if (isStopped) DesignSystemR.drawable.ic_restart else DesignSystemR.drawable.ic_stop
-    val textRes = if (isStopped) R.string.workout_main_restart else R.string.workout_main_stop
+    val textRes = if (isStopped) R.string.workout_main_control_restart else R.string.workout_main_control_stop
 
     Row(
         modifier = modifier
@@ -61,6 +62,8 @@ internal fun WorkoutStopButton(
             text = stringResource(textRes),
             style = RouteeTheme.typography.labelSb16,
             color = contentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
