@@ -48,7 +48,7 @@ fun RouteeFeatureCard(
 | Can be cut | `Text` + `maxLines = 1` + `TextOverflow.Ellipsis` | Chip, button, address, tab |
 
 ```kotlin
-RouteeAutoSizeText(text = value, style = RouteeTheme.typography.display30) // 넘치면 70%까지 줄임. 커지지는 않음
+RouteeAutoSizeText(text = value, style = RouteeTheme.typography.display30) // 넘치면 12sp까지 줄임. 커지지는 않음
 // 200% 글자에서 겹치거나 사라지는 게 없으면 통과
 ```
 
