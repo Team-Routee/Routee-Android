@@ -11,7 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -56,7 +57,7 @@ fun RouteeCheckbox(
     ) {
         if (checked) {
             Image(
-                painter = painterResource(R.drawable.ic_check_sm_black),
+                imageVector = ImageVector.vectorResource(R.drawable.ic_check_sm_black),
                 contentDescription = null,
             )
         }

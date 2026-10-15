@@ -10,8 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
@@ -70,7 +71,7 @@ private fun BackButton(
     modifier: Modifier = Modifier,
 ) {
     Icon(
-        painter = painterResource(R.drawable.ic_arrow_left_sm_white),
+        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_left_sm_white),
         contentDescription = stringResource(R.string.designsystem_page_nav_bar_back_a11y),
         tint = RouteeTheme.colors.white,
         modifier = modifier
