@@ -56,7 +56,34 @@ internal class AuthRepositoryImpl @Inject constructor(
                 agreements = agreements.toRequest(),
             ),
         )
-    }.mapApiException(::mapAuthException)
+    }.fold(
+        onSuccess = {
+            executeLogin(idToken = idToken, provider = provider)
+        },
+        onFailure = { throwable ->
+            if (throwable is ApiException && throwable.serverCode == ALREADY_REGISTERED_MEMBER) {
+                executeLogin(idToken = idToken, provider = provider)
+            } else {
+                Result.failure(throwable)
+            }
+        },
+    ).mapApiException(::mapAuthException)
+
+    private suspend fun executeLogin(
+        idToken: String,
+        provider: SocialProvider,
+    ): Result<Unit> = apiResponseHandler.safeApiCall {
+        authService.login(LoginRequest(idToken = idToken, provider = provider.name))
+    }.fold(
+        onSuccess = { token ->
+            suspendRunCatching {
+                tokenLocalDataSource.saveTokens(accessToken = token.accessToken, refreshToken = token.refreshToken)
+            }
+        },
+        onFailure = { throwable ->
+            Result.failure(throwable)
+        },
+    )
 
     private fun mapAuthException(exception: ApiException): Throwable = when (exception.serverCode) {
         INVALID_ID_TOKEN, ID_TOKEN_EXPIRED, INVALID_TOKEN_CLAIMS -> AuthException.InvalidIdToken(exception.message)

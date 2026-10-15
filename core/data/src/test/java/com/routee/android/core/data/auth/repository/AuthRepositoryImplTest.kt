@@ -119,18 +119,49 @@ class AuthRepositoryImplTest {
     }
 
     /**
-     * GIVEN: 이미 가입된 회원일 때
+     * GIVEN: 회원가입 요청이 성공할 때
      * WHEN: 회원가입하면
-     * THEN: AlreadyRegistered로 실패한다
+     * THEN: 로그인까지 이어서 진행하고 토큰을 저장한다
      */
     @Test
-    fun `이미 가입된 회원이면 AlreadyRegistered로 실패한다`() = runTest {
-        val repository =
-            repository(FakeAuthService(onRegister = { throw httpException(409, "ALREADY_REGISTERED_MEMBER") }))
+    fun `회원가입에 성공하면 로그인까지 이어서 진행하고 토큰을 저장한다`() = runTest {
+        val tokenStore = tokenStore()
+        val repository = repository(
+            FakeAuthService(
+                onRegister = {},
+                onLogin = { tokenResponse() },
+            ),
+            tokenStore,
+        )
 
         val result = repository.register(NICKNAME, ID_TOKEN, SocialProvider.GOOGLE, agreements)
 
-        assertTrue(result.exceptionOrNull() is AuthException.AlreadyRegistered)
+        assertTrue(result.isSuccess)
+        assertEquals("access", tokenStore.getAccessToken())
+        assertEquals("refresh", tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: 이미 가입된 회원일 때
+     * WHEN: 회원가입하면
+     * THEN: 로그인으로 전환하여 토큰을 저장하고 성공한다
+     */
+    @Test
+    fun `이미 가입된 회원이면 로그인으로 전환하여 토큰을 저장하고 성공한다`() = runTest {
+        val tokenStore = tokenStore()
+        val repository = repository(
+            FakeAuthService(
+                onRegister = { throw httpException(409, "ALREADY_REGISTERED_MEMBER") },
+                onLogin = { tokenResponse() },
+            ),
+            tokenStore,
+        )
+
+        val result = repository.register(NICKNAME, ID_TOKEN, SocialProvider.GOOGLE, agreements)
+
+        assertTrue(result.isSuccess)
+        assertEquals("access", tokenStore.getAccessToken())
+        assertEquals("refresh", tokenStore.getRefreshToken())
     }
 
     /**
