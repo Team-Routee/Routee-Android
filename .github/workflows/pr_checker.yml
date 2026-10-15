@@ -48,6 +48,7 @@ jobs:
             echo "release.key.password=unused"
             echo "test.base.url=https://localhost/"
             echo "prod.base.url=https://localhost/"
+            echo "google.web.client.id=unused"
           } > local.properties
 
       - name: Lint
