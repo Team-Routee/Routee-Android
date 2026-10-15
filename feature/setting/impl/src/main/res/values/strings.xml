@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 문의하기 -->
+    <string name="setting_contact_button_kakao">카카오톡 문의하기</string>
+    <string name="setting_contact_button_email">이메일 문의하기</string>
+
+    <!-- 프로필 변경 -->
+    <string name="setting_profile_image_change_a11y">프로필 사진 변경</string>
+</resources>
