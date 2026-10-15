@@ -51,6 +51,7 @@ private fun RouteeTypographyPreview() {
                 "label_sb_12" to typography.labelSb12,
                 "label_m_12" to typography.labelM12,
                 "label_r_12" to typography.labelR12,
+                "label_r_10" to typography.labelR10,
             ).forEach { (name, style) ->
                 val sample = if (name.startsWith("display")) "Routee Style Guide" else "루티 스타일 가이드"
                 Text(
