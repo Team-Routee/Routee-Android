@@ -9,5 +9,11 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.core.network)
+
+    implementation(libs.androidx.datastore.preferences)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
