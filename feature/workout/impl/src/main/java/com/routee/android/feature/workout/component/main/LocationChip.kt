@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,8 +37,10 @@ internal fun LocationChip(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(RouteeTheme.radius.Radius16))
-            .background(RouteeTheme.colors.grey500)
+            .background(
+                color = RouteeTheme.colors.grey500,
+                shape = RoundedCornerShape(RouteeTheme.radius.Radius16),
+            )
             .padding(
                 start = RouteeTheme.spacing.Spacing8,
                 end = RouteeTheme.spacing.Spacing12,
