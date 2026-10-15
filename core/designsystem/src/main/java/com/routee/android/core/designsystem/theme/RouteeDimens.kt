@@ -29,3 +29,11 @@ object RouteeRadius {
     val Radius32 = 32.dp
     val Full = 9999.dp
 }
+
+object RouteeField {
+    val MinHeight = 50.dp
+}
+
+object RouteeBorder {
+    val Thickness = 1.dp
+}
