@@ -1,9 +1,7 @@
 package com.routee.android.feature.setting.component.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -79,10 +77,7 @@ internal fun ProfileImage(
 @PreviewFontSizes
 @Composable
 private fun ProfileImagePreview() {
-    RouteePreviewTheme(modifier = Modifier.padding(16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            ProfileImage(imageUrl = null, onClick = {})
-            ProfileImage(imageUrl = "https://example.com/profile.jpg", onClick = {})
-        }
+    RouteePreviewTheme {
+        ProfileImage(imageUrl = null, onClick = {})
     }
 }
