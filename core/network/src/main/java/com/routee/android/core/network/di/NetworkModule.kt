@@ -4,6 +4,7 @@ import com.routee.android.core.network.BuildConfig
 import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
+import com.routee.android.core.network.token.ReissueService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +17,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.create
 import timber.log.Timber
 
 @Module
@@ -85,6 +87,12 @@ internal object NetworkModule {
         @Auth client: OkHttpClient,
         converterFactory: Converter.Factory,
     ): Retrofit = createRetrofit(client, converterFactory)
+
+    @Provides
+    @Singleton
+    fun provideReissueService(
+        @NoAuth retrofit: Retrofit,
+    ): ReissueService = retrofit.create()
 
     private fun createRetrofit(
         client: OkHttpClient,
