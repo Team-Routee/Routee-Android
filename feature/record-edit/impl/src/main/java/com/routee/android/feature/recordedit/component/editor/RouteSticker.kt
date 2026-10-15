@@ -8,7 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -42,7 +43,7 @@ internal fun RouteSticker(
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6),
     ) {
         Icon(
-            painter = painterResource(DesignSystemR.drawable.route_leading_graphic),
+            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.route_leading_graphic),
             contentDescription = null,
             tint = contentColor,
         )
