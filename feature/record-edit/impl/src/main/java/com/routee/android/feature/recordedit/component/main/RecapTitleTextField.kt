@@ -4,12 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -23,9 +19,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -37,13 +33,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 
 private const val RECAP_TITLE_MAX_LENGTH = 16
-private val EditingUnderlineThickness = 1.dp
 
 /**
  * 기록 카드의 제목 영역 (textfield_recap_title)
@@ -104,7 +100,7 @@ private fun RecapTitleDisplay(
             modifier = Modifier.weight(1f, fill = false),
         )
         Icon(
-            painter = painterResource(DesignSystemR.drawable.ic_edit_sm_line_grey),
+            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_grey),
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier
@@ -130,13 +126,17 @@ private fun RecapTitleEditor(
         focusRequester.requestFocus()
     }
 
-    BasicTextField(
+    RouteeBasicTextField(
         state = state,
+        textStyle = RouteeTheme.typography.bodySb14,
+        maxLength = RECAP_TITLE_MAX_LENGTH,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        onKeyboardAction = { onEditComplete() },
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .drawBehind {
-                val strokeWidth = EditingUnderlineThickness.toPx()
+                val strokeWidth = RouteeTheme.border.Thickness.toPx()
                 val y = size.height - strokeWidth / 2
                 drawLine(
                     color = underlineColor,
@@ -149,12 +149,6 @@ private fun RecapTitleEditor(
                 horizontal = RouteeTheme.spacing.Spacing4,
                 vertical = RouteeTheme.spacing.Spacing2,
             ),
-        inputTransformation = InputTransformation.maxLength(RECAP_TITLE_MAX_LENGTH),
-        textStyle = RouteeTheme.typography.bodySb14.copy(color = RouteeTheme.colors.white),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        onKeyboardAction = { onEditComplete() },
-        lineLimits = TextFieldLineLimits.SingleLine,
-        cursorBrush = SolidColor(RouteeTheme.colors.white),
     )
 }
 
