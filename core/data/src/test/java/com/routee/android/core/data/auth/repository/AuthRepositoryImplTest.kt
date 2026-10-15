@@ -2,6 +2,7 @@ package com.routee.android.core.data.auth.repository
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.routee.android.core.data.auth.exception.AuthException
+import com.routee.android.core.data.auth.local.FakeTokenCipher
 import com.routee.android.core.data.auth.local.TokenLocalDataSource
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
@@ -243,6 +244,7 @@ class AuthRepositoryImplTest {
         PreferenceDataStoreFactory.create(scope = backgroundScope) {
             File(temporaryFolder.newFolder(), "token.preferences_pb")
         },
+        FakeTokenCipher(),
     )
 
     private fun TestScope.repository(

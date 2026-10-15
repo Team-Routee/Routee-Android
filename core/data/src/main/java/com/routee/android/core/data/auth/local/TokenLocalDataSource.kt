@@ -8,15 +8,19 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.routee.android.core.data.di.TokenDataStore
 import com.routee.android.core.network.token.TokenProvider
 import java.io.IOException
+import java.security.GeneralSecurityException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 @Singleton
 internal class TokenLocalDataSource @Inject constructor(
     @param:TokenDataStore private val dataStore: DataStore<Preferences>,
+    private val tokenCipher: TokenCipher,
 ) : TokenProvider {
 
     override suspend fun getAccessToken(): String? = read(ACCESS_TOKEN)
@@ -28,8 +32,8 @@ internal class TokenLocalDataSource @Inject constructor(
         refreshToken: String,
     ) {
         dataStore.edit { prefs ->
-            prefs[ACCESS_TOKEN] = accessToken
-            prefs[REFRESH_TOKEN] = refreshToken
+            prefs[ACCESS_TOKEN] = tokenCipher.encrypt(accessToken)
+            prefs[REFRESH_TOKEN] = tokenCipher.encrypt(refreshToken)
         }
     }
 
@@ -43,6 +47,15 @@ internal class TokenLocalDataSource @Inject constructor(
         }
         .map { prefs -> prefs[key] }
         .first()
+        ?.let { encrypted -> withContext(Dispatchers.IO) { decryptOrNull(encrypted) } }
+
+    private fun decryptOrNull(encrypted: String): String? = try {
+        tokenCipher.decrypt(encrypted)
+    } catch (e: GeneralSecurityException) {
+        null
+    } catch (e: IllegalArgumentException) {
+        null
+    }
 
     private companion object {
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
