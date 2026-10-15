@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 상단 바 -->
+    <string name="designsystem_page_nav_bar_back_a11y">뒤로 가기</string>
+
+    <!-- 이미지 회전 -->
+    <string name="designsystem_image_rotation_left_a11y">왼쪽으로 90도 회전</string>
+    <string name="designsystem_image_rotation_reset_a11y">회전 초기화</string>
+    <string name="designsystem_image_rotation_right_a11y">오른쪽으로 90도 회전</string>
+
     <!-- 운동 수치 -->
     <string name="designsystem_workout_metric_distance">거리(km)</string>
     <string name="designsystem_workout_metric_duration">시간</string>
