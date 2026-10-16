@@ -27,6 +27,7 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
 import com.routee.android.core.ui.error.component.ErrorButton
+
 private const val CONTENT_TOP_RATIO = 201f / 760f
 private val ContentToButtonSpacing = 80.dp
 

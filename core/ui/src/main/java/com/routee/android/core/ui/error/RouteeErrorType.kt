@@ -6,7 +6,7 @@ import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.ui.R
 
 /**
- * 에러 화면 종류 (RT-EDGE-001)
+ * 에러 화면 종류
  */
 enum class RouteeErrorType(
     @param:DrawableRes val graphicRes: Int,
