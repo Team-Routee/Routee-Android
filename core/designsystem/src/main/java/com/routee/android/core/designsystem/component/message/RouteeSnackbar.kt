@@ -23,16 +23,18 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 private val SnackbarMinHeight = 46.dp
 
 /**
- * 되돌리기 버튼이 있는 스낵바
+ * 스낵바
+ *
+ * [actionLabel]이 있으면 오른쪽에 버튼을 보여준다
  *
  * 띄우기는 [RouteeMessageState]로 한다
  */
 @Composable
 fun RouteeSnackbar(
     text: String,
-    actionLabel: String,
-    onActionClick: () -> Unit,
     modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onActionClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
@@ -50,16 +52,18 @@ fun RouteeSnackbar(
             color = RouteeTheme.colors.white,
             modifier = Modifier.weight(1f),
         )
-        // btn_in_snackbar
-        Text(
-            text = actionLabel,
-            style = RouteeTheme.typography.labelSb14,
-            color = RouteeTheme.colors.statusError,
-            modifier = Modifier
-                .noRippleClickable(onClick = onActionClick)
-                .semantics { role = Role.Button }
-                .padding(horizontal = RouteeTheme.spacing.Spacing12, vertical = RouteeTheme.spacing.Spacing8),
-        )
+        if (actionLabel != null) {
+            // btn_in_snackbar
+            Text(
+                text = actionLabel,
+                style = RouteeTheme.typography.labelSb14,
+                color = RouteeTheme.colors.statusError,
+                modifier = Modifier
+                    .noRippleClickable(onClick = onActionClick)
+                    .semantics { role = Role.Button }
+                    .padding(horizontal = RouteeTheme.spacing.Spacing12, vertical = RouteeTheme.spacing.Spacing8),
+            )
+        }
     }
 }
 
@@ -70,7 +74,6 @@ private fun RouteeSnackbarPreview() {
         RouteeSnackbar(
             text = "삭제되었습니다",
             actionLabel = "취소",
-            onActionClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
     }
