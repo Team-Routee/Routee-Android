@@ -1,7 +1,6 @@
 package com.routee.android.core.ui.error
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -77,21 +76,20 @@ fun RouteeErrorScreen(
                     textAlign = TextAlign.Center,
                 )
                 Spacer(modifier = Modifier.height(ContentToButtonSpacing))
-                Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16)) {
-                    if (showRetry) {
-                        ErrorButton(
-                            text = stringResource(R.string.ui_error_retry_button),
-                            onClick = onRetryClick,
-                            isPrimary = true,
-                            iconRes = DesignSystemR.drawable.ic_retry,
-                        )
-                    }
+                if (showRetry) {
                     ErrorButton(
-                        text = stringResource(R.string.ui_error_home_button),
-                        onClick = onHomeClick,
-                        isPrimary = !showRetry,
+                        text = stringResource(R.string.ui_error_retry_button),
+                        onClick = onRetryClick,
+                        isPrimary = true,
+                        iconRes = DesignSystemR.drawable.ic_retry,
                     )
+                    Spacer(modifier = Modifier.height(RouteeTheme.spacing.Spacing16))
                 }
+                ErrorButton(
+                    text = stringResource(R.string.ui_error_home_button),
+                    onClick = onHomeClick,
+                    isPrimary = !showRetry,
+                )
             }
         }
     }
