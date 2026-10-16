@@ -37,7 +37,7 @@ private val ToastHorizontalPadding = 24.dp
  * 전역 메시지를 그리는 자리
  *
  * 앱 루트 `Scaffold`의 `snackbarHost`에 넣는다. 토스트는 [routeeMessageAnchor]를 붙인 요소 위에 띄운다.
- * 여러 개면 가장 위 요소 위, 없으면 화면 하단(키보드가 있으면 키보드 위)에 띄운다. 스낵바는 항상 화면 하단에 띄운다
+ * 여러 개면 가장 위 요소 위, 없으면 화면 하단에 띄운다. 키보드가 더 높이 올라와 있으면 키보드 위에 띄운다. 스낵바는 항상 화면 하단에 띄운다
  */
 @Composable
 fun RouteeMessageHost(
@@ -88,7 +88,8 @@ private fun Modifier.toastPosition(
     gap: Dp,
 ): Modifier = layout { measurable, constraints ->
     val horizontal = ToastHorizontalPadding.roundToPx()
-    val bottom = (state.anchorBottomOffsets.values.maxOrNull() ?: bottomInsets.getBottom(this)) + gap.roundToPx()
+    val anchorBottom = state.anchorBottomOffsets.values.maxOrNull() ?: 0
+    val bottom = maxOf(anchorBottom, bottomInsets.getBottom(this)) + gap.roundToPx()
     val placeable = measurable.measure(constraints.offset(horizontal = -horizontal * 2, vertical = -bottom))
     layout(placeable.width + horizontal * 2, placeable.height + bottom) {
         placeable.place(horizontal, 0)
