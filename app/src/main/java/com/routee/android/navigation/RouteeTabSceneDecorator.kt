@@ -21,6 +21,7 @@ import androidx.navigation3.scene.SceneDecoratorStrategyScope
 import com.routee.android.core.designsystem.component.LocalRouteeNavBarPadding
 import com.routee.android.core.designsystem.component.RouteeNavBar
 import com.routee.android.core.designsystem.component.RouteeNavBarItem
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.navigation.RouteeNavigator
 
@@ -72,6 +73,7 @@ private class RouteeTabScene(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
+                        .routeeMessageAnchor()
                         .padding(horizontal = RouteeTheme.spacing.Spacing16),
                 )
             },
