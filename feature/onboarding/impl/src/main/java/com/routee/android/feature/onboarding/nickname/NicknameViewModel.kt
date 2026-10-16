@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldValidation
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.onboarding.api.NicknameNavKey
 import com.routee.android.feature.onboarding.nickname.model.NicknameSideEffect
@@ -59,7 +60,10 @@ internal class NicknameViewModel @AssistedInject constructor(
     }
 
     fun onStartClick() {
-        if (!_uiState.value.isStartEnabled || isRegistering) return
+        if (isRegistering) return
+        val validation = NicknameValidator.validate(nicknameState.text)
+        _uiState.update { it.copy(validation = validation) }
+        if (validation != RouteeTextFieldValidation.Valid) return
         isRegistering = true
         viewModelScope.launch {
             authRepository.register(
