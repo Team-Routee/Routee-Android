@@ -18,8 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.extension.noRippleClickable
@@ -47,8 +45,7 @@ internal fun ErrorButton(
             .width(ButtonWidth)
             .background(backgroundColor, shape)
             .border(RouteeTheme.border.Thickness, borderColor, shape)
-            .noRippleClickable(onClick = onClick)
-            .semantics { role = Role.Button }
+            .noRippleClickable(role = Role.Button, onClick = onClick)
             .padding(vertical = RouteeTheme.spacing.Spacing16),
         horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
