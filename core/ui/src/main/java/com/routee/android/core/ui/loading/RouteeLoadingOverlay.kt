@@ -14,7 +14,7 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -26,6 +26,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
+
 private const val SCREEN_HEIGHT = 800f
 private const val ANIMATION_TOP = 220f
 private const val ANIMATION_SIZE = 276f
@@ -90,7 +91,7 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(widthDp = 360, heightDp = 800)
+@PreviewScreenSizes
 @Composable
 private fun RouteeLoadingOverlayPreview() {
     RouteeTheme {
