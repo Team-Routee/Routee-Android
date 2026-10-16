@@ -1,5 +1,6 @@
 package com.routee.android.navigation
 
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -25,7 +29,7 @@ import com.routee.android.core.designsystem.component.LocalRouteeNavBarPadding
 import com.routee.android.core.designsystem.component.RouteeNavBar
 import com.routee.android.core.designsystem.component.RouteeNavBarItem
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
-import com.routee.android.core.designsystem.component.message.RouteeMessage
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.navigation.RouteeNavigator
@@ -121,9 +125,15 @@ private fun TabExitBackHandler() {
     val messageState = LocalRouteeMessageState.current
     val activity = LocalActivity.current
     val exitText = stringResource(R.string.tab_exit_toast)
+    var lastBackPressedAt by remember { mutableLongStateOf(0L) }
 
     BackHandler {
-        val isExitToastShowing = (messageState.currentMessage as? RouteeMessage.Toast)?.text == exitText
-        if (isExitToastShowing) activity?.finish() else messageState.showToast(text = exitText)
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBackPressedAt < RouteeMessageDuration.SHORT.millis) {
+            activity?.finish()
+        } else {
+            lastBackPressedAt = now
+            messageState.showToast(text = exitText)
+        }
     }
 }
