@@ -11,8 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
@@ -59,8 +57,7 @@ fun RouteeSnackbar(
                 style = RouteeTheme.typography.labelSb14,
                 color = RouteeTheme.colors.statusError,
                 modifier = Modifier
-                    .noRippleClickable(onClick = onActionClick)
-                    .semantics { role = Role.Button }
+                    .noRippleClickable(role = Role.Button, onClick = onActionClick)
                     .padding(horizontal = RouteeTheme.spacing.Spacing12, vertical = RouteeTheme.spacing.Spacing8),
             )
         }
