@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="user_profile_days_together">%1$d일째 함께하는 중</string>
+
+    <!-- 마운틴맵 -->
+    <string name="archive_mountain_map_less">less</string>
+    <string name="archive_mountain_map_more">more</string>
+</resources>
