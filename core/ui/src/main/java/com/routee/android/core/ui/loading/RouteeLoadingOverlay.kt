@@ -2,9 +2,11 @@ package com.routee.android.core.ui.loading
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -30,8 +32,8 @@ import com.routee.android.core.ui.R
 private const val SCREEN_HEIGHT = 800f
 private const val ANIMATION_TOP = 220f
 private const val ANIMATION_SIZE = 276f
+private const val MESSAGE_TOP_RATIO = 217f / ANIMATION_SIZE
 private val AnimationSize = ANIMATION_SIZE.dp
-private val MessageTopPadding = 217.dp
 private val AnimationAlignment = BiasAlignment(
     horizontalBias = 0f,
     verticalBias = 2 * ANIMATION_TOP / (SCREEN_HEIGHT - ANIMATION_SIZE) - 1,
@@ -69,10 +71,11 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .background(RouteeTheme.colors.dimSecondary),
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .align(AnimationAlignment)
-                .size(AnimationSize),
+                .sizeIn(maxWidth = AnimationSize, maxHeight = AnimationSize)
+                .aspectRatio(1f),
         ) {
             LottieAnimation(
                 composition = composition,
@@ -85,7 +88,7 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
                 color = RouteeTheme.colors.white,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = MessageTopPadding),
+                    .padding(top = maxHeight * MESSAGE_TOP_RATIO),
             )
         }
     }
