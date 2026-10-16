@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -29,7 +28,6 @@ import com.routee.android.core.ui.R
 import com.routee.android.core.ui.error.component.ErrorButton
 
 private const val CONTENT_TOP_RATIO = 201f / 760f
-private val ContentToButtonSpacing = 80.dp
 
 /**
  * 에러 화면
@@ -76,7 +74,7 @@ fun RouteeErrorScreen(
                     color = RouteeTheme.colors.grey200,
                     textAlign = TextAlign.Center,
                 )
-                Spacer(modifier = Modifier.height(ContentToButtonSpacing))
+                Spacer(modifier = Modifier.height(RouteeTheme.spacing.Spacing80))
                 if (showRetry) {
                     ErrorButton(
                         text = stringResource(R.string.ui_error_retry_button),
