@@ -14,7 +14,7 @@ internal fun FeatureRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    viewModel.sideEffect.collectSideEffect { sideEffect -> // 화면이 보일 때(STARTED)만 수집
+    viewModel.sideEffect.CollectSideEffect { sideEffect -> // 화면이 보일 때(STARTED)만 수집
         when (sideEffect) {
             is FeatureSideEffect.NavigateToDetail -> onItemClick(sideEffect.itemId)
             FeatureSideEffect.ShowDeleteToast -> { /* 토스트 */ }
@@ -61,7 +61,7 @@ fun onDeleteClick(itemId: Long) {
 | Don't | Do |
 | --- | --- |
 | `MutableSharedFlow(replay = 0)` for side effects | `Channel(BUFFERED).receiveAsFlow()` |
-| `LaunchedEffect(Unit) { flow.collect { } }` | `collectSideEffect { }` (`core:ui`) |
+| `LaunchedEffect(Unit) { flow.collect { } }` | `CollectSideEffect { }` (`core:ui`) |
 | Toast/navigation state in UiState | `XxxSideEffect` |
 | Dialog visibility as a side effect | `isXxxDialogVisible` in UiState ([navigation](navigation.md)) |
 
