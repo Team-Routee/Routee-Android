@@ -1,5 +1,7 @@
 package com.routee.android.navigation
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -18,9 +20,12 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
 import androidx.navigation3.scene.SceneDecoratorStrategyScope
+import com.routee.android.R
 import com.routee.android.core.designsystem.component.LocalRouteeNavBarPadding
 import com.routee.android.core.designsystem.component.RouteeNavBar
 import com.routee.android.core.designsystem.component.RouteeNavBarItem
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessage
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.navigation.RouteeNavigator
@@ -62,6 +67,7 @@ private class RouteeTabScene(
     override val metadata get() = delegate.metadata
 
     override val content: @Composable () -> Unit = {
+        TabExitBackHandler()
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
@@ -107,5 +113,17 @@ private fun RouteeBottomBar(
                 label = stringResource(tab.labelRes),
             )
         }
+    }
+}
+
+@Composable
+private fun TabExitBackHandler() {
+    val messageState = LocalRouteeMessageState.current
+    val activity = LocalActivity.current
+    val exitText = stringResource(R.string.tab_exit_toast)
+
+    BackHandler {
+        val isExitToastShowing = (messageState.currentMessage as? RouteeMessage.Toast)?.text == exitText
+        if (isExitToastShowing) activity?.finish() else messageState.showToast(text = exitText)
     }
 }

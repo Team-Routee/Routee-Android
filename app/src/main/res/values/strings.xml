@@ -5,4 +5,5 @@
     <string name="tab_record_edit">기록 편집</string>
     <string name="tab_archive">아카이브</string>
     <string name="tab_setting">설정</string>
+    <string name="tab_exit_toast">한 번 더 누르면 앱이 종료됩니다</string>
 </resources>
