@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Routee-Android</string>
+    <string name="app_name">Routee</string>
 
     <string name="tab_workout">운동</string>
     <string name="tab_record_edit">기록 편집</string>
