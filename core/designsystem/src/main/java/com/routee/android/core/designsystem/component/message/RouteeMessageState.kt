@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.AccessibilityManager
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -60,7 +61,10 @@ class RouteeMessageState internal constructor(
         text: String,
         duration: RouteeMessageDuration = RouteeMessageDuration.SHORT,
     ) {
-        scope.launch { show(RouteeMessage.Toast(text = text, duration = duration)) }
+        // 호출 즉시 상태 반영, 타임아웃 대기만 비동기
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            show(RouteeMessage.Toast(text = text, duration = duration))
+        }
     }
 
     /**
