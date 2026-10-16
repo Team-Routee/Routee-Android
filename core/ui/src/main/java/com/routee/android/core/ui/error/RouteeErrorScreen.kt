@@ -81,7 +81,7 @@ fun RouteeErrorScreen(
                     if (showRetry) {
                         ErrorButton(
                             text = stringResource(R.string.ui_error_retry_button),
-                            onClick = { onRetryClick?.invoke() },
+                            onClick = onRetryClick,
                             isPrimary = true,
                             iconRes = DesignSystemR.drawable.ic_retry,
                         )
