@@ -19,8 +19,10 @@ internal val Pretendard = FontFamily(
     Font(R.font.pretendard_semibold, FontWeight.SemiBold),
 )
 
-/* TODO Coolvetica 임시 폰트 라이선스 확인 후 변경 필요 */
-internal val DisplayFontFamily: FontFamily = FontFamily.Default
+internal val Archivo = FontFamily(
+    Font(R.font.archivo_semibold_italic, FontWeight.SemiBold, FontStyle.Italic),
+    Font(R.font.archivo_bold_italic, FontWeight.Bold, FontStyle.Italic),
+)
 
 private fun pretendard(
     weight: FontWeight,
@@ -39,13 +41,13 @@ private fun pretendard(
     ),
 )
 
-private fun display(size: Int) = TextStyle(
-    fontFamily = DisplayFontFamily,
+private fun display(weight: FontWeight, size: Int, lineHeight: Double) = TextStyle(
+    fontFamily = Archivo,
     fontStyle = FontStyle.Italic,
-    fontWeight = FontWeight.Normal,
+    fontWeight = weight,
     fontSize = size.sp,
-    lineHeight = 1.2.em, // 120%
-    letterSpacing = 0.04.em, // 4%
+    lineHeight = lineHeight.em,
+    letterSpacing = (-0.04).em, // -4%
     platformStyle = PlatformTextStyle(includeFontPadding = false),
     lineHeightStyle = LineHeightStyle(
         alignment = LineHeightStyle.Alignment.Center,
@@ -55,10 +57,9 @@ private fun display(size: Int) = TextStyle(
 
 @Immutable
 data class RouteeTypography(
-    val display52: TextStyle,
-    val display40: TextStyle,
-    val display30: TextStyle,
-    val display26: TextStyle,
+    val displayB42: TextStyle,
+    val displaySb28: TextStyle,
+    val displaySb22: TextStyle,
     val titleSb24: TextStyle,
     val titleSb20: TextStyle,
     val titleSb18: TextStyle,
@@ -77,11 +78,10 @@ data class RouteeTypography(
 )
 
 val DefaultRouteeTypography = RouteeTypography(
-    // Display — Italic, 120%, 4%
-    display52 = display(52),
-    display40 = display(40),
-    display30 = display(30),
-    display26 = display(26),
+    // Display - Archivo Italic, -4%
+    displayB42 = display(FontWeight.Bold, 42, lineHeight = 1.3), // 130%
+    displaySb28 = display(FontWeight.SemiBold, 28, lineHeight = 1.3), // 130%
+    displaySb22 = display(FontWeight.SemiBold, 22, lineHeight = 1.2), // 120%
 
     // Title - Pretendard, 140%, -1%
     titleSb24 = pretendard(FontWeight.SemiBold, 24),
