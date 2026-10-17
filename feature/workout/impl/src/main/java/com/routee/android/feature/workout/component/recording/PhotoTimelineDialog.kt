@@ -1,5 +1,6 @@
 package com.routee.android.feature.workout.component.recording
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,7 +20,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,7 +32,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeAsyncImage
@@ -40,12 +40,22 @@ import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextF
 import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldLengthCounter
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
+import com.routee.android.core.designsystem.theme.RouteeSpacing
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.workout.R
 
 private const val LOCATION_MAX_LENGTH = 16
 private const val PHOTO_ASPECT_RATIO = 272f / 256f
+private val PreviewDialogWidth = 304.dp
 private val LocationFieldMinHeight = 42.dp
+private val PhotoTimelineDialogPadding = PaddingValues(
+    start = RouteeSpacing.Spacing24,
+    top = RouteeSpacing.Spacing20,
+    end = RouteeSpacing.Spacing24,
+    bottom = RouteeSpacing.Spacing24,
+)
 
 /**
  * 사진 타임라인 확인 다이얼로그 (modal_photocheck_android)
@@ -62,42 +72,53 @@ internal fun PhotoTimelineDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val focusManager = LocalFocusManager.current
-
     RouteeDialogContainer(
         onDismissRequest = onDismissRequest,
-        contentPadding = PaddingValues(
-            start = RouteeTheme.spacing.Spacing24,
-            top = RouteeTheme.spacing.Spacing20,
-            end = RouteeTheme.spacing.Spacing24,
-            bottom = RouteeTheme.spacing.Spacing24,
-        ),
+        contentPadding = PhotoTimelineDialogPadding,
         modifier = modifier,
     ) {
-        Column(
-            modifier = Modifier.clearFocus(focusManager),
-            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12),
+        PhotoTimelineContent(
+            imageUrl = imageUrl,
+            locationState = locationState,
+            onDeleteClick = onDeleteClick,
+            onCloseClick = onDismissRequest,
+        )
+    }
+}
+
+@Composable
+private fun PhotoTimelineContent(
+    imageUrl: String?,
+    locationState: TextFieldState,
+    onDeleteClick: () -> Unit,
+    onCloseClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
+
+    Column(
+        modifier = modifier.clearFocus(focusManager),
+        verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                PhotoTimelineIconButton(
-                    iconRes = DesignSystemR.drawable.ic_delete_lg,
-                    contentDescription = stringResource(R.string.workout_recording_photo_delete_a11y),
-                    backgroundColor = RouteeTheme.colors.grey900,
-                    onClick = onDeleteClick,
-                )
-                PhotoTimelineIconButton(
-                    iconRes = DesignSystemR.drawable.ic_cancel_white_lg,
-                    contentDescription = stringResource(R.string.workout_recording_photo_close_a11y),
-                    backgroundColor = RouteeTheme.colors.white10,
-                    onClick = onDismissRequest,
-                )
-            }
-            PhotoImage(imageUrl = imageUrl)
-            LocationNameField(state = locationState)
+            PhotoTimelineIconButton(
+                iconRes = DesignSystemR.drawable.ic_delete_lg,
+                contentDescription = stringResource(R.string.workout_recording_photo_delete_a11y),
+                backgroundColor = RouteeTheme.colors.grey900,
+                onClick = onDeleteClick,
+            )
+            PhotoTimelineIconButton(
+                iconRes = DesignSystemR.drawable.ic_cancel_white_lg,
+                contentDescription = stringResource(R.string.workout_recording_photo_close_a11y),
+                backgroundColor = RouteeTheme.colors.white10,
+                onClick = onCloseClick,
+            )
         }
+        PhotoImage(imageUrl = imageUrl)
+        LocationNameField(state = locationState)
     }
 }
 
@@ -117,7 +138,7 @@ private fun PhotoImage(
 }
 
 // modal_location_input_android
-// TODO 추후 텍스트필드 박스형 공통 컨포넌트로 묶기 (닉네임 위치 입력칸과 함께)
+// TODO 추후 텍스트필드 박스형 공통 컴포넌트로 묶기 (닉네임 위치 입력칸과 함께)
 @Composable
 private fun LocationNameField(
     state: TextFieldState,
@@ -159,7 +180,7 @@ private fun LocationNameField(
 
 @Composable
 private fun PhotoTimelineIconButton(
-    iconRes: Int,
+    @DrawableRes iconRes: Int,
     contentDescription: String,
     backgroundColor: Color,
     onClick: () -> Unit,
@@ -174,15 +195,19 @@ private fun PhotoTimelineIconButton(
     )
 }
 
-@Preview
+@PreviewFontSizes
 @Composable
 private fun PhotoTimelineDialogPreview() {
-    RouteeTheme {
-        PhotoTimelineDialog(
+    RouteePreviewTheme(modifier = Modifier.padding(RouteeTheme.spacing.Spacing16)) {
+        PhotoTimelineContent(
             imageUrl = null,
             locationState = rememberTextFieldState("관악산 말바위 전망 포토 스팟"),
             onDeleteClick = {},
-            onDismissRequest = {},
+            onCloseClick = {},
+            modifier = Modifier
+                .width(PreviewDialogWidth)
+                .background(color = RouteeTheme.colors.grey800, shape = RoundedCornerShape(RouteeTheme.radius.Radius24))
+                .padding(PhotoTimelineDialogPadding),
         )
     }
 }
