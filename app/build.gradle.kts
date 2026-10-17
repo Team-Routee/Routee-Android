@@ -61,6 +61,7 @@ dependencies {
     implementation(projects.core.designsystem)
     implementation(projects.core.network)
     implementation(projects.core.navigation)
+    implementation(projects.core.ui)
 
     implementation(projects.feature.onboarding.api)
     implementation(projects.feature.onboarding.impl)
