@@ -40,15 +40,18 @@ import kotlinx.coroutines.launch
  * 리플 효과 없이 클릭 가능하게 만드는 Modifier
  *
  * @param enabled 클릭 가능 여부
+ * @param role 접근성 역할 (예: [Role.Button])
  * @param onClick 클릭 시 실행될 콜백
  */
 fun Modifier.noRippleClickable(
     enabled: Boolean = true,
+    role: Role? = null,
     onClick: () -> Unit,
 ): Modifier = clickable(
     interactionSource = null,
     indication = null,
     enabled = enabled,
+    role = role,
     onClick = onClick,
 )
 

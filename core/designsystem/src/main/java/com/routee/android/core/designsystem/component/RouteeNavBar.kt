@@ -32,7 +32,7 @@ private val NavItemSpacing = 5.dp
 /**
  * 하단 플로팅 탭 바
  *
- * 항목은 [RouteeNavBarItem]으로 구성. 폭은 호출하는 쪽에서 결정
+ * 항목은 [RouteeNavBarItem]으로 구성
  */
 @Composable
 fun RouteeNavBar(

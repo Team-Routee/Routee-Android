@@ -1,5 +1,7 @@
 package com.routee.android.core.designsystem.theme
 
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -55,7 +57,14 @@ fun RouteeTheme(
                 background = colors.bgPrimary,
                 surface = colors.bgPrimary,
             ),
-            content = content,
-        )
+        ) {
+            CompositionLocalProvider(
+                LocalTextSelectionColors provides TextSelectionColors(
+                    handleColor = colors.white,
+                    backgroundColor = colors.white30,
+                ),
+                content = content,
+            )
+        }
     }
 }

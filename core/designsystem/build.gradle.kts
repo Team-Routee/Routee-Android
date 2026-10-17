@@ -13,4 +13,5 @@ dependencies {
     implementation(libs.android.image.cropper)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
