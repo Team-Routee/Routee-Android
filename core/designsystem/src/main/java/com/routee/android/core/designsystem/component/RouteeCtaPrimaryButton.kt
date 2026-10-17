@@ -29,7 +29,7 @@ private val CtaMinHeight = 52.dp
 /**
  * 화면 하단 메인 버튼
  *
- * 누르는 동안 밝은 색으로 바뀌고, [enabled]가 false면 회색으로 표시되며 클릭되지 않는다. 폭은 호출하는 쪽에서 결정
+ * 누르는 동안 밝은 색으로 바뀌고, [enabled]가 false면 회색으로 표시되며 클릭되지 않는다
  */
 @Composable
 fun RouteeCtaPrimaryButton(
