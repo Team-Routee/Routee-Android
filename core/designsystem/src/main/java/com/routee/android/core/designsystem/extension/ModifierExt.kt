@@ -1,9 +1,13 @@
 package com.routee.android.core.designsystem.extension
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.selection.selectable
@@ -12,9 +16,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusEventModifierNode
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -25,7 +32,9 @@ import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * 리플 효과 없이 클릭 가능하게 만드는 Modifier
@@ -150,4 +159,57 @@ private class PreventBringIntoViewNode :
         childCoordinates: LayoutCoordinates,
         boundsProvider: () -> Rect?,
     ) = Unit
+}
+
+/**
+ * 키보드 높이에서 [bottomHeight]만큼 뺀 만큼만 아래 여백을 준다
+ *
+ * 키보드에 가려져도 되는 하단 영역(버튼 등) 위의 스크롤 영역에 붙인다. 바깥에서 소비한 인셋(내비게이션 바)은 빼고 계산된다
+ *
+ * @param bottomHeight 스크롤 영역 아래에 있는 하단 영역 높이
+ */
+fun Modifier.imePaddingAbove(bottomHeight: Dp): Modifier =
+    consumeWindowInsets(PaddingValues(bottom = bottomHeight)).imePadding()
+
+/**
+ * 안쪽에 포커스가 있는 동안 스크롤을 끝까지 내린다
+ *
+ * 키보드가 올라오며 영역이 줄거나 에러 문구가 생겨 길이가 바뀌어도 다시 끝으로 맞춘다. `verticalScroll` 앞에 붙인다
+ */
+fun Modifier.scrollToEndOnFocus(scrollState: ScrollState): Modifier = this then ScrollToEndOnFocusElement(scrollState)
+
+private data class ScrollToEndOnFocusElement(
+    private val scrollState: ScrollState,
+) : ModifierNodeElement<ScrollToEndOnFocusNode>() {
+    override fun create(): ScrollToEndOnFocusNode = ScrollToEndOnFocusNode(scrollState)
+
+    override fun update(node: ScrollToEndOnFocusNode) {
+        node.update(scrollState)
+    }
+}
+
+private class ScrollToEndOnFocusNode(
+    private var scrollState: ScrollState,
+) : Modifier.Node(),
+    FocusEventModifierNode {
+    private var scrollJob: Job? = null
+
+    override fun onFocusEvent(focusState: FocusState) {
+        if (!focusState.hasFocus) {
+            scrollJob?.cancel()
+            scrollJob = null
+            return
+        }
+        if (scrollJob?.isActive == true) return
+        scrollJob = coroutineScope.launch {
+            snapshotFlow { scrollState.maxValue }.collect { scrollState.scrollTo(it) }
+        }
+    }
+
+    fun update(scrollState: ScrollState) {
+        if (this.scrollState === scrollState) return
+        scrollJob?.cancel()
+        scrollJob = null
+        this.scrollState = scrollState
+    }
 }
