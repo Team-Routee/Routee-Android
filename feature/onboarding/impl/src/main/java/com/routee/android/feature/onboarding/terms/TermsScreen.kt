@@ -27,8 +27,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -243,8 +241,7 @@ private fun TermsItemRow(
                 imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_chevron_right_sm_white),
                 contentDescription = stringResource(R.string.onboarding_terms_document_a11y, title),
                 modifier = Modifier
-                    .noRippleClickable(onClick = { onDocumentClick(document) })
-                    .semantics { role = Role.Button }
+                    .noRippleClickable(role = Role.Button, onClick = { onDocumentClick(document) })
                     .minimumInteractiveComponentSize(),
             )
         }
