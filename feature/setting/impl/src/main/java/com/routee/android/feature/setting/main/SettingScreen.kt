@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,6 +25,7 @@ import com.routee.android.core.designsystem.component.RouteePageHeader
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
@@ -162,7 +162,7 @@ private fun SettingScreen(
     }
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun SettingScreenPreview() {
     RouteePreviewTheme {

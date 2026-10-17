@@ -67,7 +67,7 @@ RouteeAutoSizeText(text = value, style = RouteeTheme.typography.displaySb28) // 
 | Target    | Annotation                                                                 |
 |-----------|----------------------------------------------------------------------------|
 | Component | `@PreviewFontSizes` (default + 200% font)                                  |
-| Screen    | `@PreviewScreenSizes` (Compose built-in: phone, foldable, tablet, desktop) |
+| Screen    | `@PreviewDeviceSizes` (phone, 200% font, short phone, foldable. No system bars) |
 
 ```kotlin
 // 컴포넌트: @Preview 대신. 폰트 크기 확인용
@@ -83,7 +83,7 @@ private fun FeatureButtonPreview() {
 }
 
 // 화면: Route가 아닌 Screen을 미리보기. 필요시 사용
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun FeatureScreenPreview() {
     RouteePreviewTheme {
