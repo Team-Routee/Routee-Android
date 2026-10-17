@@ -1,7 +1,6 @@
 package com.routee.android.feature.onboarding.login
 
 import android.os.SystemClock
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
@@ -40,6 +39,9 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.collectSideEffect
@@ -52,7 +54,6 @@ private const val BACKGROUND_HEIGHT = 639f
 private const val LOGIN_BACKGROUND_RATIO = 360f / BACKGROUND_HEIGHT
 private const val LOGO_TOP_IN_BACKGROUND = 311f
 private const val LOGO_HEIGHT = 76f
-private const val EXIT_BACK_INTERVAL_MS = 2_000L
 private val BottomPadding = 25.dp
 private val LogoAlignment = BiasAlignment(
     horizontalBias = 0f,
@@ -66,6 +67,7 @@ internal fun LoginRoute(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val activity = LocalActivity.current
+    val messageState = LocalRouteeMessageState.current
     val coroutineScope = rememberCoroutineScope()
     val exitMessage = stringResource(R.string.onboarding_login_exit_toast)
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
@@ -80,11 +82,11 @@ internal fun LoginRoute(
 
     BackHandler {
         val now = SystemClock.elapsedRealtime()
-        if (now - lastBackPressedAt < EXIT_BACK_INTERVAL_MS) {
+        if (now - lastBackPressedAt < RouteeMessageDuration.SHORT.millis) {
             activity?.finish()
         } else {
             lastBackPressedAt = now
-            Toast.makeText(activity, exitMessage, Toast.LENGTH_SHORT).show()
+            messageState.showToast(text = exitMessage)
         }
     }
 
@@ -143,7 +145,9 @@ private fun LoginScreen(
         ) {
             GoogleLoginButton(
                 onClick = onGoogleLoginClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .routeeMessageAnchor(),
             )
             TermsNoticeText(modifier = Modifier.fillMaxWidth())
         }
