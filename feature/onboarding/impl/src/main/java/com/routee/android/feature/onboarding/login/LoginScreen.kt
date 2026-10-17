@@ -18,14 +18,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -46,6 +47,7 @@ import com.routee.android.core.ui.collectSideEffect
 import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
+import kotlinx.coroutines.launch
 
 private const val BACKGROUND_HEIGHT = 639f
 private const val LOGIN_BACKGROUND_RATIO = 360f / BACKGROUND_HEIGHT
@@ -66,10 +68,11 @@ internal fun LoginRoute(
     onNavigateToTerms: (idToken: String) -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val activity = LocalActivity.current
+    val coroutineScope = rememberCoroutineScope()
     val exitMessage = stringResource(R.string.onboarding_login_exit_toast)
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
+    var isRequestingIdToken by remember { mutableStateOf(false) }
 
     viewModel.sideEffect.collectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -84,12 +87,20 @@ internal fun LoginRoute(
             activity?.finish()
         } else {
             lastBackPressedAt = now
-            Toast.makeText(context, exitMessage, Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, exitMessage, Toast.LENGTH_SHORT).show()
         }
     }
 
     LoginScreen(
-        onGoogleLoginClick = { viewModel.onGoogleLoginClick(context) },
+        onGoogleLoginClick = {
+            if (activity != null && !isRequestingIdToken) {
+                isRequestingIdToken = true
+                coroutineScope.launch {
+                    viewModel.onIdTokenResult(activity.requestGoogleIdToken())
+                    isRequestingIdToken = false
+                }
+            }
+        },
     )
 }
 

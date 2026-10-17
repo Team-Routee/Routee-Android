@@ -1,6 +1,5 @@
 package com.routee.android.feature.onboarding.login
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.auth.model.LoginResult
@@ -16,7 +15,6 @@ import timber.log.Timber
 
 @HiltViewModel
 internal class LoginViewModel @Inject constructor(
-    private val googleLoginManager: GoogleLoginManager,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
     private val _sideEffect = Channel<LoginSideEffect>(Channel.BUFFERED)
@@ -24,13 +22,14 @@ internal class LoginViewModel @Inject constructor(
 
     private var isLoggingIn = false
 
-    fun onGoogleLoginClick(activityContext: Context) {
+    fun onIdTokenResult(result: Result<String>) {
+        val idToken = result
+            .onFailure { e -> if (e !is GoogleLoginException.Cancelled) Timber.e(e) }
+            .getOrNull() ?: return
         if (isLoggingIn) return
         isLoggingIn = true
         viewModelScope.launch {
-            googleLoginManager.requestIdToken(activityContext)
-                .onSuccess { idToken -> login(idToken) }
-                .onFailure { e -> if (e !is GoogleLoginException.Cancelled) Timber.e(e) }
+            login(idToken)
             isLoggingIn = false
         }
     }
