@@ -64,7 +64,7 @@ fun RouteeLoadingOverlay(modifier: Modifier = Modifier) {
 
 @Composable
 private fun LoadingContent(modifier: Modifier = Modifier) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(DesignSystemR.raw.loading))
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(DesignSystemR.raw.lottie_loading))
 
     Box(
         modifier = modifier
