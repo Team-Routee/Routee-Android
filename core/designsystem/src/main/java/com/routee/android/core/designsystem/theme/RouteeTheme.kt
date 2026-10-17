@@ -58,7 +58,6 @@ fun RouteeTheme(
                 surface = colors.bgPrimary,
             ),
         ) {
-            // 입력창 커서(흰색)와 선택 핸들 선택 영역 색을 맞춘다
             CompositionLocalProvider(
                 LocalTextSelectionColors provides TextSelectionColors(
                     handleColor = colors.white,
