@@ -198,6 +198,7 @@ private fun RecordListItem(
 private fun RecordThumbnail(url: String?) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
     if (url == null) {
+        // TODO: 기본 썸네일 에셋 받으면 교체
         Box(
             modifier = Modifier
                 .size(ThumbnailSize)
