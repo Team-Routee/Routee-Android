@@ -49,19 +49,25 @@ internal class RecordEditMainViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onRecapClick(activityId: Long) {
-        onEditTitleComplete()
+        completeTitleEdit()
         // TODO API 연동 시 편집 리소스를 먼저 불러오고, 실패하면 이동하지 않고 ShowNetworkErrorToast
         viewModelScope.launch { _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId)) }
     }
 
     fun onEditTitleClick(activityId: Long) {
-        onEditTitleComplete()
+        completeTitleEdit()
         val recap = recapsOrEmpty().find { it.activityId == activityId } ?: return
         titleEditingState.setTextAndPlaceCursorAtEnd(recap.title)
         _uiState.update { it.copy(editingActivityId = activityId) }
     }
 
-    fun onEditTitleComplete() {
+    fun onEditTitleComplete(activityId: Long) {
+        // 다른 기록 편집을 시작하면 앞 입력창이 사라지며 완료가 늦게 오므로 무시
+        if (_uiState.value.editingActivityId != activityId) return
+        completeTitleEdit()
+    }
+
+    private fun completeTitleEdit() {
         val activityId = _uiState.value.editingActivityId ?: return
         val title = titleEditingState.text.toString()
         _uiState.update { state ->
@@ -74,7 +80,7 @@ internal class RecordEditMainViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun moveMonth(month: YearMonth) {
-        onEditTitleComplete()
+        completeTitleEdit()
         _uiState.update { it.copy(selectedMonth = month) }
         loadRecaps()
     }

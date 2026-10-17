@@ -96,7 +96,7 @@ private fun RecordEditMainScreen(
     onNextMonthClick: () -> Unit,
     onRecapClick: (Long) -> Unit,
     onEditTitleClick: (Long) -> Unit,
-    onEditTitleComplete: () -> Unit,
+    onEditTitleComplete: (Long) -> Unit,
     onRetryClick: () -> Unit,
     onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -168,7 +168,7 @@ private fun RecapGrid(
     titleEditingState: TextFieldState,
     onRecapClick: (Long) -> Unit,
     onEditTitleClick: (Long) -> Unit,
-    onEditTitleComplete: () -> Unit,
+    onEditTitleComplete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -195,7 +195,7 @@ private fun RecapGrid(
                 editingTitleState = titleEditingState.takeIf { recap.activityId == editingActivityId },
                 onItemClick = { onRecapClick(recap.activityId) },
                 onEditTitleClick = { onEditTitleClick(recap.activityId) },
-                onEditTitleComplete = onEditTitleComplete,
+                onEditTitleComplete = { onEditTitleComplete(recap.activityId) },
             )
         }
     }
