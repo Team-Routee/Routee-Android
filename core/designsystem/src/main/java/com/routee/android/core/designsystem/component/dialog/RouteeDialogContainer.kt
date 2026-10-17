@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -17,10 +18,12 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -34,11 +37,13 @@ private val DialogMaxWidth = 304.dp
 /**
  * 다이얼로그 공통 틀. 화면 전체 딤 + 가운데 카드
  *
+ * 시스템 바와 키보드를 피해 가운데에 놓인다. 키보드가 올라와 공간이 모자라면 카드 크기는 그대로 두고 위쪽을 화면 밖으로 밀어낸다
+ *
  * @param onDismissRequest  뒤로가기, 딤 탭 시 호출
  * @param contentPadding    카드 안쪽 여백
  */
 @Composable
-internal fun RouteeDialogContainer(
+fun RouteeDialogContainer(
     onDismissRequest: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
@@ -59,17 +64,28 @@ internal fun RouteeDialogContainer(
             modifier = modifier
                 .fillMaxSize()
                 .background(RouteeTheme.colors.dimSecondary)
-                .pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } },
+                .pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } }
+                .safeDrawingPadding(),
             contentAlignment = Alignment.Center,
         ) {
             DialogCard(
                 contentPadding = contentPadding,
                 modifier = Modifier
+                    .overflowTop()
                     .padding(horizontal = DialogHorizontalMargin)
                     .pointerInput(Unit) { detectTapGestures { } }, // 카드 안 터치가 딤 닫기로 가지 않게
                 content = content,
             )
         }
+    }
+}
+
+// 공간보다 크면 아래(키보드 쪽)를 맞추고 위를 잘라낸다
+private fun Modifier.overflowTop(): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints.copy(maxHeight = Constraints.Infinity))
+    val height = minOf(placeable.height, constraints.maxHeight)
+    layout(placeable.width, height) {
+        placeable.place(0, height - placeable.height)
     }
 }
 
