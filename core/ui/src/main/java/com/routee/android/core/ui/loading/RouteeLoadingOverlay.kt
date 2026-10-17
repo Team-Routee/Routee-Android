@@ -80,7 +80,6 @@ fun RouteeLoadingHost(
         isContentVisible = true
     }
 
-    // TODO TalkBack이 딤 아래 화면을 읽지 않도록 처리 (iOS accessibilityViewIsModal)
     Box(
         modifier = modifier
             .fillMaxSize()
