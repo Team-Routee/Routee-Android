@@ -6,4 +6,10 @@
     <string name="workout_main_metric_distance">거리</string>
     <string name="workout_main_metric_duration">시간</string>
     <string name="workout_main_metric_max_elevation">최고 고도</string>
+
+    <!-- 운동 중 사진 타임라인 -->
+    <string name="workout_recording_photo_delete_a11y">사진 삭제</string>
+    <string name="workout_recording_photo_close_a11y">닫기</string>
+    <string name="workout_recording_photo_location_placeholder">장소명을 입력해주세요</string>
+    <string name="workout_recording_photo_location_edit_a11y">장소명 편집</string>
 </resources>

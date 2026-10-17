@@ -5,8 +5,9 @@
 | Item | Rule |
 | --- | --- |
 | Location | 1 feature → `feature/<x>/impl/.../component/<screen>/`, `internal`. 2+ features → `core/designsystem/.../component/`, `Routee` prefix ([modularization](../architecture/modularization.md)) |
-| Name | Figma name in PascalCase. Add the shape when it helps (`Card`, `Chip`, `Bar`) |
+| Name | Figma name in PascalCase. Add the shape when it helps (`Card`, `Chip`, `Bar`). Use the Android term when Figma differs (`modal` → `Dialog`), Figma name in the `//` comment |
 | Fixed content | Take values, not a slot, when Figma never changes the items |
+| List parameter | `List`. `ImmutableList` only for lists in UiState ([ui-state](../architecture/ui-state.md)) |
 | Screen | Route, Screen, events ([screen](../architecture/screen.md)) |
 
 ```kotlin
@@ -16,17 +17,26 @@ private val ItemSpacing = 4.dp     // 토큰에 없는 값만 private 상수
 /**
  * 기능 카드
  *
- * 제목과 값을 한 줄로 보여준다
- *
- * @param value 화면에 보일 문자열 (예: "15.53")
+ * @param title    제목
+ * @param value    화면에 보일 문자열 (예: "15.53")
+ * @param onClick  탭 시 호출
+ * @param badge    오른쪽 뱃지. null 이면 숨김
  */
 @Composable
 fun RouteeFeatureCard(
     title: String,                 // 필수 → modifier → 선택 → content 순서
     value: String,
-    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier, // modifier는 @param 생략
+    badge: String? = null,
 )
 ```
+
+| KDoc | Rule |
+| --- | --- |
+| Title | Short noun phrase. Feature module: `설명 (figma_name)` |
+| Behavior | Aligned `@param` lines with short phrases (`탭 시 호출`, `null 이면 숨김`, `true 이면 ~ 표시`) |
+| Skip | `modifier`, width/size notes (`폭은 [modifier]로 정한다`) |
 
 ## Design Tokens
 
