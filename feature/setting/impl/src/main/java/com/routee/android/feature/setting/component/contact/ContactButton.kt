@@ -53,7 +53,7 @@ internal enum class ContactButtonType(
 /**
  * 문의하기 버튼 (btn_contact_android)
  *
- * [type]에 맞는 아이콘, 문구, 색을 보여준다. 폭은 [modifier]로 정한다
+ * [type]에 맞는 아이콘, 문구, 색을 보여준다
  */
 @Composable
 internal fun ContactButton(

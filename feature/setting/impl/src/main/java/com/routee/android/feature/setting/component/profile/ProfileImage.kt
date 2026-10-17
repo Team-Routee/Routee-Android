@@ -58,7 +58,7 @@ internal fun ProfileImage(
             modifier = Modifier
                 .size(ProfileImageSize)
                 .clip(CircleShape),
-            fallback = painterResource(DesignSystemR.drawable.img_profile_default),
+            defaultImage = painterResource(DesignSystemR.drawable.img_profile_default),
         )
         Icon(
             imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_camera_fill_black_sm),

@@ -10,9 +10,11 @@ import coil3.compose.AsyncImage
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 /**
- * URL 이미지를 불러온다. 로딩 중이거나 실패하면 회색 배경을 보여준다
+ * URL 이미지
  *
- * @param fallback [url]이 null이거나 실패했을 때 보여줄 이미지. null이면 회색 배경
+ * @param defaultImage 기본 이미지. [url]이 null일 때. null 이면 회색 (TODO 임시)
+ * @param loadingImage 로딩 중. 넘기지 않으면 [defaultImage]
+ * @param errorImage 불러오기 실패. 넘기지 않으면 [defaultImage]
  */
 @Composable
 fun RouteeAsyncImage(
@@ -20,18 +22,21 @@ fun RouteeAsyncImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
-    fallback: Painter? = null,
+    defaultImage: Painter? = null,
+    loadingImage: Painter? = defaultImage,
+    errorImage: Painter? = defaultImage,
 ) {
+    // TODO 기본 이미지 디자인 확정 시 교체 (지금은 임시 회색)
     val placeholderColor = RouteeTheme.colors.grey800
-    val placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) }
+    val grey = remember(placeholderColor) { ColorPainter(placeholderColor) }
 
     AsyncImage(
         model = url,
         contentDescription = contentDescription,
         modifier = modifier,
-        placeholder = placeholder,
-        error = fallback ?: placeholder,
-        fallback = fallback ?: placeholder,
+        placeholder = loadingImage ?: grey,
+        error = errorImage ?: grey,
+        fallback = defaultImage ?: grey,
         contentScale = contentScale,
     )
 }

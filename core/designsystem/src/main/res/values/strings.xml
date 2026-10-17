@@ -17,4 +17,7 @@
 
     <!-- 기록 제목 헤더 -->
     <string name="designsystem_record_summary_text_field_edit_a11y">기록 제목 편집</string>
+
+    <!-- 다이얼로그 -->
+    <string name="designsystem_dialog_close_a11y">닫기</string>
 </resources>
