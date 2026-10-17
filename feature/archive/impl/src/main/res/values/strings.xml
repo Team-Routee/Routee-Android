@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 나의 루트 -->
+    <string name="archive_route_point_item_title">나의 루트</string>
+
     <string name="user_profile_days_together">%1$d일째 함께하는 중</string>
 
     <!-- 마운틴맵 -->
