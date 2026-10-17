@@ -12,6 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
+import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -91,11 +92,18 @@ internal object NetworkModule {
         converterFactory: Converter.Factory,
     ): Retrofit = createRetrofit(client, converterFactory)
 
+    /**
+     * 재발급 요청은 별도 [Dispatcher]로 보낸다. 401을 받은 요청들이 재발급을 기다리며 Dispatcher 슬롯을 모두 잡고 있어도 재발급 요청이 실행되도록 한다
+     */
     @Provides
     @Singleton
     fun provideReissueService(
-        @NoAuth retrofit: Retrofit,
-    ): ReissueService = retrofit.create()
+        @NoAuth client: OkHttpClient,
+        converterFactory: Converter.Factory,
+    ): ReissueService = createRetrofit(
+        client = client.newBuilder().dispatcher(Dispatcher()).build(),
+        converterFactory = converterFactory,
+    ).create()
 
     private fun createRetrofit(
         client: OkHttpClient,
