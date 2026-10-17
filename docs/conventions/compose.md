@@ -16,7 +16,7 @@ private val ItemSpacing = 4.dp     // 토큰에 없는 값만 private 상수
 /**
  * 기능 카드
  *
- * 제목과 값을 한 줄로 보여준다. 카드 폭은 [modifier]로 정한다
+ * 제목과 값을 한 줄로 보여준다
  *
  * @param value 화면에 보일 문자열 (예: "15.53")
  */
