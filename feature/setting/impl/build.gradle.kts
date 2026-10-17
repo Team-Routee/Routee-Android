@@ -7,6 +7,8 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
+
     implementation(projects.feature.setting.api)
     implementation(projects.feature.onboarding.api)
 }
