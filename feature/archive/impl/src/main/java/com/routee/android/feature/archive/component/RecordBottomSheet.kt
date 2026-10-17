@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,6 +42,7 @@ import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
+private const val MAX_HEIGHT_RECORD_COUNT = 3
 private val ContentMaxHeight = 304.dp
 private val HandleWidth = 40.dp
 private val HandleHeight = 4.dp
@@ -128,7 +129,7 @@ private fun RecordBottomSheetContent(
 ) {
     Column(
         modifier = Modifier
-            .heightIn(max = ContentMaxHeight)
+            .then(if (records.size >= MAX_HEIGHT_RECORD_COUNT) Modifier.height(ContentMaxHeight) else Modifier)
             .padding(horizontal = RouteeTheme.spacing.Spacing24),
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16),
     ) {
