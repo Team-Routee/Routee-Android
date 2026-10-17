@@ -30,13 +30,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -54,8 +53,6 @@ private const val LOGIN_BACKGROUND_RATIO = 360f / BACKGROUND_HEIGHT
 private const val LOGO_TOP_IN_BACKGROUND = 311f
 private const val LOGO_HEIGHT = 76f
 private const val EXIT_BACK_INTERVAL_MS = 2_000L
-private const val LINK_PLACEHOLDER_SERVICE = "%1\$s"
-private const val LINK_PLACEHOLDER_PRIVACY = "%2\$s"
 private val BottomPadding = 25.dp
 private val LogoAlignment = BiasAlignment(
     horizontalBias = 0f,
@@ -155,19 +152,16 @@ private fun LoginScreen(
 
 @Composable
 private fun TermsNoticeText(modifier: Modifier = Modifier) {
-    val template = stringResource(R.string.onboarding_login_terms_notice)
-    val serviceLink = stringResource(R.string.onboarding_login_terms_notice_service_link)
-    val privacyLink = stringResource(R.string.onboarding_login_terms_notice_privacy_link)
-    val linkStyles = TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline))
-
-    val text = buildAnnotatedString {
-        val serviceStart = template.indexOf(LINK_PLACEHOLDER_SERVICE)
-        val privacyStart = template.indexOf(LINK_PLACEHOLDER_PRIVACY)
-        append(template.substring(0, serviceStart))
-        withLink(LinkAnnotation.Url(TermsDocument.SERVICE.url, linkStyles)) { append(serviceLink) }
-        append(template.substring(serviceStart + LINK_PLACEHOLDER_SERVICE.length, privacyStart))
-        withLink(LinkAnnotation.Url(TermsDocument.PRIVACY.url, linkStyles)) { append(privacyLink) }
-        append(template.substring(privacyStart + LINK_PLACEHOLDER_PRIVACY.length))
+    val html = stringResource(
+        R.string.onboarding_login_terms_notice,
+        TermsDocument.SERVICE.url,
+        TermsDocument.PRIVACY.url,
+    )
+    val text = remember(html) {
+        AnnotatedString.fromHtml(
+            htmlString = html,
+            linkStyles = TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline)),
+        )
     }
 
     Text(
