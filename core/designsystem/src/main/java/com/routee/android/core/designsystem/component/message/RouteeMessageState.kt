@@ -28,7 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * val messageState = LocalRouteeMessageState.current
  * val scope = rememberCoroutineScope()
  *
- * viewModel.sideEffect.collectSideEffect { sideEffect ->
+ * viewModel.sideEffect.CollectSideEffect { sideEffect ->
  *     when (sideEffect) {
  *         FeatureSideEffect.ShowDeleteToast -> messageState.showToast(text = deletedText)
  *         FeatureSideEffect.ShowUndoSnackbar -> scope.launch {
