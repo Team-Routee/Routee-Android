@@ -1,7 +1,9 @@
 package com.routee.android.feature.setting.component.profile
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -11,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -58,7 +61,14 @@ internal fun ProfileImage(
             modifier = Modifier
                 .size(ProfileImageSize)
                 .clip(CircleShape),
-            fallback = painterResource(DesignSystemR.drawable.img_profile_default),
+            defaultImage = {
+                Image(
+                    painter = painterResource(DesignSystemR.drawable.img_profile_default),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
         )
         Icon(
             imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_camera_fill_black_sm),
