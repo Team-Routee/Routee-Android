@@ -43,7 +43,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 private val ContentMaxHeight = 304.dp
-private val HandleVerticalPadding = 14.dp
 private val HandleWidth = 40.dp
 private val HandleHeight = 4.dp
 private val ThumbnailSize = 42.dp
@@ -115,7 +114,7 @@ private fun DisableNavigationBarContrast() {
 private fun SheetHandle() {
     Box(
         modifier = Modifier
-            .padding(vertical = HandleVerticalPadding)
+            .padding(vertical = RouteeTheme.spacing.Spacing14)
             .size(width = HandleWidth, height = HandleHeight)
             .background(color = RouteeTheme.colors.grey300, shape = RoundedCornerShape(RouteeTheme.radius.Full)),
     )
