@@ -43,9 +43,9 @@ import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
-import com.routee.android.feature.onboarding.terms.model.TermsDocument
 
 private const val BACKGROUND_HEIGHT = 639f
 private const val LOGIN_BACKGROUND_RATIO = 360f / BACKGROUND_HEIGHT

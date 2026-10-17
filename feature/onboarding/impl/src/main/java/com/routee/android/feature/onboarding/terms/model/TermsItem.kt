@@ -1,6 +1,7 @@
 package com.routee.android.feature.onboarding.terms.model
 
 import androidx.annotation.StringRes
+import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 
 internal enum class TermsItem(
