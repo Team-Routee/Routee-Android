@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,23 +106,13 @@ private fun PhotoImage(
     imageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
-
     RouteeAsyncImage(
         url = imageUrl,
         contentDescription = null,
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(PHOTO_ASPECT_RATIO)
-            .background(color = RouteeTheme.colors.grey900, shape = shape)
-            .clip(shape),
-        // TODO 사진 없을 때 표시 디자이너 확인 (기획에 없음, 아카이브 바텀시트처럼 루티 로고로 맞춤)
-        defaultImage = {
-            Image(
-                imageVector = ImageVector.vectorResource(DesignSystemR.drawable.routee_symbol_grey_sm),
-                contentDescription = null,
-            )
-        },
+            .clip(RoundedCornerShape(RouteeTheme.radius.Radius12)),
     )
 }
 
