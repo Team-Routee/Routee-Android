@@ -34,7 +34,7 @@ fun RouteeFeatureCard(
 
 | KDoc | Rule |
 | --- | --- |
-| Title | Short noun phrase. Feature: `설명 (figma_name)` |
+| Title | Short noun phrase. Feature module: `설명 (figma_name)` |
 | Behavior | Aligned `@param` lines with short phrases (`탭 시 호출`, `null 이면 숨김`, `true 이면 ~ 표시`) |
 | Skip | `modifier`, width/size notes (`폭은 [modifier]로 정한다`) |
 
