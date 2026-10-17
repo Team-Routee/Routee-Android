@@ -115,6 +115,7 @@ private fun PhotoImage(
             .aspectRatio(PHOTO_ASPECT_RATIO)
             .background(color = RouteeTheme.colors.grey900, shape = shape)
             .clip(shape),
+        // TODO 사진 없을 때 표시 디자이너 확인 (기획에 없음, 아카이브 바텀시트처럼 루티 로고로 맞춤)
         defaultImage = {
             Image(
                 imageVector = ImageVector.vectorResource(DesignSystemR.drawable.routee_symbol_grey_sm),
