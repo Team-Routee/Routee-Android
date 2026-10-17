@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,13 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -46,18 +43,36 @@ private val AnimationAlignment = BiasAlignment(
 )
 
 /**
- * 전역 로딩
+ * 전역 로딩 표시 요청
  *
- * 화면 전체를 딤으로 덮고 로딩 애니메이션과 "로딩 중" 문구를 보여준다. 떠 있는 동안 터치와 뒤로가기는 막힌다.
- * 데이터를 불러오는 동안에만 호출한다
- *
- * @param showDelayMillis 호출 즉시 터치는 막고, 딤과 애니메이션은 이 시간이 지나야 보여준다. 빠른 응답에서 깜빡이지 않게 한다
+ * 데이터를 불러오는 동안에만 호출한다. 호출한 화면을 벗어나면 함께 내려간다. 화면은 앱 루트의 [RouteeLoadingHost]가 그린다
  */
 @Composable
-fun RouteeLoadingOverlay(
+fun RouteeLoadingOverlay() {
+    val state = LocalRouteeLoadingState.current
+
+    DisposableEffect(state) {
+        state.show()
+        onDispose { state.hide() }
+    }
+}
+
+/**
+ * 전역 로딩 (RT-EDGE-001)
+ *
+ * 앱 루트에서 화면 전체 위에 둔다. 로딩 중에는 바로 터치를 막고, 딤과 애니메이션은 [showDelayMillis] 뒤에 보여준다.
+ * 같은 창 안에 그려서 뒤로가기는 막지 않는다 (상세 화면은 이전 화면, 탭 첫 화면은 종료 토스트)
+ *
+ * @param showDelayMillis 빠른 응답에서 깜빡이지 않도록 딤과 애니메이션을 늦게 보여줄 시간
+ */
+@Composable
+fun RouteeLoadingHost(
+    state: RouteeLoadingState,
     modifier: Modifier = Modifier,
     showDelayMillis: Long = DEFAULT_SHOW_DELAY_MILLIS,
 ) {
+    if (!state.isLoading) return
+
     var isContentVisible by remember { mutableStateOf(showDelayMillis <= 0) }
 
     LaunchedEffect(showDelayMillis) {
@@ -65,22 +80,17 @@ fun RouteeLoadingOverlay(
         isContentVisible = true
     }
 
-    Dialog(
-        onDismissRequest = {},
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false,
-        ),
+    // TODO TalkBack이 딤 아래 화면을 읽지 않도록 처리 (iOS accessibilityViewIsModal)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) awaitPointerEvent().changes.forEach { it.consume() }
+                }
+            },
     ) {
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.setDimAmount(0f) }
-        if (isContentVisible) {
-            LoadingContent(modifier = modifier)
-        } else {
-            Box(modifier = modifier.fillMaxSize())
-        }
+        if (isContentVisible) LoadingContent()
     }
 }
 
