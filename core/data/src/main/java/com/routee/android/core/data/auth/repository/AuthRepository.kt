@@ -16,4 +16,9 @@ interface AuthRepository {
         provider: SocialProvider,
         agreements: Agreements,
     ): Result<Unit>
+
+    /**
+     * 로그아웃. 서버 요청이 실패해도 저장된 토큰은 지운다
+     */
+    suspend fun logout(): Result<Unit>
 }
