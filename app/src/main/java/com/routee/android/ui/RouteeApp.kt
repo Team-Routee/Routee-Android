@@ -10,7 +10,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.routee.android.core.navigation.rememberRouteeNavigator
-import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.archive.navigation.archiveEntries
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.navigation.onboardingEntries
@@ -30,7 +30,7 @@ internal fun RouteeApp(
     val backStack = rememberNavBackStack(WorkoutMainNavKey)
     val navigator = rememberRouteeNavigator(backStack)
 
-    sessionExpired.collectSideEffect {
+    sessionExpired.CollectSideEffect {
         // TODO 세션 만료 안내 문구 (기획 확인 후)
         navigator.clearAndNavigateTo(LoginNavKey)
     }

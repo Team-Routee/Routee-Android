@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.Flow
  * Route에서 ViewModel의 `sideEffect`에 붙여 쓴다. 백그라운드에서는 수집을 멈추고, 돌아오면 다시 받는다
  *
  * ```kotlin
- * viewModel.sideEffect.collectSideEffect { sideEffect ->
+ * viewModel.sideEffect.CollectSideEffect { sideEffect ->
  *     when (sideEffect) { ... }
  * }
  * ```
  */
 @Composable
-fun <T> Flow<T>.collectSideEffect(onSideEffect: suspend (T) -> Unit) {
+fun <T> Flow<T>.CollectSideEffect(onSideEffect: suspend (T) -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnSideEffect by rememberUpdatedState(onSideEffect)
 
