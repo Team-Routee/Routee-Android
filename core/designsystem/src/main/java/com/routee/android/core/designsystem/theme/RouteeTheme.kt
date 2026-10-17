@@ -1,5 +1,7 @@
 package com.routee.android.core.designsystem.theme
 
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -55,7 +57,15 @@ fun RouteeTheme(
                 background = colors.bgPrimary,
                 surface = colors.bgPrimary,
             ),
-            content = content,
-        )
+        ) {
+            // 입력창 커서(흰색)와 선택 핸들 선택 영역 색을 맞춘다
+            CompositionLocalProvider(
+                LocalTextSelectionColors provides TextSelectionColors(
+                    handleColor = colors.white,
+                    backgroundColor = colors.white30,
+                ),
+                content = content,
+            )
+        }
     }
 }
