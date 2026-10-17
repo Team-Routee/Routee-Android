@@ -19,16 +19,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
+import com.routee.android.core.designsystem.theme.RouteeSpacing
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 // modal_action_vertical_android
-private val ActionSpacing = 10.dp
-
 /**
  * 선택 다이얼로그 버튼
  *
@@ -68,7 +66,12 @@ fun RouteeVerticalActionDialog(
     }
 }
 
-private val VerticalActionDialogPadding = PaddingValues(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 24.dp)
+private val VerticalActionDialogPadding = PaddingValues(
+    start = RouteeSpacing.Spacing24,
+    top = RouteeSpacing.Spacing20,
+    end = RouteeSpacing.Spacing24,
+    bottom = RouteeSpacing.Spacing24,
+)
 
 @Composable
 private fun ColumnScope.VerticalActionDialogContent(
@@ -98,7 +101,7 @@ private fun ColumnScope.VerticalActionDialogContent(
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(ActionSpacing),
+        verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing10),
     ) {
         actions.forEach { action ->
             DialogActionButton(
