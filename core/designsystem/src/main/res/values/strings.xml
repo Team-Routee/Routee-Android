@@ -20,4 +20,9 @@
 
     <!-- 다이얼로그 -->
     <string name="designsystem_dialog_close_a11y">닫기</string>
+
+    <!-- 월 이동 -->
+    <string name="designsystem_month_control_year_month">%1$d년 %2$d월</string>
+    <string name="designsystem_month_control_previous_a11y">이전 달</string>
+    <string name="designsystem_month_control_next_a11y">다음 달</string>
 </resources>

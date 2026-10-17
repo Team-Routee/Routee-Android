@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기록 편집 메인 -->
+    <string name="record_edit_main_title">운동 기록 편집</string>
+    <string name="record_edit_main_network_error_toast">네트워크 연결을 확인해주세요.</string>
     <string name="record_edit_main_empty_title">기록이 없어요.</string>
     <string name="record_edit_main_recap_title_edit_a11y">기록 제목 편집</string>
 
