@@ -39,6 +39,7 @@ import com.routee.android.feature.onboarding.nickname.model.NicknameUiState
 
 private val ContentTopPadding = 113.dp
 private val TitleToFieldSpacing = 89.dp
+private val ButtonBottomPadding = 75.dp
 
 @Composable
 internal fun NicknameRoute(
@@ -115,7 +116,12 @@ private fun NicknameScreen(
                 enabled = uiState.isStartEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(RouteeTheme.spacing.Spacing16),
+                    .padding(
+                        start = RouteeTheme.spacing.Spacing16,
+                        top = RouteeTheme.spacing.Spacing16,
+                        end = RouteeTheme.spacing.Spacing16,
+                        bottom = ButtonBottomPadding,
+                    ),
             )
         }
     }

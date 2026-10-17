@@ -54,6 +54,7 @@ import com.routee.android.feature.onboarding.terms.model.TermsUiState
 private val ContentTopPadding = 113.dp
 private val AllAgreeVerticalPadding = 20.dp
 private val DocumentTouchSize = 48.dp
+private val ButtonBottomPadding = 75.dp
 
 @Composable
 internal fun TermsRoute(
@@ -143,7 +144,12 @@ private fun TermsScreen(
                 enabled = uiState.isNextEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(RouteeTheme.spacing.Spacing16),
+                    .padding(
+                        start = RouteeTheme.spacing.Spacing16,
+                        top = RouteeTheme.spacing.Spacing16,
+                        end = RouteeTheme.spacing.Spacing16,
+                        bottom = ButtonBottomPadding,
+                    ),
             )
         }
     }
