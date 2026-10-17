@@ -3,7 +3,6 @@ package com.routee.android.feature.onboarding.terms
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,6 +45,7 @@ import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.terms.model.TermsItem
 import com.routee.android.feature.onboarding.terms.model.TermsSideEffect
@@ -53,7 +53,6 @@ import com.routee.android.feature.onboarding.terms.model.TermsUiState
 
 private val ContentTopPadding = 113.dp
 private val AllAgreeVerticalPadding = 20.dp
-private val DocumentTouchSize = 48.dp
 private val ButtonBottomPadding = 75.dp
 
 @Composable
@@ -83,7 +82,7 @@ internal fun TermsRoute(
         onBackClick = viewModel::onBackClick,
         onAllCheckedChange = viewModel::onAllCheckedChange,
         onItemCheckedChange = viewModel::onItemCheckedChange,
-        onDocumentClick = { item -> item.document?.let { uriHandler.openUri(it.url) } },
+        onDocumentClick = { document -> uriHandler.openUri(document.url) },
         onNextClick = viewModel::onNextClick,
     )
 }
@@ -94,7 +93,7 @@ private fun TermsScreen(
     onBackClick: () -> Unit,
     onAllCheckedChange: (Boolean) -> Unit,
     onItemCheckedChange: (TermsItem, Boolean) -> Unit,
-    onDocumentClick: (TermsItem) -> Unit,
+    onDocumentClick: (TermsDocument) -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -132,7 +131,7 @@ private fun TermsScreen(
                                 item = item,
                                 checked = uiState.isChecked(item),
                                 onCheckedChange = { checked -> onItemCheckedChange(item, checked) },
-                                onDocumentClick = { onDocumentClick(item) },
+                                onDocumentClick = onDocumentClick,
                             )
                         }
                     }
@@ -196,7 +195,7 @@ private fun TermsItemRow(
     item: TermsItem,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    onDocumentClick: () -> Unit,
+    onDocumentClick: (TermsDocument) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val title = stringResource(item.titleRes)
@@ -239,19 +238,15 @@ private fun TermsItemRow(
                 modifier = Modifier.weight(1f),
             )
         }
-        if (item.document != null) {
-            Box(
+        item.document?.let { document ->
+            Image(
+                imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_chevron_right_sm_white),
+                contentDescription = stringResource(R.string.onboarding_terms_document_a11y, title),
                 modifier = Modifier
-                    .size(DocumentTouchSize)
-                    .noRippleClickable(onClick = onDocumentClick)
-                    .semantics { role = Role.Button },
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_chevron_right_sm_white),
-                    contentDescription = stringResource(R.string.onboarding_terms_document_a11y, title),
-                )
-            }
+                    .noRippleClickable(onClick = { onDocumentClick(document) })
+                    .semantics { role = Role.Button }
+                    .minimumInteractiveComponentSize(),
+            )
         }
     }
 }
