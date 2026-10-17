@@ -55,7 +55,7 @@ private fun MetricItem(
         )
         RouteeAutoSizeText(
             text = value,
-            style = RouteeTheme.typography.display52,
+            style = RouteeTheme.typography.displayB42,
             color = RouteeTheme.colors.black,
             textAlign = TextAlign.Center,
         )

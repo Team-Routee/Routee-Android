@@ -10,6 +10,8 @@ dependencies {
     implementation(projects.core.common)
 
     implementation(libs.coil.compose)
+    implementation(libs.android.image.cropper)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

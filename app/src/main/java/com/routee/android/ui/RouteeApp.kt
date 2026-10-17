@@ -1,14 +1,25 @@
 package com.routee.android.ui
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageHost
+import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
+import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.rememberRouteeNavigator
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.archive.navigation.archiveEntries
@@ -35,6 +46,30 @@ internal fun RouteeApp(
         navigator.clearAndNavigateTo(LoginNavKey)
     }
 
+    val messageState = rememberRouteeMessageState()
+
+    CompositionLocalProvider(LocalRouteeMessageState provides messageState) {
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0),
+            snackbarHost = { RouteeMessageHost(state = messageState) },
+        ) { innerPadding ->
+            RouteeNavDisplay(
+                backStack = backStack,
+                navigator = navigator,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RouteeNavDisplay(
+    backStack: NavBackStack<NavKey>,
+    navigator: RouteeNavigator,
+    modifier: Modifier = Modifier,
+) {
     NavDisplay(
         backStack = backStack,
         modifier = modifier.fillMaxSize(),

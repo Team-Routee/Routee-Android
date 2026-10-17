@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="user_profile_days_together">%1$d일째 함께하는 중</string>
+
+    <!-- 마운틴맵 -->
+    <string name="archive_mountain_map_less">less</string>
+    <string name="archive_mountain_map_more">more</string>
+
+    <!-- 캘린더 -->
+    <string name="archive_calendar_weekday_monday">Mon</string>
+    <string name="archive_calendar_weekday_tuesday">Tue</string>
+    <string name="archive_calendar_weekday_wednesday">Wed</string>
+    <string name="archive_calendar_weekday_thursday">Thu</string>
+    <string name="archive_calendar_weekday_friday">Fri</string>
+    <string name="archive_calendar_weekday_saturday">Sat</string>
+    <string name="archive_calendar_weekday_sunday">Sun</string>
+    <string name="archive_calendar_photo_day_a11y">%1$d일, 기록 %2$d개</string>
+
+    <!-- 숫자 뱃지 -->
+    <string name="archive_count_badge_overflow">9+</string>
+</resources>

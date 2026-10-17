@@ -23,7 +23,7 @@ private val MetricItemSpacing = 4.dp
 /**
  * 운동 수치 카드
  *
- * 거리, 시간, 최고 고도를 세 칸에 같은 폭으로 나눠 보여준다. 라벨과 값이 칸보다 길면 한 줄을 유지하며 글자를 줄인다. 카드 폭은 [modifier]로 정한다 (예: `Modifier.fillMaxWidth()`)
+ * 거리, 시간, 최고 고도를 세 칸에 같은 폭으로 나눠 보여준다. 라벨과 값이 칸보다 길면 한 줄을 유지하며 글자를 줄인다
  *
  * @param distance 거리(km). 화면에 보일 문자열 (예: "15.53")
  * @param duration 운동 시간 (예: "03:20")
@@ -70,7 +70,7 @@ private fun RowScope.MetricItem(
         )
         RouteeAutoSizeText(
             text = value,
-            style = RouteeTheme.typography.display30,
+            style = RouteeTheme.typography.displaySb28,
             color = RouteeTheme.colors.mint300,
             textAlign = TextAlign.Center,
         )
