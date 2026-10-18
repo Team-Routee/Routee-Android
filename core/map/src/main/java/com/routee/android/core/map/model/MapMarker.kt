@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.Dp
 /**
  * 지도 마커
  *
- * @property id    마커 구분용. 탭 시 RouteeNaverMap 의 onMarkerClick 으로 돌아온다
+ * @property id    탭 시 onMarkerClick 으로 전달
  * @property icon  마커 이미지. null 이면 SDK 기본 마커
  * @property size  아이콘 크기. null 이면 이미지 원래 크기
  */
