@@ -1,11 +1,13 @@
 package com.routee.android.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -21,6 +23,9 @@ import com.routee.android.core.designsystem.component.message.RouteeMessageHost
 import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
 import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.rememberRouteeNavigator
+import com.routee.android.core.ui.loading.LocalRouteeLoadingState
+import com.routee.android.core.ui.loading.RouteeLoadingHost
+import com.routee.android.core.ui.loading.RouteeLoadingState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.archive.navigation.archiveEntries
 import com.routee.android.feature.onboarding.api.LoginNavKey
@@ -47,19 +52,25 @@ internal fun RouteeApp(
     }
 
     val messageState = rememberRouteeMessageState()
+    val loadingState = remember { RouteeLoadingState() }
 
-    CompositionLocalProvider(LocalRouteeMessageState provides messageState) {
+    CompositionLocalProvider(
+        LocalRouteeMessageState provides messageState,
+        LocalRouteeLoadingState provides loadingState,
+    ) {
         Scaffold(
             modifier = modifier.fillMaxSize(),
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             snackbarHost = { RouteeMessageHost(state = messageState) },
         ) { innerPadding ->
-            RouteeNavDisplay(
-                backStack = backStack,
-                navigator = navigator,
-                modifier = Modifier.padding(innerPadding),
-            )
+            Box(modifier = Modifier.padding(innerPadding)) {
+                RouteeNavDisplay(
+                    backStack = backStack,
+                    navigator = navigator,
+                )
+                RouteeLoadingHost(state = loadingState)
+            }
         }
     }
 }

@@ -7,5 +7,8 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.designsystem)
+
+    implementation(libs.lottie.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 }
