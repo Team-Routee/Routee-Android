@@ -29,6 +29,7 @@ import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
 private const val SCREEN_HEIGHT = 800f
@@ -76,7 +77,7 @@ fun RouteeLoadingHost(
     var isContentVisible by remember { mutableStateOf(showDelayMillis <= 0) }
 
     LaunchedEffect(showDelayMillis) {
-        delay(showDelayMillis)
+        delay(showDelayMillis.milliseconds)
         isContentVisible = true
     }
 
