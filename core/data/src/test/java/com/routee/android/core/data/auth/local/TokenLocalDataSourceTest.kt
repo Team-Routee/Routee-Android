@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import java.io.File
+import java.security.ProviderException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -66,6 +67,21 @@ class TokenLocalDataSourceTest {
             prefs[REFRESH_TOKEN] = "plain-refresh"
         }
         val tokenStore = TokenLocalDataSource(dataStore, FakeTokenCipher())
+
+        assertNull(tokenStore.getAccessToken())
+        assertNull(tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: Keystore가 RuntimeException(BackendBusyException 등)을 던질 때
+     * WHEN: 토큰을 읽으면
+     * THEN: 앱이 죽지 않고 null을 반환한다
+     */
+    @Test
+    fun `Keystore 런타임 예외도 null로 읽는다`() = runTest {
+        val dataStore = dataStore()
+        TokenLocalDataSource(dataStore, FakeTokenCipher()).saveTokens(accessToken = "access", refreshToken = "refresh")
+        val tokenStore = TokenLocalDataSource(dataStore, FakeTokenCipher(decryptException = ProviderException()))
 
         assertNull(tokenStore.getAccessToken())
         assertNull(tokenStore.getRefreshToken())

@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.routee.android.core.data.di.TokenDataStore
 import com.routee.android.core.network.token.TokenProvider
 import java.io.IOException
-import java.security.GeneralSecurityException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -49,11 +48,10 @@ internal class TokenLocalDataSource @Inject constructor(
         .first()
         ?.let { encrypted -> withContext(Dispatchers.IO) { decryptOrNull(encrypted) } }
 
+    // Keystore는 BackendBusyException 같은 RuntimeException도 던진다. 어떤 이유든 못 풀면 null (재로그인)
     private fun decryptOrNull(encrypted: String): String? = try {
         tokenCipher.decrypt(encrypted)
-    } catch (e: GeneralSecurityException) {
-        null
-    } catch (e: IllegalArgumentException) {
+    } catch (e: Exception) {
         null
     }
 
