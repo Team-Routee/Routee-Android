@@ -8,6 +8,10 @@ import com.routee.android.feature.recordedit.main.RecordEditMainRoute
 
 fun EntryProviderScope<NavKey>.recordEditEntries(navigator: RouteeNavigator) {
     entry<RecordEditMainNavKey> {
-        RecordEditMainRoute()
+        RecordEditMainRoute(
+            // TODO #63 편집 화면 엔트리를 등록하면서 RecapEditorNavKey로 이동 연결
+            onNavigateToEditor = {},
+            onNavigateToHome = navigator::navigateToHome,
+        )
     }
 }
