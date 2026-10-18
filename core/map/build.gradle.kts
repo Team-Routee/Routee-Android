@@ -7,5 +7,7 @@ android {
 }
 
 dependencies {
-    api(libs.naver.map.sdk)
+    implementation(projects.core.designsystem)
+
+    implementation(libs.naver.map.sdk)
 }

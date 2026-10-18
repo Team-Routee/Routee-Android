@@ -5,7 +5,7 @@
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
 | `core:common` | Kotlin utilities (`suspendRunCatching`) |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
-| `core:map` | `RouteeNaverMap`, Naver Map SDK. Only features that show a map depend on it |
+| `core:map` | `RouteeNaverMap`, `RouteeMapState`, `MapPoint`. Naver Map SDK stays inside (`implementation`). Only features that show a map depend on it |
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
 | `core:ui` | `UiState`, `CollectSideEffect`, shared screen-level UI (loading, error). Uses `core:designsystem` |
 | `core:data` | Repository, DataSource, DTO, model |
