@@ -1,21 +1,25 @@
 package com.routee.android.core.network.di
 
 import com.routee.android.core.network.BuildConfig
+import com.routee.android.core.network.authenticator.TokenAuthenticator
 import com.routee.android.core.network.extension.toPrettyJsonOrSelf
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
+import com.routee.android.core.network.token.ReissueService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
+import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.create
 import timber.log.Timber
 
 @Module
@@ -58,7 +62,7 @@ internal object NetworkModule {
         .build()
 
     /**
-     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor]를 추가한다
+     * [NoAuth] 클라이언트의 커넥션 풀과 Dispatcher를 공유하고 [AuthInterceptor], [TokenAuthenticator]를 추가한다
      */
     @Auth
     @Provides
@@ -66,8 +70,10 @@ internal object NetworkModule {
     fun provideAuthOkHttpClient(
         @NoAuth client: OkHttpClient,
         authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient = client.newBuilder()
         .addInterceptor(authInterceptor)
+        .authenticator(tokenAuthenticator)
         .build()
 
     @NoAuth
@@ -85,6 +91,19 @@ internal object NetworkModule {
         @Auth client: OkHttpClient,
         converterFactory: Converter.Factory,
     ): Retrofit = createRetrofit(client, converterFactory)
+
+    /**
+     * 재발급 요청은 별도 [Dispatcher]로 보낸다. 401을 받은 요청들이 재발급을 기다리며 Dispatcher 슬롯을 모두 잡고 있어도 재발급 요청이 실행되도록 한다
+     */
+    @Provides
+    @Singleton
+    fun provideReissueService(
+        @NoAuth client: OkHttpClient,
+        converterFactory: Converter.Factory,
+    ): ReissueService = createRetrofit(
+        client = client.newBuilder().dispatcher(Dispatcher()).build(),
+        converterFactory = converterFactory,
+    ).create()
 
     private fun createRetrofit(
         client: OkHttpClient,
