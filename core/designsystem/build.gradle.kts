@@ -10,6 +10,7 @@ dependencies {
     implementation(projects.core.common)
 
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.android.image.cropper)
 
     testImplementation(libs.junit)
