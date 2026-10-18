@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 설정 메인 -->
+    <string name="setting_main_title">설정</string>
+    <string name="setting_main_section_use">루티 이용하기</string>
+    <string name="setting_main_section_policy">이용정책</string>
+    <string name="setting_main_section_app_info">앱 정보</string>
+    <string name="setting_main_menu_profile">프로필 변경</string>
+    <string name="setting_main_menu_contact">1:1 문의하기</string>
+    <string name="setting_main_menu_instagram">루티 인스타그램 바로가기</string>
+    <string name="setting_main_menu_terms">이용약관</string>
+    <string name="setting_main_menu_privacy">개인정보 처리방침</string>
+    <string name="setting_main_menu_location_terms">위치기반 서비스 이용약관</string>
+    <string name="setting_main_menu_version">버전정보</string>
+    <string name="setting_main_menu_logout">로그아웃</string>
+    <string name="setting_main_menu_withdraw">회원탈퇴</string>
+    <string name="setting_main_logout_dialog_title">로그아웃하시겠습니까?</string>
+    <string name="setting_main_logout_dialog_cancel">취소</string>
+    <string name="setting_main_logout_dialog_confirm">확인</string>
+    <!-- TODO 기획 문구 확인 -->
+    <string name="setting_main_link_error">링크를 열 수 없어요.</string>
+
     <!-- 문의하기 -->
     <string name="setting_contact_button_kakao">카카오톡 문의하기</string>
     <string name="setting_contact_button_email">이메일 문의하기</string>

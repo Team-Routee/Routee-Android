@@ -19,9 +19,9 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
@@ -98,7 +98,7 @@ private class RouteeErrorTypePreviewParameterProvider : PreviewParameterProvider
     override val values = RouteeErrorType.entries.asSequence()
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun RouteeErrorScreenPreview(
     @PreviewParameter(RouteeErrorTypePreviewParameterProvider::class) type: RouteeErrorType,
