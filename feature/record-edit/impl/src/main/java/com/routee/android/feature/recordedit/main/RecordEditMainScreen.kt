@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
@@ -139,7 +138,6 @@ private fun RecordEditMainScreen(
             if (recaps is UiState.Success) {
                 RecapGrid(
                     recaps = recaps.data,
-                    selectedMonth = uiState.selectedMonth,
                     editingActivityId = uiState.editingActivityId,
                     titleEditingState = titleEditingState,
                     onRecapClick = onRecapClick,
@@ -163,7 +161,6 @@ private fun RecordEditMainScreen(
 @Composable
 private fun RecapGrid(
     recaps: ImmutableList<RecapItemUiModel>,
-    selectedMonth: YearMonth,
     editingActivityId: Long?,
     titleEditingState: TextFieldState,
     onRecapClick: (Long) -> Unit,
@@ -171,15 +168,8 @@ private fun RecapGrid(
     onEditTitleComplete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gridState = rememberLazyGridState()
-
-    LaunchedEffect(selectedMonth) {
-        gridState.scrollToItem(0)
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(RECAP_GRID_COLUMNS),
-        state = gridState,
         modifier = modifier,
         contentPadding = PaddingValues(
             start = RouteeTheme.spacing.Spacing24,
