@@ -87,6 +87,45 @@ class TokenLocalDataSourceTest {
         assertNull(tokenStore.getRefreshToken())
     }
 
+    /**
+     * GIVEN: 저장된 토큰을 한 번 읽었을 때
+     * WHEN: 다시 여러 번 읽으면
+     * THEN: 다시 복호화하지 않는다
+     */
+    @Test
+    fun `한 번 읽은 토큰은 다시 복호화하지 않는다`() = runTest {
+        val dataStore = dataStore()
+        TokenLocalDataSource(dataStore, FakeTokenCipher()).saveTokens(accessToken = "access", refreshToken = "refresh")
+        val cipher = FakeTokenCipher()
+        val tokenStore = TokenLocalDataSource(dataStore, cipher)
+
+        repeat(3) {
+            assertEquals("access", tokenStore.getAccessToken())
+            assertEquals("refresh", tokenStore.getRefreshToken())
+        }
+
+        assertEquals(2, cipher.decryptCount)
+    }
+
+    /**
+     * GIVEN: 토큰을 읽어둔 뒤
+     * WHEN: 새 토큰을 저장하거나 삭제하면
+     * THEN: 이후 읽는 값도 바뀐다
+     */
+    @Test
+    fun `저장하거나 삭제하면 읽는 값도 바뀐다`() = runTest {
+        val tokenStore = TokenLocalDataSource(dataStore(), FakeTokenCipher())
+        tokenStore.saveTokens(accessToken = "old-access", refreshToken = "old-refresh")
+        tokenStore.getAccessToken()
+
+        tokenStore.saveTokens(accessToken = "new-access", refreshToken = "new-refresh")
+        assertEquals("new-access", tokenStore.getAccessToken())
+
+        tokenStore.clearTokens()
+        assertNull(tokenStore.getAccessToken())
+        assertNull(tokenStore.getRefreshToken())
+    }
+
     private fun TestScope.dataStore(): DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = backgroundScope,
     ) {
