@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.map.RouteeNaverMap
 
 @Composable
 internal fun WorkoutMainRoute() {
@@ -18,16 +19,17 @@ internal fun WorkoutMainRoute() {
 private fun WorkoutMainScreen(
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(RouteeTheme.spacing.Spacing24),
-        verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12),
-    ) {
-        Text(
-            text = "운동",
-            style = RouteeTheme.typography.titleSb24,
-            color = RouteeTheme.colors.white,
-        )
+    // TODO #52 운동 메인 UI
+    RouteeNaverMap(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.padding(RouteeTheme.spacing.Spacing24),
+            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12),
+        ) {
+            Text(
+                text = "운동",
+                style = RouteeTheme.typography.titleSb24,
+                color = RouteeTheme.colors.white,
+            )
+        }
     }
 }
