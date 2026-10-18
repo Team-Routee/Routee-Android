@@ -10,6 +10,7 @@ import androidx.navigation3.runtime.NavKey
  */
 class RouteeNavigator internal constructor(
     private val backStack: NavBackStack<NavKey>,
+    private val homeKey: NavKey,
 ) {
     fun navigateTo(key: NavKey) {
         if (backStack.lastOrNull() == key) return
@@ -24,9 +25,12 @@ class RouteeNavigator internal constructor(
         backStack.clear()
         backStack.add(key)
     }
+
+    fun navigateToHome() = clearAndNavigateTo(homeKey)
 }
 
 @Composable
 fun rememberRouteeNavigator(
     backStack: NavBackStack<NavKey>,
-): RouteeNavigator = remember(backStack) { RouteeNavigator(backStack) }
+    homeKey: NavKey,
+): RouteeNavigator = remember(backStack, homeKey) { RouteeNavigator(backStack, homeKey) }
