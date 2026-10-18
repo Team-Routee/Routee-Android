@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
@@ -36,6 +35,7 @@ import com.routee.android.core.designsystem.component.message.LocalRouteeMessage
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.extension.clearFocus
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
@@ -217,7 +217,7 @@ private class RecordEditMainUiStatePreviewParameterProvider : PreviewParameterPr
     private fun photos(count: Int) = List(count) { "https://example.com/photo_$it.jpg" }.toImmutableList()
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun RecordEditMainScreenPreview(
     @PreviewParameter(RecordEditMainUiStatePreviewParameterProvider::class) uiState: RecordEditMainUiState,
