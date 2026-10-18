@@ -20,13 +20,13 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
 import kotlinx.coroutines.delay
@@ -125,7 +125,7 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
     }
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun RouteeLoadingOverlayPreview() {
     RouteeTheme {
