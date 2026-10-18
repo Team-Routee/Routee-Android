@@ -70,6 +70,10 @@ internal class RecordEditMainViewModel @Inject constructor() : ViewModel() {
     private fun completeTitleEdit() {
         val activityId = _uiState.value.editingActivityId ?: return
         val title = titleEditingState.text.toString()
+        if (title.isBlank()) {
+            _uiState.update { it.copy(editingActivityId = null) }
+            return
+        }
         _uiState.update { state ->
             state.copy(
                 editingActivityId = null,

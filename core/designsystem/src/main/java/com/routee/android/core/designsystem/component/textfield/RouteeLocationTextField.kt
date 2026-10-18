@@ -14,7 +14,6 @@ import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -22,14 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import com.routee.android.core.common.extension.graphemeLength
 import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
@@ -80,15 +77,7 @@ fun RouteeLocationTextField(
                 .border(RouteeTheme.border.Thickness, status.borderColor, shape)
                 .padding(RouteeTheme.spacing.Spacing16),
         )
-        Text(
-            text = stringResource(
-                R.string.designsystem_text_field_length_counter,
-                state.text.graphemeLength(),
-                LOCATION_MAX_LENGTH,
-            ),
-            style = RouteeTheme.typography.labelM14,
-            color = RouteeTheme.colors.white30,
-        )
+        RouteeTextFieldLengthCounter(state = state, maxLength = LOCATION_MAX_LENGTH)
     }
 }
 

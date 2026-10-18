@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
@@ -27,7 +26,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
@@ -37,6 +35,7 @@ import com.routee.android.core.designsystem.component.message.LocalRouteeMessage
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.extension.clearFocus
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
@@ -139,7 +138,6 @@ private fun RecordEditMainScreen(
             if (recaps is UiState.Success) {
                 RecapGrid(
                     recaps = recaps.data,
-                    selectedMonth = uiState.selectedMonth,
                     editingActivityId = uiState.editingActivityId,
                     titleEditingState = titleEditingState,
                     onRecapClick = onRecapClick,
@@ -163,7 +161,6 @@ private fun RecordEditMainScreen(
 @Composable
 private fun RecapGrid(
     recaps: ImmutableList<RecapItemUiModel>,
-    selectedMonth: YearMonth,
     editingActivityId: Long?,
     titleEditingState: TextFieldState,
     onRecapClick: (Long) -> Unit,
@@ -171,15 +168,8 @@ private fun RecapGrid(
     onEditTitleComplete: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gridState = rememberLazyGridState()
-
-    LaunchedEffect(selectedMonth) {
-        gridState.scrollToItem(0)
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(RECAP_GRID_COLUMNS),
-        state = gridState,
         modifier = modifier,
         contentPadding = PaddingValues(
             start = RouteeTheme.spacing.Spacing24,
@@ -227,7 +217,7 @@ private class RecordEditMainUiStatePreviewParameterProvider : PreviewParameterPr
     private fun photos(count: Int) = List(count) { "https://example.com/photo_$it.jpg" }.toImmutableList()
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun RecordEditMainScreenPreview(
     @PreviewParameter(RecordEditMainUiStatePreviewParameterProvider::class) uiState: RecordEditMainUiState,
