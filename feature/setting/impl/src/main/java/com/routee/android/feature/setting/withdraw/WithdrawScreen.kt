@@ -50,7 +50,6 @@ import com.routee.android.feature.setting.withdraw.model.WithdrawSideEffect
 import com.routee.android.feature.setting.withdraw.model.WithdrawUiState
 
 private val ContentTopSpacing = 27.dp
-private val ContactCardBottomPadding = 6.dp
 private val ContactItemHeight = 50.dp
 private val BottomSpacing = 28.dp
 
@@ -195,7 +194,7 @@ private fun ContactCard(
                 start = RouteeTheme.spacing.Spacing18,
                 top = RouteeTheme.spacing.Spacing18,
                 end = RouteeTheme.spacing.Spacing18,
-                bottom = ContactCardBottomPadding,
+                bottom = RouteeTheme.spacing.Spacing6,
             ),
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8),
     ) {
