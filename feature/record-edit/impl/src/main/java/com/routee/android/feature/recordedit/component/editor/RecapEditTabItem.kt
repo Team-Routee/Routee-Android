@@ -17,11 +17,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.extension.noRippleSelectable
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapEditTab
@@ -81,7 +81,7 @@ private class RecapEditTabItemPreviewParameterProvider : PreviewParameterProvide
     override val values = sequenceOf(false, true)
 }
 
-@Preview
+@PreviewFontSizes
 @Composable
 private fun RecapEditTabItemPreview(
     @PreviewParameter(RecapEditTabItemPreviewParameterProvider::class) isSelected: Boolean,
