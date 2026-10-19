@@ -89,11 +89,23 @@ private class MapLogoAboveNode(
 ) : Modifier.Node(),
     GlobalPositionAwareModifierNode,
     CompositionLocalConsumerModifierNode {
+    private var anchor: MapLogoAnchor? = null
+    private var placedBounds: Rect? = null
+
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         val anchor = currentValueOf(LocalMapLogoAnchor) ?: return
-        anchor.bounds = coordinates.boundsInRoot()
+        val bounds = coordinates.boundsInRoot()
+        this.anchor = anchor
+        placedBounds = bounds
+        anchor.bounds = bounds
         anchor.spacing = spacing
         anchor.isEnd = isEnd
         anchor.inset = inset
+    }
+
+    override fun onDetach() {
+        anchor?.let { if (it.bounds == placedBounds) it.bounds = null }
+        anchor = null
+        placedBounds = null
     }
 }
