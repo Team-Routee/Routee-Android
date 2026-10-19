@@ -18,6 +18,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -94,6 +95,7 @@ private fun WorkoutMainScreen(
                 onClick = onRecordClick,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .routeeMessageAnchor()
                     .mapLogoAbove(spacing = RouteeTheme.spacing.Spacing12),
             )
         }
