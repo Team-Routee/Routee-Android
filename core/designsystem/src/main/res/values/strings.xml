@@ -25,4 +25,8 @@
     <string name="designsystem_month_control_year_month">%1$d년 %2$d월</string>
     <string name="designsystem_month_control_previous_a11y">이전 달</string>
     <string name="designsystem_month_control_next_a11y">다음 달</string>
+
+    <!-- 사진 저장 -->
+    <string name="designsystem_photo_save_a11y">사진 저장</string>
+    <string name="designsystem_photo_saved_a11y">사진 저장됨</string>
 </resources>
