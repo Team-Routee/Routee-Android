@@ -42,7 +42,7 @@ import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.terms.model.TermsItem
@@ -62,7 +62,7 @@ internal fun TermsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
 
-    viewModel.sideEffect.collectSideEffect { sideEffect ->
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             TermsSideEffect.NavigateBack -> onNavigateBack()
 

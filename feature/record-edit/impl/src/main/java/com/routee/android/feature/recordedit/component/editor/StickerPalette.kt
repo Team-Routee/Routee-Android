@@ -9,9 +9,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.StickerType
@@ -53,7 +53,7 @@ private class StickerPalettePreviewParameterProvider : PreviewParameterProvider<
     override val values = sequenceOf(null) + StickerType.entries.asSequence()
 }
 
-@Preview(widthDp = 360)
+@PreviewFontSizes
 @Composable
 private fun StickerPalettePreview(
     @PreviewParameter(StickerPalettePreviewParameterProvider::class) selectedSticker: StickerType?,

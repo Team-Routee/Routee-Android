@@ -40,7 +40,7 @@ import com.routee.android.core.designsystem.extension.imePaddingAbove
 import com.routee.android.core.designsystem.extension.scrollToEndOnFocus
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.nickname.model.NicknameSideEffect
 import com.routee.android.feature.onboarding.nickname.model.NicknameUiState
@@ -60,7 +60,7 @@ internal fun NicknameRoute(
     val networkErrorMessage = stringResource(R.string.onboarding_network_error_toast)
     val unknownErrorMessage = stringResource(R.string.onboarding_unknown_error_toast)
 
-    viewModel.sideEffect.collectSideEffect { sideEffect ->
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             NicknameSideEffect.NavigateToHome -> onNavigateToHome()
 

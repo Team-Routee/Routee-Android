@@ -11,6 +11,12 @@
 
 Sizes: `sm`, `md`, `lg`, `xl`.
 
+## Lottie
+
+| Prefix | Location | Pattern | Example |
+| --- | --- | --- | --- |
+| `lottie_` | `core/designsystem/src/main/res/raw/` | `lottie_<name>` | `lottie_loading` |
+
 ## Strings
 
 ```xml

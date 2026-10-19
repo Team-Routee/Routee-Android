@@ -5,8 +5,9 @@
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
 | `core:common` | Kotlin utilities (`suspendRunCatching`) |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
+| `core:map` | `RouteeNaverMap`, `RouteeMapState`, `MapPoint`. Naver Map SDK stays inside (`implementation`). Only features that show a map depend on it |
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
-| `core:ui` | `UiState` and other shared UI code |
+| `core:ui` | `UiState`, `CollectSideEffect`, shared screen-level UI (loading, error). Uses `core:designsystem` |
 | `core:data` | Repository, DataSource, DTO, model |
 | `core:network` | Retrofit, `ApiResponseHandler`, `ApiException` |
 | `feature:<x>:api` | `NavKey`, result types |
@@ -36,6 +37,7 @@ dependencies {
 | Component shared within a feature | `feature/<x>/impl/.../component/` |
 | Entry builder | `feature/<x>/impl/.../navigation/<X>EntryBuilder.kt` |
 | Component used in 2+ features | `core/designsystem/.../component/` |
+| Screen-level UI used in 2+ features (loading, error) | `core/ui/.../<name>/` |
 | Modifier extension | `core/designsystem/.../extension/ModifierExt.kt` |
 | Feature strings | `feature/<x>/impl/src/main/res/values/strings.xml` |
 | Repository, DTO, model | `core/data/.../<domain>/` |

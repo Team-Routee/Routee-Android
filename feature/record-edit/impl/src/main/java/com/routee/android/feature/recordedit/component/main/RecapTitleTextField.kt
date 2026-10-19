@@ -11,27 +11,30 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.extension.noRippleClickable
@@ -47,7 +50,7 @@ private const val RECAP_TITLE_MAX_LENGTH = 16
  * @param title 저장된 제목. 편집 중이 아닐 때 표시한다
  * @param editingState 편집 중인 제목 상태. null이면 편집 중이 아니다
  * @param onEditClick 연필 아이콘 클릭 시 호출. 호출하는 쪽에서 [editingState]를 만들어 넘긴다
- * @param onEditComplete 키보드 완료 버튼 클릭 시 호출
+ * @param onEditComplete 편집이 끝났을 때 호출. 키보드 완료 버튼이나 다른 곳을 눌러 입력창 포커스가 빠지면 끝난다
  */
 @Composable
 internal fun RecapTitleTextField(
@@ -104,11 +107,8 @@ private fun RecapTitleDisplay(
             contentDescription = null,
             tint = Color.Unspecified,
             modifier = Modifier
-                .noRippleClickable(onClick = onEditClick)
-                .semantics {
-                    role = Role.Button
-                    contentDescription = editDescription
-                },
+                .noRippleClickable(role = Role.Button, onClick = onEditClick)
+                .semantics { contentDescription = editDescription },
         )
     }
 }
@@ -120,7 +120,9 @@ private fun RecapTitleEditor(
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
     val underlineColor = RouteeTheme.colors.statusInfo
+    var hasFocused by remember { mutableStateOf(false) }
 
     LaunchedEffect(focusRequester) {
         focusRequester.requestFocus()
@@ -131,10 +133,17 @@ private fun RecapTitleEditor(
         textStyle = RouteeTheme.typography.bodySb14,
         maxLength = RECAP_TITLE_MAX_LENGTH,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        onKeyboardAction = { onEditComplete() },
+        onKeyboardAction = { focusManager.clearFocus() },
         modifier = modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    hasFocused = true
+                } else if (hasFocused) {
+                    onEditComplete()
+                }
+            }
             .drawBehind {
                 val strokeWidth = RouteeTheme.border.Thickness.toPx()
                 val y = size.height - strokeWidth / 2

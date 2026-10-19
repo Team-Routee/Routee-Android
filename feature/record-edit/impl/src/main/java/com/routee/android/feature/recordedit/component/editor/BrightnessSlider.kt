@@ -29,11 +29,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
@@ -221,7 +221,7 @@ private class BrightnessSliderPreviewParameterProvider : PreviewParameterProvide
     override val values = sequenceOf(0f, 0.5f, 1f)
 }
 
-@Preview(widthDp = 360)
+@PreviewFontSizes
 @Composable
 private fun BrightnessSliderPreview(
     @PreviewParameter(BrightnessSliderPreviewParameterProvider::class) value: Float,

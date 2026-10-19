@@ -2,16 +2,20 @@ package com.routee.android.core.data.auth.repository
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.routee.android.core.data.auth.exception.AuthException
+import com.routee.android.core.data.auth.local.FakeTokenCipher
 import com.routee.android.core.data.auth.local.TokenLocalDataSource
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
+import com.routee.android.core.data.auth.remote.dto.request.LogoutRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
 import com.routee.android.core.data.auth.remote.dto.response.TokenResponse
 import com.routee.android.core.data.auth.remote.service.AuthService
+import com.routee.android.core.data.auth.remote.service.LogoutService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.model.BaseResponse
+import com.routee.android.core.network.session.AuthSessionManager
 import com.routee.android.core.network.util.ApiResponseHandler
 import java.io.File
 import java.io.IOException
@@ -193,18 +197,79 @@ class AuthRepositoryImplTest {
         assertTrue(result.exceptionOrNull() is AuthException.NetworkUnavailable)
     }
 
+    /**
+     * GIVEN: 로그인된 상태일 때
+     * WHEN: 로그아웃하면
+     * THEN: Refresh Token으로 로그아웃 API를 호출하고 저장된 토큰을 지운다
+     */
+    @Test
+    fun `로그아웃하면 서버에 알리고 토큰을 지운다`() = runTest {
+        val tokenStore = loggedInTokenStore()
+        val logoutService = FakeLogoutService()
+        val repository = repository(FakeAuthService(), tokenStore, logoutService)
+
+        val result = repository.logout()
+
+        assertTrue(result.isSuccess)
+        assertEquals("refresh", logoutService.lastRequest?.refreshToken)
+        assertNull(tokenStore.getAccessToken())
+        assertNull(tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: 로그아웃 API가 실패할 때
+     * WHEN: 로그아웃하면
+     * THEN: 저장된 토큰은 지우고 성공한다
+     */
+    @Test
+    fun `로그아웃 API가 실패해도 토큰을 지운다`() = runTest {
+        val tokenStore = loggedInTokenStore()
+        val logoutService = FakeLogoutService(onLogout = { throw IOException() })
+        val repository = repository(FakeAuthService(), tokenStore, logoutService)
+
+        val result = repository.logout()
+
+        assertTrue(result.isSuccess)
+        assertNull(tokenStore.getAccessToken())
+        assertNull(tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: 저장된 Refresh Token이 없을 때
+     * WHEN: 로그아웃하면
+     * THEN: 로그아웃 API를 호출하지 않고 성공한다
+     */
+    @Test
+    fun `Refresh Token이 없으면 로그아웃 API를 호출하지 않는다`() = runTest {
+        val logoutService = FakeLogoutService()
+        val repository = repository(FakeAuthService(), tokenStore(), logoutService)
+
+        val result = repository.logout()
+
+        assertTrue(result.isSuccess)
+        assertNull(logoutService.lastRequest)
+    }
+
+    private suspend fun TestScope.loggedInTokenStore() = tokenStore().apply {
+        saveTokens(accessToken = "access", refreshToken = "refresh")
+    }
+
     private fun TestScope.tokenStore() = TokenLocalDataSource(
         PreferenceDataStoreFactory.create(scope = backgroundScope) {
             File(temporaryFolder.newFolder(), "token.preferences_pb")
         },
+        FakeTokenCipher(),
     )
 
     private fun TestScope.repository(
         authService: AuthService,
         tokenStore: TokenLocalDataSource = tokenStore(),
+        logoutService: LogoutService = FakeLogoutService(),
     ) = AuthRepositoryImpl(
         authService = authService,
+        logoutService = logoutService,
         tokenLocalDataSource = tokenStore,
+        authSessionManager = AuthSessionManager(tokenStore),
         apiResponseHandler = ApiResponseHandler(Json { ignoreUnknownKeys = true }),
     )
 
@@ -231,6 +296,17 @@ class AuthRepositoryImplTest {
         override suspend fun login(request: LoginRequest): BaseResponse<TokenResponse> = onLogin()
 
         override suspend fun register(request: RegisterRequest) = onRegister()
+    }
+
+    private class FakeLogoutService(
+        private val onLogout: () -> Unit = {},
+    ) : LogoutService {
+        var lastRequest: LogoutRequest? = null
+
+        override suspend fun logout(request: LogoutRequest) {
+            lastRequest = request
+            onLogout()
+        }
     }
 
     private companion object {

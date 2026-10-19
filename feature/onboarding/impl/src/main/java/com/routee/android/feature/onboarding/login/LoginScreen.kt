@@ -44,7 +44,7 @@ import com.routee.android.core.designsystem.component.message.RouteeMessageDurat
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.core.ui.collectSideEffect
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
@@ -75,7 +75,7 @@ internal fun LoginRoute(
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
     var isRequestingIdToken by remember { mutableStateOf(false) }
 
-    viewModel.sideEffect.collectSideEffect { sideEffect ->
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             LoginSideEffect.NavigateToHome -> onNavigateToHome()
 

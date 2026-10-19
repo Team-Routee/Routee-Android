@@ -1,8 +1,10 @@
 package com.routee.android.core.data.di
 
 import com.routee.android.core.data.auth.remote.service.AuthService
+import com.routee.android.core.data.auth.remote.service.LogoutService
 import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.core.data.auth.repository.AuthRepositoryImpl
+import com.routee.android.core.network.di.Auth
 import com.routee.android.core.network.di.NoAuth
 import dagger.Binds
 import dagger.Module
@@ -26,5 +28,11 @@ internal abstract class AuthModule {
         fun provideAuthService(
             @NoAuth retrofit: Retrofit,
         ): AuthService = retrofit.create()
+
+        @Provides
+        @Singleton
+        fun provideLogoutService(
+            @Auth retrofit: Retrofit,
+        ): LogoutService = retrofit.create()
     }
 }

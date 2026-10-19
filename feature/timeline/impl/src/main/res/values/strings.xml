@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 나의 루트 편집 -->
+    <string name="timeline_route_title">나의 루트</string>
+    <string name="timeline_route_point_count">(%1$d/%2$d)</string>
+    <string name="timeline_route_add_point">지점 추가</string>
+    <string name="timeline_route_point_placeholder">지점을 입력해주세요</string>
+    <string name="timeline_route_drag_handle_a11y">%1$d번 지점 순서 변경</string>
+    <string name="timeline_route_remove_point_a11y">%1$d번 지점 삭제</string>
+</resources>
