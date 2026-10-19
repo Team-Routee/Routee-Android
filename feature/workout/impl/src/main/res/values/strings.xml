@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 운동 메인 -->
+    <string name="workout_main_record">운동 기록</string>
+    <string name="workout_main_location_permission_required">위치 권한 허용이 필요합니다.</string>
+    <string name="workout_main_my_location_a11y">내 위치로 이동</string>
     <string name="workout_main_control_stop">정지</string>
     <string name="workout_main_control_restart">다시 시작</string>
     <string name="workout_main_metric_distance">거리</string>

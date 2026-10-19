@@ -8,6 +8,6 @@ import com.routee.android.feature.workout.main.WorkoutMainRoute
 
 fun EntryProviderScope<NavKey>.workoutEntries(navigator: RouteeNavigator) {
     entry<WorkoutMainNavKey> {
-        WorkoutMainRoute()
+        WorkoutMainRoute(onRecordClick = {})
     }
 }
