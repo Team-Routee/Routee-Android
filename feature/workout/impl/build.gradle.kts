@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(projects.feature.workout.api)
+    implementation(projects.core.map)
 }

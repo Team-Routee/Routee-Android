@@ -37,7 +37,7 @@ reviews:
 
   path_instructions:
     - path: "{feature,core}/**/*.kt"
-      instructions: "색상·크기·글꼴은 하드코딩하지 않고 RouteeTheme 토큰을 쓴다."
+      instructions: "색상·글꼴은 하드코딩하지 않고 RouteeTheme 토큰을 쓴다."
     - path: "feature/**"
       instructions: "feature의 impl 모듈은 다른 feature의 impl에 의존하지 않는다. 다른 feature로 이동할 때는 그 feature의 api 모듈에만 의존한다."
     - path: "**/*.gradle.kts"

@@ -49,6 +49,7 @@ jobs:
             echo "test.base.url=https://localhost/"
             echo "prod.base.url=https://localhost/"
             echo "google.web.client.id=unused"
+            echo "naver.map.client.id=unused"
           } > local.properties
 
       - name: Lint

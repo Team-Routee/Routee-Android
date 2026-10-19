@@ -24,6 +24,7 @@ android {
         applicationId = "com.routee.android"
         versionCode = libs.versions.versionCode.get().toInt()
         versionName = libs.versions.versionName.get()
+        manifestPlaceholders["naverMapClientId"] = localProperty("naver.map.client.id")
     }
 
     signingConfigs {

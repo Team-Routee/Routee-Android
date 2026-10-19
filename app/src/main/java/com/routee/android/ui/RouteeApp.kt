@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPopTransitionSpec
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageHost
 import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
@@ -85,6 +86,7 @@ private fun RouteeNavDisplay(
         backStack = backStack,
         modifier = modifier.fillMaxSize(),
         onBack = navigator::navigateBack,
+        predictivePopTransitionSpec = { defaultPopTransitionSpec<NavKey>()(this) },
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
