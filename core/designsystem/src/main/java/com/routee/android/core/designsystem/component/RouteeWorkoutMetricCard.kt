@@ -42,7 +42,10 @@ fun RouteeWorkoutMetricCard(
                 color = RouteeTheme.colors.black60,
                 shape = RoundedCornerShape(RouteeTheme.radius.Radius12),
             )
-            .padding(vertical = RouteeTheme.spacing.Spacing16),
+            .padding(
+                top = RouteeTheme.spacing.Spacing18,
+                bottom = RouteeTheme.spacing.Spacing16,
+            ),
         horizontalArrangement = Arrangement.spacedBy(MetricItemSpacing, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
