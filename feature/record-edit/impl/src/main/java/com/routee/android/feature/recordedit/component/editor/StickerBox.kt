@@ -229,7 +229,6 @@ private val StickerHandle.alignment: Alignment
         StickerHandle.BOTTOM_END -> Alignment.BottomEnd
     }
 
-// 측정할 때 정한 위치를 제스처에서 읽는다
 private class StickerBounds {
     var rect: Rect = Rect.Zero
         private set

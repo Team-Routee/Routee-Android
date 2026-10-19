@@ -35,7 +35,6 @@ internal data class RecapEditorUiState(
 ) {
     val overlayOpacity: Float get() = RecapBrightness.overlayOpacity(brightness, baseOpacity)
 
-    // 처음 상태와 다른지. 스티커 쌓인 순서는 보지 않는다
     val hasChanges: Boolean
         get() = brightness != RecapBrightness.DEFAULT_SLIDER_VALUE ||
             recapColor != RecapColor.DEFAULT ||

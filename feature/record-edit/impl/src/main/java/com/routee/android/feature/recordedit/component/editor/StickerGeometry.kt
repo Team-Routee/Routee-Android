@@ -18,7 +18,6 @@ internal enum class StickerHandle {
  * 스티커 이동, 크기 조절 계산 (RT-EDIT-007). 모든 값은 dp
  */
 internal object StickerGeometry {
-    // 캔버스 밖으로 옮겨도 항상 남는 길이
     const val MIN_VISIBLE_LENGTH = 20f
     private const val MIN_SCALE = 0.01f
 
