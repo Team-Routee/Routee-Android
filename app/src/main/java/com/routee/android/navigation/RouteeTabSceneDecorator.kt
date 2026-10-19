@@ -126,7 +126,7 @@ private fun TabExitBackHandler(enabled: Boolean) {
     val messageState = LocalRouteeMessageState.current
     val activity = LocalActivity.current
     val exitText = stringResource(R.string.tab_exit_toast)
-    var lastBackPressedAt by remember { mutableLongStateOf(0L) }
+    var lastBackPressedAt by remember(enabled) { mutableLongStateOf(0L) }
 
     BackHandler(enabled = enabled) {
         val now = SystemClock.elapsedRealtime()
