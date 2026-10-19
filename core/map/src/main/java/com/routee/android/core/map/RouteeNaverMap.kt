@@ -67,8 +67,9 @@ fun RouteeNaverMap(
     onMarkerClick: (String) -> Unit = {},
     content: (@Composable BoxScope.() -> Unit)? = null,
 ) {
-    val logoAnchor = if (content == null) null else remember { MapLogoAnchor() }
-    val map = @Composable { mapModifier: Modifier ->
+    val logoAnchor = remember { MapLogoAnchor() }
+
+    Box(modifier = modifier) {
         NaverMapView(
             state = state,
             myLocation = myLocation,
@@ -77,16 +78,11 @@ fun RouteeNaverMap(
             markers = markers,
             logoAnchor = logoAnchor,
             onMarkerClick = onMarkerClick,
-            modifier = mapModifier,
+            modifier = Modifier.matchParentSize(),
         )
-    }
-    if (content == null) {
-        map(modifier)
-        return
-    }
-    Box(modifier = modifier) {
-        map(Modifier.matchParentSize())
-        CompositionLocalProvider(LocalMapLogoAnchor provides logoAnchor) { content() }
+        CompositionLocalProvider(LocalMapLogoAnchor provides logoAnchor) {
+            content?.invoke(this@Box)
+        }
     }
 }
 
@@ -114,20 +110,24 @@ private fun NaverMapView(
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapBounds by remember { mutableStateOf<Rect?>(null) }
     val locationSource = remember { MapLocationSource() }
-    // 지도는 한 번만 만들고, 준비되면 연결
+    // 지도는 한 번만 만듦
     val mapView = remember {
         MapView(context, routeeMapOptions(state.initialCamera)).apply {
             getMapAsync {
                 it.locationSource = locationSource
-                state.attach(it, density)
                 naverMap = it
             }
         }
     }
 
-    // 생명주기 전달, 화면에서 빠지면 상태 연결 해제
+    // 생명주기 전달
     MapViewLifecycle(mapView = mapView, savedState = savedState, onSave = { savedState = it })
-    DisposableEffect(state) { onDispose { state.detach() } }
+
+    // 지도 준비되면 상태 연결
+    DisposableEffect(state, naverMap, density) {
+        naverMap?.let { state.attach(it, density) }
+        onDispose { state.detach() }
+    }
 
     // 지도 준비 뒤 내 위치, 경로선, 마커 반영
     naverMap?.let { map ->

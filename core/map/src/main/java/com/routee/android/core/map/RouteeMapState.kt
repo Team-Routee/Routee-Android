@@ -138,7 +138,8 @@ class RouteeMapState internal constructor(
     }
 
     internal fun detach() {
-        map?.removeOnCameraChangeListener(cameraChangeListener)
+        val attached = map ?: return
+        attached.removeOnCameraChangeListener(cameraChangeListener)
         map = null
         mapReady = CompletableDeferred()
     }
