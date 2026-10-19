@@ -38,12 +38,6 @@ import com.routee.android.feature.recordedit.editor.model.StickerFrame
 
 // sticker_bounding_box
 private val BorderWidth = 1.dp
-private val HandleSize = 8.dp
-private val HandleTouchSize = 24.dp
-private val DeleteButtonSize = 24.dp
-
-// 모서리 핸들과 삭제 버튼이 스티커 밖으로 나가는 만큼
-private val DecorationMargin = 12.dp
 
 /**
  * 캔버스 위 스티커 틀 (sticker_bounding_box)
@@ -133,7 +127,7 @@ internal fun StickerBox(
         val top = rect.top.dp.roundToPx()
         val width = rect.width.dp.roundToPx()
         val height = rect.height.dp.roundToPx()
-        val margin = DecorationMargin.roundToPx()
+        val margin = RouteeTheme.spacing.Spacing12.roundToPx()
         val scale = frame?.scale ?: 1f
         val touchPlaceable = touchMeasurables.first().measure(Constraints.fixed(width, height))
         val decorationPlaceables = decorationMeasurables.map {
@@ -164,7 +158,7 @@ private fun StickerDecoration(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(DecorationMargin)
+                .padding(RouteeTheme.spacing.Spacing12)
                 .border(BorderWidth, RouteeTheme.colors.statusInfo),
         )
         StickerHandle.entries.forEach { handle ->
@@ -177,7 +171,7 @@ private fun StickerDecoration(
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .size(DeleteButtonSize)
+                .size(RouteeTheme.spacing.Spacing24)
                 .clip(CircleShape)
                 .background(RouteeTheme.colors.statusInfo)
                 .noRippleClickable(role = Role.Button, onClick = onDeleteClick),
@@ -201,7 +195,7 @@ private fun BoxScope.ResizeHandle(
     Box(
         modifier = Modifier
             .align(alignment)
-            .size(HandleTouchSize)
+            .size(RouteeTheme.spacing.Spacing24)
             .pointerInput(Unit) {
                 var start = Rect.Zero
                 var drag = Offset.Zero
@@ -221,7 +215,7 @@ private fun BoxScope.ResizeHandle(
     ) {
         Box(
             modifier = Modifier
-                .size(HandleSize)
+                .size(RouteeTheme.spacing.Spacing8)
                 .background(RouteeTheme.colors.white)
                 .border(BorderWidth, RouteeTheme.colors.statusInfo),
         )

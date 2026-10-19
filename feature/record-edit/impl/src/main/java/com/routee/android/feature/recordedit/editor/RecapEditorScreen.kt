@@ -18,7 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
@@ -54,8 +53,6 @@ import com.routee.android.feature.recordedit.model.StickerType
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
 // btn_reset_recap 위치
-private val ResetButtonStart = 16.dp
-private val ResetButtonBottom = 18.dp
 
 @Composable
 internal fun RecapEditorRoute(
@@ -245,7 +242,7 @@ private fun RecapEditorContent(
                             onClick = onResetClick,
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .padding(start = ResetButtonStart, bottom = ResetButtonBottom),
+                                .padding(start = RouteeTheme.spacing.Spacing16, bottom = RouteeTheme.spacing.Spacing18),
                         )
                     }
                 }
