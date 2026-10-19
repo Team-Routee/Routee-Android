@@ -31,6 +31,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.link.RouteeLink
 import com.routee.android.core.ui.link.tryOpenUri
+import com.routee.android.core.ui.link.tryOpenUriInNativeApp
 import com.routee.android.feature.setting.R
 import com.routee.android.feature.setting.component.main.SettingMenuItem
 import com.routee.android.feature.setting.component.main.SettingSection
@@ -68,6 +69,11 @@ internal fun SettingRoute(
         onProfileClick = onProfileClick,
         onContactClick = onContactClick,
         onLinkClick = { url -> if (!uriHandler.tryOpenUri(url)) messageState.showToast(text = linkErrorText) },
+        onInstagramClick = {
+            val url = RouteeLink.INSTAGRAM.url
+            val opened = context.tryOpenUriInNativeApp(url) || uriHandler.tryOpenUri(url)
+            if (!opened) messageState.showToast(text = linkErrorText)
+        },
         onLogoutClick = viewModel::onLogoutClick,
         onLogoutConfirm = viewModel::onLogoutConfirm,
         onLogoutDismiss = viewModel::onLogoutDismiss,
@@ -82,6 +88,7 @@ private fun SettingScreen(
     onProfileClick: () -> Unit,
     onContactClick: () -> Unit,
     onLinkClick: (String) -> Unit,
+    onInstagramClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onLogoutConfirm: () -> Unit,
     onLogoutDismiss: () -> Unit,
@@ -112,7 +119,7 @@ private fun SettingScreen(
                         )
                         SettingMenuItem(
                             title = stringResource(R.string.setting_main_menu_instagram),
-                            onClick = { onLinkClick(RouteeLink.INSTAGRAM.url) },
+                            onClick = onInstagramClick,
                         )
                     }
                     SettingSection(title = stringResource(R.string.setting_main_section_policy)) {
@@ -172,6 +179,7 @@ private fun SettingScreenPreview() {
             onProfileClick = {},
             onContactClick = {},
             onLinkClick = {},
+            onInstagramClick = {},
             onLogoutClick = {},
             onLogoutConfirm = {},
             onLogoutDismiss = {},
