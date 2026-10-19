@@ -153,7 +153,6 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     }
 
     fun onResetConfirm() {
-        // 첫 화면으로 되돌린다 (RT-EDIT-004)
         _uiState.update { RecapEditorUiState(content = it.content) }
     }
 

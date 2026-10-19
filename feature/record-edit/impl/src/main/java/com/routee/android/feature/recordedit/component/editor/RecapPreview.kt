@@ -37,7 +37,7 @@ import kotlinx.collections.immutable.persistentListOf
 private const val RECORD_STICKER_LEFT = 32f
 private const val RECORD_STICKER_TOP = 80f
 
-// sticker_bounding_box 테두리와 내용 사이 여백
+// sticker_bounding_box
 private const val STICKER_INSET = 12f
 
 /**
@@ -136,7 +136,6 @@ internal fun RecapPreview(
     }
 }
 
-// 루트는 처음부터 가운데 (RT-EDIT-007)
 private fun StickerType.initialPosition(timelineLayout: PhotoTimelineStickerLayout?): Offset? = when (this) {
     StickerType.WORKOUT_RECORD -> Offset(RECORD_STICKER_LEFT - STICKER_INSET, RECORD_STICKER_TOP - STICKER_INSET)
     StickerType.PHOTO_TIMELINE -> timelineLayout?.position

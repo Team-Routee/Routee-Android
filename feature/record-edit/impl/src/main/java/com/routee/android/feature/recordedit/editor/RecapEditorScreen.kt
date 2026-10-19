@@ -57,7 +57,7 @@ import com.routee.android.feature.recordedit.model.StickerType
 // recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
-// btn_reset_recap 위치
+// btn_reset_recap
 
 @Composable
 internal fun RecapEditorRoute(
@@ -256,7 +256,6 @@ private fun RecapEditorContent(
                         onStickerDeleteClick = onStickerDeleteClick,
                         modifier = Modifier.fillMaxSize(),
                     )
-                    // 하단 보조 메뉴가 열려 있으면 숨긴다 (RT-EDIT-004)
                     if (uiState.selectedTab == null) {
                         RecapResetButton(
                             enabled = uiState.hasChanges,
