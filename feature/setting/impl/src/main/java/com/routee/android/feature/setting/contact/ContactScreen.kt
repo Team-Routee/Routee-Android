@@ -21,11 +21,11 @@ import com.routee.android.core.designsystem.component.message.LocalRouteeMessage
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.core.ui.link.RouteeLink
-import com.routee.android.core.ui.link.tryOpenUri
 import com.routee.android.feature.setting.R
 import com.routee.android.feature.setting.component.contact.ContactButton
 import com.routee.android.feature.setting.component.contact.ContactButtonType
+import com.routee.android.feature.setting.component.contact.tryOpenContactEmail
+import com.routee.android.feature.setting.component.contact.tryOpenKakaoChannel
 
 private val ContentTopSpacing = 27.dp
 
@@ -39,14 +39,8 @@ internal fun ContactRoute(
 
     ContactScreen(
         onBackClick = onBackClick,
-        onKakaoClick = {
-            val opened = uriHandler.tryOpenUri(RouteeLink.KAKAO_CHANNEL_APP.url) ||
-                uriHandler.tryOpenUri(RouteeLink.KAKAO_CHANNEL.url)
-            if (!opened) messageState.showToast(text = linkErrorText)
-        },
-        onEmailClick = {
-            if (!uriHandler.tryOpenUri(RouteeLink.CONTACT_EMAIL.url)) messageState.showToast(text = linkErrorText)
-        },
+        onKakaoClick = { if (!uriHandler.tryOpenKakaoChannel()) messageState.showToast(text = linkErrorText) },
+        onEmailClick = { if (!uriHandler.tryOpenContactEmail()) messageState.showToast(text = linkErrorText) },
     )
 }
 
