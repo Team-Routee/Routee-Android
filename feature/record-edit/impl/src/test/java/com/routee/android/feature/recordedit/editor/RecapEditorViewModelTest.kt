@@ -1,6 +1,7 @@
 package com.routee.android.feature.recordedit.editor
 
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
+import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
 import com.routee.android.feature.recordedit.editor.model.RecapSticker
 import com.routee.android.feature.recordedit.editor.model.StickerFrame
@@ -111,6 +112,54 @@ class RecapEditorViewModelTest {
 
         assertEquals(RecapEditorUiState(content = state.content), state)
         assertFalse(state.hasChanges)
+    }
+
+    /**
+     * GIVEN: 밝기를 바꾼 뒤
+     * WHEN: 배경을 사진으로 바꾸면
+     * THEN: 밝기는 초기화되고 사진 기본 투명도(40%)가 적용되며 탭이 닫힌다
+     */
+    @Test
+    fun `배경을 바꾸면 밝기가 초기화되고 사진 기본 투명도가 적용된다`() {
+        viewModel.onBrightnessChange(0.2f)
+
+        viewModel.onBackgroundCropComplete("content://background")
+
+        assertEquals("content://background", state.backgroundUri)
+        assertEquals(RecapBrightness.PHOTO_BASE_OPACITY, state.baseOpacity)
+        assertEquals(RecapBrightness.DEFAULT_SLIDER_VALUE, state.brightness)
+        assertNull(state.selectedTab)
+        assertTrue(state.hasChanges)
+    }
+
+    /**
+     * GIVEN: 스티커를 옮긴 뒤
+     * WHEN: 배경을 바꾸면
+     * THEN: 스티커 위치는 그대로다
+     */
+    @Test
+    fun `배경을 바꿔도 스티커 위치는 유지된다`() {
+        val frame = StickerFrame(x = 10f, y = 10f, scale = 2f)
+        viewModel.onStickerFrameChange(StickerType.WORKOUT_RECORD, frame)
+
+        viewModel.onBackgroundCropComplete("content://background")
+
+        assertEquals(frame, state.stickers.first { it.type == StickerType.WORKOUT_RECORD }.frame)
+    }
+
+    /**
+     * GIVEN: 배경을 사진으로 바꾼 뒤
+     * WHEN: 초기화하면
+     * THEN: 지도 배경과 지도 기본 투명도로 돌아간다
+     */
+    @Test
+    fun `초기화하면 지도 배경으로 돌아간다`() {
+        viewModel.onBackgroundCropComplete("content://background")
+
+        viewModel.onResetConfirm()
+
+        assertNull(state.backgroundUri)
+        assertEquals(RecapBrightness.MAP_BASE_OPACITY, state.baseOpacity)
     }
 
     /**

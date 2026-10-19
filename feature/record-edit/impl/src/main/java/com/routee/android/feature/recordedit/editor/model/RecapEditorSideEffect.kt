@@ -4,4 +4,6 @@ internal sealed interface RecapEditorSideEffect {
     data object NavigateBack : RecapEditorSideEffect
 
     data object ShowNoRouteToast : RecapEditorSideEffect
+
+    data object LaunchPhotoPicker : RecapEditorSideEffect
 }

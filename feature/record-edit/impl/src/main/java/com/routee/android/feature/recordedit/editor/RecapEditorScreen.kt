@@ -1,6 +1,9 @@
 package com.routee.android.feature.recordedit.editor
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -19,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.ResultEffect
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
@@ -34,6 +38,7 @@ import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.recordedit.R
+import com.routee.android.feature.recordedit.background.RecapBackgroundCropResult
 import com.routee.android.feature.recordedit.component.editor.BrightnessSlider
 import com.routee.android.feature.recordedit.component.editor.ColorPalette
 import com.routee.android.feature.recordedit.component.editor.RecapEditNavBar
@@ -59,15 +64,31 @@ internal fun RecapEditorRoute(
     viewModel: RecapEditorViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToBackgroundCrop: (imageUri: String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val messageState = LocalRouteeMessageState.current
     val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
+    val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) viewModel.onPhotoPickerCancel() else onNavigateToBackgroundCrop(uri.toString())
+    }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             RecapEditorSideEffect.NavigateBack -> onNavigateBack()
+
             RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
+
+            RecapEditorSideEffect.LaunchPhotoPicker -> photoPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        }
+    }
+
+    ResultEffect<RecapBackgroundCropResult> { result ->
+        when (result) {
+            is RecapBackgroundCropResult.Complete -> viewModel.onBackgroundCropComplete(result.imageUri)
+            RecapBackgroundCropResult.Cancel -> viewModel.onBackgroundCropCancel()
         }
     }
 
@@ -221,7 +242,7 @@ private fun RecapEditorContent(
                         .aspectRatio(PREVIEW_ASPECT_RATIO),
                 ) {
                     RecapPreview(
-                        backgroundUrl = content.mapImageUrl,
+                        backgroundUrl = uiState.backgroundUri ?: content.mapImageUrl,
                         overlayOpacity = uiState.overlayOpacity,
                         recapColor = uiState.recapColor,
                         record = content.record,

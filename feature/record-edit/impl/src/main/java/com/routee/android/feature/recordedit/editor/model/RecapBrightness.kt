@@ -11,6 +11,8 @@ internal object RecapBrightness {
     // 배경이 기본 지도일 때
     const val MAP_BASE_OPACITY = 0.5f
 
+    const val PHOTO_BASE_OPACITY = 0.4f
+
     fun overlayOpacity(
         sliderValue: Float,
         baseOpacity: Float,

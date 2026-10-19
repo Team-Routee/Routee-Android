@@ -13,6 +13,7 @@ import kotlinx.collections.immutable.persistentListOf
  *
  * @param content                   편집할 기록. GET /recap, /track 응답
  * @param selectedTab               하단 편집 탭. 처음에는 모두 미선택
+ * @param backgroundUri             배경으로 고른 사진. null 이면 서버 지도 이미지
  * @param brightness                밝기 슬라이더 값 (0~1)
  * @param baseOpacity               밝기 기본값일 때 배경 위 검은 레이어 투명도 (지도 50%, 사진 40%)
  * @param recapColor                스티커 색
@@ -25,6 +26,7 @@ import kotlinx.collections.immutable.persistentListOf
 internal data class RecapEditorUiState(
     val content: UiState<RecapEditorContent> = UiState.Loading,
     val selectedTab: RecapEditTab? = null,
+    val backgroundUri: String? = null,
     val brightness: Float = RecapBrightness.DEFAULT_SLIDER_VALUE,
     val baseOpacity: Float = RecapBrightness.MAP_BASE_OPACITY,
     val recapColor: RecapColor = RecapColor.DEFAULT,
@@ -37,7 +39,8 @@ internal data class RecapEditorUiState(
 
     // 처음 상태와 다른지. 스티커 쌓인 순서는 보지 않는다
     val hasChanges: Boolean
-        get() = brightness != RecapBrightness.DEFAULT_SLIDER_VALUE ||
+        get() = backgroundUri != null ||
+            brightness != RecapBrightness.DEFAULT_SLIDER_VALUE ||
             recapColor != RecapColor.DEFAULT ||
             stickers.associateBy { it.type } != INITIAL_STICKERS.associateBy { it.type }
 
