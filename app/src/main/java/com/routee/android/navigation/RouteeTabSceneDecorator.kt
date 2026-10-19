@@ -56,13 +56,14 @@ private class RouteeTabSceneDecorator(
             .asReversed()
             .firstNotNullOfOrNull(RouteeTab::find)
             ?: return scene
-        return RouteeTabScene(scene, currentTab, navigator)
+        return RouteeTabScene(scene, currentTab, backStack, navigator)
     }
 }
 
 private class RouteeTabScene(
     private val delegate: Scene<NavKey>,
     private val currentTab: RouteeTab,
+    private val backStack: List<NavKey>,
     private val navigator: RouteeNavigator,
 ) : Scene<NavKey> {
     override val key: Any get() = delegate.key
@@ -71,7 +72,7 @@ private class RouteeTabScene(
     override val metadata get() = delegate.metadata
 
     override val content: @Composable () -> Unit = {
-        TabExitBackHandler()
+        TabExitBackHandler(enabled = backStack.lastOrNull() == currentTab.navKey)
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
@@ -121,13 +122,13 @@ private fun RouteeBottomBar(
 }
 
 @Composable
-private fun TabExitBackHandler() {
+private fun TabExitBackHandler(enabled: Boolean) {
     val messageState = LocalRouteeMessageState.current
     val activity = LocalActivity.current
     val exitText = stringResource(R.string.tab_exit_toast)
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
 
-    BackHandler {
+    BackHandler(enabled = enabled) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackPressedAt < RouteeMessageDuration.SHORT.millis) {
             activity?.finish()
