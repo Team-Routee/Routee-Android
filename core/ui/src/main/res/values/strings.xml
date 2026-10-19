@@ -10,4 +10,7 @@
     <string name="ui_error_unknown_description">예상치 못한 문제가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
     <string name="ui_error_retry_button">다시 시도</string>
     <string name="ui_error_home_button">홈으로 이동</string>
+
+    <!-- 이미지 자르기 -->
+    <string name="ui_image_crop_confirm">확인</string>
 </resources>
