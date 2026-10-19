@@ -3,6 +3,11 @@ package com.routee.android.feature.workout.recording
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,18 +24,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.main.MyLocationButton
 import com.routee.android.feature.workout.component.main.WorkoutStopButton
@@ -43,6 +52,7 @@ import kotlin.math.roundToInt
 
 private val MetricTopSpacing = 24.dp
 private val ControlBottomSpacing = 28.dp
+private const val COUNTDOWN_FADE_OUT_MILLIS = 300
 
 @Composable
 internal fun WorkoutRecordingRoute(
@@ -50,7 +60,7 @@ internal fun WorkoutRecordingRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    RecordingExitBackHandler()
+    RecordingExitBackHandler(enabled = !uiState.isCountingDown)
 
     WorkoutRecordingScreen(
         uiState = uiState,
@@ -60,6 +70,7 @@ internal fun WorkoutRecordingRoute(
         onStopClick = {},
         // TODO 카메라 권한 확인 후 촬영
         onCameraClick = {},
+        onCountdownFinish = viewModel::onCountdownFinish,
     )
 }
 
@@ -69,6 +80,7 @@ private fun WorkoutRecordingScreen(
     onMyLocationClick: () -> Unit,
     onStopClick: () -> Unit,
     onCameraClick: () -> Unit,
+    onCountdownFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // TODO 내 위치, 경로선, 사진 마커 연결
@@ -103,7 +115,9 @@ private fun WorkoutRecordingScreen(
         ) {
             MyLocationButton(onClick = onMyLocationClick)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .routeeMessageAnchor(),
                 horizontalArrangement = Arrangement.spacedBy(
                     RouteeTheme.spacing.Spacing12,
                     Alignment.CenterHorizontally,
@@ -129,17 +143,31 @@ private fun WorkoutRecordingScreen(
                     inset = RouteeTheme.spacing.Spacing14,
                 ),
         )
+        AnimatedVisibility(
+            visible = uiState.isCountingDown,
+            enter = EnterTransition.None,
+            exit = fadeOut(tween(COUNTDOWN_FADE_OUT_MILLIS)),
+        ) {
+            RouteeLottie(
+                resId = DesignSystemR.raw.lottie_workout_countdown,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RouteeTheme.colors.black),
+                contentScale = ContentScale.Crop,
+                onFinish = onCountdownFinish,
+            )
+        }
     }
 }
 
 @Composable
-private fun RecordingExitBackHandler() {
+private fun RecordingExitBackHandler(enabled: Boolean) {
     val messageState = LocalRouteeMessageState.current
     val activity = LocalActivity.current
     val exitText = stringResource(R.string.workout_recording_exit_toast)
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
 
-    BackHandler {
+    BackHandler(enabled = enabled) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackPressedAt < RouteeMessageDuration.MEDIUM.millis) {
             activity?.finish()
@@ -165,11 +193,13 @@ private fun WorkoutRecordingScreenPreview() {
                 distanceMeters = 15_530.0,
                 durationSec = 12_000,
                 maxElevationMeters = 2132.0,
+                isCountingDown = false,
                 photoCount = 20,
             ),
             onMyLocationClick = {},
             onStopClick = {},
             onCameraClick = {},
+            onCountdownFinish = {},
         )
     }
 }

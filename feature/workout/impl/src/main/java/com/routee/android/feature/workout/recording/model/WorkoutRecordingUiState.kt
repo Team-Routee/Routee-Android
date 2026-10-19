@@ -6,6 +6,7 @@ internal const val MAX_PHOTO_COUNT = 20
 
 @Immutable
 internal data class WorkoutRecordingUiState(
+    val isCountingDown: Boolean = true,
     val distanceMeters: Double = 0.0,
     val durationSec: Int = 0,
     val maxElevationMeters: Double = 0.0,
