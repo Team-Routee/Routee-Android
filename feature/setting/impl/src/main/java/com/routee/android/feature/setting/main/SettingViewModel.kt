@@ -2,7 +2,6 @@ package com.routee.android.feature.setting.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.feature.setting.main.model.SettingSideEffect
 import com.routee.android.feature.setting.main.model.SettingUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,9 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-internal class SettingViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-) : ViewModel() {
+internal class SettingViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow(SettingUiState())
     val uiState: StateFlow<SettingUiState> = _uiState.asStateFlow()
 
@@ -35,9 +32,7 @@ internal class SettingViewModel @Inject constructor(
 
     fun onLogoutConfirm() {
         _uiState.update { it.copy(isLogoutDialogVisible = false) }
-        viewModelScope.launch {
-            authRepository.logout()
-            _sideEffect.send(SettingSideEffect.NavigateToLogin)
-        }
+        // TODO authRepository.logout() 연결
+        viewModelScope.launch { _sideEffect.send(SettingSideEffect.NavigateToLogin) }
     }
 }
