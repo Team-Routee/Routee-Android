@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
+import com.routee.android.feature.recordedit.model.StickerType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -15,8 +16,10 @@ import kotlinx.collections.immutable.persistentListOf
  * @param brightness                밝기 슬라이더 값 (0~1)
  * @param baseOpacity               밝기 기본값일 때 배경 위 검은 레이어 투명도 (지도 50%, 사진 40%)
  * @param recapColor                스티커 색
- * @param hasChanges                한 번이라도 편집했는지. 뒤로가기 시 편집 중단 모달 여부
+ * @param stickers                  캔버스에 놓인 스티커. 뒤에 있을수록 위
+ * @param selectedSticker           테두리를 표시할 스티커. 스티커 탭에서는 서브탭 선택과 같다
  * @param isEditStopDialogVisible   편집 중단 모달 노출 여부
+ * @param isResetDialogVisible      초기화 모달 노출 여부
  */
 @Immutable
 internal data class RecapEditorUiState(
@@ -25,10 +28,25 @@ internal data class RecapEditorUiState(
     val brightness: Float = RecapBrightness.DEFAULT_SLIDER_VALUE,
     val baseOpacity: Float = RecapBrightness.MAP_BASE_OPACITY,
     val recapColor: RecapColor = RecapColor.DEFAULT,
-    val hasChanges: Boolean = false,
+    val stickers: ImmutableList<RecapSticker> = INITIAL_STICKERS,
+    val selectedSticker: StickerType? = null,
     val isEditStopDialogVisible: Boolean = false,
+    val isResetDialogVisible: Boolean = false,
 ) {
     val overlayOpacity: Float get() = RecapBrightness.overlayOpacity(brightness, baseOpacity)
+
+    // 처음 상태와 다른지. 스티커 쌓인 순서는 보지 않는다
+    val hasChanges: Boolean
+        get() = brightness != RecapBrightness.DEFAULT_SLIDER_VALUE ||
+            recapColor != RecapColor.DEFAULT ||
+            stickers.associateBy { it.type } != INITIAL_STICKERS.associateBy { it.type }
+
+    companion object {
+        val INITIAL_STICKERS: ImmutableList<RecapSticker> = persistentListOf(
+            RecapSticker(StickerType.WORKOUT_RECORD),
+            RecapSticker(StickerType.PHOTO_TIMELINE),
+        )
+    }
 }
 
 /**
