@@ -89,6 +89,7 @@ internal class RecordEditMainViewModel @Inject constructor() : ViewModel() {
         loadRecaps()
     }
 
+    // TODO API 연동 시 회원 요약(GET /summary)의 joinDate로 joinedMonth를 채운다. 가입 월 이전으로 이동 막기 (RT-EDIT-001)
     // TODO API 연동 시 selectedMonth로 GET /api/v1/activity/recap?year=&month= 결과를 채운다 (실패 시 UiState.Failure)
     private fun loadRecaps() {
         _uiState.update { it.copy(recaps = UiState.Empty) }

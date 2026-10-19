@@ -93,6 +93,7 @@ internal fun RecapPreview(
                 .background(RouteeTheme.colors.black.copy(alpha = overlayOpacity)),
         )
         stickers.forEachIndexed { index, sticker ->
+            // TODO 그릴 경로가 없을 때 사진 타임라인 스티커 처리 (설계서에 없음, 기획 확인 중)
             if (sticker.type == StickerType.PHOTO_TIMELINE && timelineLayout == null) return@forEachIndexed
 
             key(sticker.type) {
