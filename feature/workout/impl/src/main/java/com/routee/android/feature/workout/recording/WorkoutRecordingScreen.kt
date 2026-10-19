@@ -48,7 +48,6 @@ import com.routee.android.feature.workout.component.recording.CameraButton
 import com.routee.android.feature.workout.recording.model.MAX_PHOTO_COUNT
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import java.util.Locale
-import kotlin.math.roundToInt
 
 private val MetricTopSpacing = 24.dp
 private val ControlBottomSpacing = 28.dp
@@ -89,7 +88,7 @@ private fun WorkoutRecordingScreen(
         RouteeWorkoutMetricCard(
             distance = String.format(Locale.US, "%.2f", uiState.distanceMeters / 1000.0),
             duration = formatDuration(uiState.durationSec),
-            maxElevation = uiState.maxElevationMeters.roundToInt().toString(),
+            maxElevation = uiState.maxElevationMeters.toString(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
@@ -190,9 +189,9 @@ private fun WorkoutRecordingScreenPreview() {
     RouteePreviewTheme {
         WorkoutRecordingScreen(
             uiState = WorkoutRecordingUiState(
-                distanceMeters = 15_530.0,
+                distanceMeters = 15_530,
                 durationSec = 12_000,
-                maxElevationMeters = 2132.0,
+                maxElevationMeters = 2132,
                 isCountingDown = false,
                 photoCount = 20,
             ),
