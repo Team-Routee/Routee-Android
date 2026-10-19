@@ -28,14 +28,10 @@ internal data class RecapRecordUiModel(
         fun formatDistance(meters: Int): String =
             if (meters == 0) "" else String.format(Locale.ROOT, "%.2fkm", meters / METERS_PER_KILOMETER)
 
-        fun formatDuration(seconds: Int): String =
-            if (seconds ==
-                0
-            ) {
-                ""
-            } else {
-                "${seconds / SECONDS_PER_HOUR}h ${seconds % SECONDS_PER_HOUR / SECONDS_PER_MINUTE}m"
-            }
+        fun formatDuration(seconds: Int): String {
+            if (seconds == 0) return ""
+            return "${seconds / SECONDS_PER_HOUR}h ${seconds % SECONDS_PER_HOUR / SECONDS_PER_MINUTE}m"
+        }
 
         fun formatElevation(meters: Int): String = if (meters == 0) "" else "${meters}m"
 
