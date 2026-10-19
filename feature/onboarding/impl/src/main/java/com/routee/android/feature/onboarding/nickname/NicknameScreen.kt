@@ -32,6 +32,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.textfield.RouteeNicknameTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.imePaddingAbove
@@ -54,10 +56,23 @@ internal fun NicknameRoute(
     onNavigateToHome: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val messageState = LocalRouteeMessageState.current
+    val networkErrorMessage = stringResource(R.string.onboarding_network_error_toast)
+    val unknownErrorMessage = stringResource(R.string.onboarding_unknown_error_toast)
 
     viewModel.sideEffect.collectSideEffect { sideEffect ->
         when (sideEffect) {
             NicknameSideEffect.NavigateToHome -> onNavigateToHome()
+
+            NicknameSideEffect.ShowNetworkErrorToast -> messageState.showToast(
+                text = networkErrorMessage,
+                duration = RouteeMessageDuration.SHORT,
+            )
+
+            NicknameSideEffect.ShowUnknownErrorToast -> messageState.showToast(
+                text = unknownErrorMessage,
+                duration = RouteeMessageDuration.LONG,
+            )
         }
     }
 

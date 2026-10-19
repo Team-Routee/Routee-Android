@@ -2,6 +2,7 @@ package com.routee.android.feature.onboarding.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
@@ -43,6 +44,13 @@ internal class LoginViewModel @Inject constructor(
                 }
                 _sideEffect.send(sideEffect)
             }
-            .onFailure { e -> Timber.e(e) }
+            .onFailure { e ->
+                if (e is AuthException.NetworkUnavailable) {
+                    _sideEffect.send(LoginSideEffect.ShowNetworkErrorToast)
+                } else {
+                    Timber.e(e)
+                    _sideEffect.send(LoginSideEffect.ShowUnknownErrorToast)
+                }
+            }
     }
 }

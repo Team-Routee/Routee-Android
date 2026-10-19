@@ -23,4 +23,8 @@
     <string name="onboarding_nickname_placeholder">닉네임을 입력해주세요</string>
     <string name="onboarding_nickname_guide">한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)</string>
     <string name="onboarding_nickname_start_button">시작하기</string>
+
+    <!-- 공통 -->
+    <string name="onboarding_network_error_toast">네트워크 연결을 확인해주세요</string>
+    <string name="onboarding_unknown_error_toast">일시적인 오류가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
 </resources>

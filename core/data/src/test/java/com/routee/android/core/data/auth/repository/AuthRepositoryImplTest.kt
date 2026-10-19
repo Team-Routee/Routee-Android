@@ -14,6 +14,7 @@ import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.model.BaseResponse
 import com.routee.android.core.network.util.ApiResponseHandler
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -176,6 +177,20 @@ class AuthRepositoryImplTest {
         val result = repository.register(NICKNAME, ID_TOKEN, SocialProvider.GOOGLE, agreements)
 
         assertTrue(result.exceptionOrNull() is ApiException.ServerError)
+    }
+
+    /**
+     * GIVEN: 네트워크 연결에 실패했을 때
+     * WHEN: 로그인하면
+     * THEN: NetworkUnavailable로 실패한다
+     */
+    @Test
+    fun `네트워크 오류면 NetworkUnavailable로 실패한다`() = runTest {
+        val repository = repository(FakeAuthService(onLogin = { throw IOException() }))
+
+        val result = repository.login(ID_TOKEN, SocialProvider.GOOGLE)
+
+        assertTrue(result.exceptionOrNull() is AuthException.NetworkUnavailable)
     }
 
     private fun TestScope.tokenStore() = TokenLocalDataSource(

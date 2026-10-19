@@ -70,13 +70,26 @@ internal fun LoginRoute(
     val messageState = LocalRouteeMessageState.current
     val coroutineScope = rememberCoroutineScope()
     val exitMessage = stringResource(R.string.onboarding_login_exit_toast)
+    val networkErrorMessage = stringResource(R.string.onboarding_network_error_toast)
+    val unknownErrorMessage = stringResource(R.string.onboarding_unknown_error_toast)
     var lastBackPressedAt by remember { mutableLongStateOf(0L) }
     var isRequestingIdToken by remember { mutableStateOf(false) }
 
     viewModel.sideEffect.collectSideEffect { sideEffect ->
         when (sideEffect) {
             LoginSideEffect.NavigateToHome -> onNavigateToHome()
+
             is LoginSideEffect.NavigateToTerms -> onNavigateToTerms(sideEffect.idToken)
+
+            LoginSideEffect.ShowNetworkErrorToast -> messageState.showToast(
+                text = networkErrorMessage,
+                duration = RouteeMessageDuration.SHORT,
+            )
+
+            LoginSideEffect.ShowUnknownErrorToast -> messageState.showToast(
+                text = unknownErrorMessage,
+                duration = RouteeMessageDuration.LONG,
+            )
         }
     }
 

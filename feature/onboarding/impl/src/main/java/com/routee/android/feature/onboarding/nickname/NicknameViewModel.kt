@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
@@ -79,7 +80,14 @@ internal class NicknameViewModel @AssistedInject constructor(
                 ),
             )
                 .onSuccess { _sideEffect.send(NicknameSideEffect.NavigateToHome) }
-                .onFailure { e -> Timber.e(e) }
+                .onFailure { e ->
+                    if (e is AuthException.NetworkUnavailable) {
+                        _sideEffect.send(NicknameSideEffect.ShowNetworkErrorToast)
+                    } else {
+                        Timber.e(e)
+                        _sideEffect.send(NicknameSideEffect.ShowUnknownErrorToast)
+                    }
+                }
             isRegistering = false
         }
     }
