@@ -54,7 +54,7 @@ import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
 
-// recap_image 9:16
+// recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
 // btn_reset_recap 위치

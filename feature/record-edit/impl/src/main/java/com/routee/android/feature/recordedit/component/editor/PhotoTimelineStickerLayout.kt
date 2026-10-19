@@ -9,7 +9,7 @@ import kotlin.math.min
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
-// map_photo_route.
+// map_photo_route
 private const val CANVAS_PADDING = 60f
 private const val ROUTE_STROKE_WIDTH = 3f
 private const val MARKER_SIZE = 42f

@@ -39,7 +39,6 @@ internal fun WorkoutRecapItem(
     onEditTitleComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 썸네일-제목 간격(10)과 제목-날짜 간격(2)이 달라, 중첩 Column 대신 각 항목의 top padding으로 처리한다
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,

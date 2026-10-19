@@ -31,7 +31,7 @@ import com.routee.android.feature.recordedit.model.RecapThumbnailType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
-// workout_recap_item_android 썸네일 (큰 사진 132 x 170 기준)
+// workout_recap_item_android
 private const val MAIN_PHOTO_ASPECT_RATIO = 132f / 170f
 private const val SMALL_PHOTO_WIDTH_FRACTION = 52f / 132f
 private const val SMALL_PHOTO_ASPECT_RATIO = 52f / 66f
@@ -74,7 +74,6 @@ internal fun RecapThumbnail(
         thumbnailUrls.drop(1).take(thumbnailType.smallPhotoCount).toImmutableList()
     }
 
-    // 바깥 반투명 테두리(workout_thumb)는 감싸는 레이아웃 없이 사진 영역의 Modifier로 그린다
     val frameModifier = modifier
         .clip(RoundedCornerShape(RouteeTheme.radius.Radius20))
         .background(RouteeTheme.colors.white10)
