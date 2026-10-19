@@ -81,6 +81,7 @@ internal fun RecapPreview(
     ) {
         val canvasSize = Size(maxWidth.value, maxHeight.value)
         val timelineLayout = remember(track, canvasSize) { PhotoTimelineStickerLayout.create(track, canvasSize) }
+        val thumbnailUrls = remember(track) { track.markers.map { it.thumbnailUrl } }
 
         RouteeAsyncImage(
             url = backgroundUrl,
@@ -118,7 +119,7 @@ internal fun RecapPreview(
                         StickerType.PHOTO_TIMELINE -> timelineLayout?.let {
                             PhotoTimelineSticker(
                                 layout = it,
-                                thumbnailUrls = track.markers.map { marker -> marker.thumbnailUrl },
+                                thumbnailUrls = thumbnailUrls,
                                 color = color,
                             )
                         }
