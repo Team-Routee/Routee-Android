@@ -21,6 +21,9 @@
     <string name="setting_main_link_error">링크를 열 수 없어요.</string>
 
     <!-- 문의하기 -->
+    <string name="setting_contact_title">1:1 문의하기</string>
+    <string name="setting_contact_guide_title">도움이 필요하신가요?</string>
+    <string name="setting_contact_guide_description">원하시는 기능 혹은 오류가 발생한다면 언제든지 문의주세요.\n순차적으로 빠르게 답변드리겠습니다.</string>
     <string name="setting_contact_button_kakao">카카오톡 문의하기</string>
     <string name="setting_contact_button_email">이메일 문의하기</string>
 

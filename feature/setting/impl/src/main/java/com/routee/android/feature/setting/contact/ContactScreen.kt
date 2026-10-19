@@ -39,22 +39,14 @@ internal fun ContactRoute(
 
     ContactScreen(
         onBackClick = onBackClick,
-        onKakaoClick = {
-            val opened = uriHandler.tryOpenUri(RouteeLink.KAKAO_CHANNEL_APP.url) ||
-                uriHandler.tryOpenUri(RouteeLink.KAKAO_CHANNEL.url)
-            if (!opened) messageState.showToast(text = linkErrorText)
-        },
-        onEmailClick = {
-            if (!uriHandler.tryOpenUri(RouteeLink.CONTACT_EMAIL.url)) messageState.showToast(text = linkErrorText)
-        },
+        onLinkClick = { url -> if (!uriHandler.tryOpenUri(url)) messageState.showToast(text = linkErrorText) },
     )
 }
 
 @Composable
 private fun ContactScreen(
     onBackClick: () -> Unit,
-    onKakaoClick: () -> Unit,
-    onEmailClick: () -> Unit,
+    onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     RouteeBgEllipse(modifier = modifier) {
@@ -79,7 +71,7 @@ private fun ContactScreen(
                 verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing32),
             ) {
                 ContactGuide()
-                ContactButtons(onKakaoClick = onKakaoClick, onEmailClick = onEmailClick)
+                ContactButtons(onLinkClick = onLinkClick)
             }
         }
     }
@@ -102,19 +94,16 @@ private fun ContactGuide() {
 }
 
 @Composable
-private fun ContactButtons(
-    onKakaoClick: () -> Unit,
-    onEmailClick: () -> Unit,
-) {
+private fun ContactButtons(onLinkClick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8)) {
         ContactButton(
             type = ContactButtonType.KAKAO_TALK,
-            onClick = onKakaoClick,
+            onClick = { onLinkClick(RouteeLink.KAKAO_CHANNEL.url) },
             modifier = Modifier.fillMaxWidth(),
         )
         ContactButton(
             type = ContactButtonType.EMAIL,
-            onClick = onEmailClick,
+            onClick = { onLinkClick(RouteeLink.CONTACT_EMAIL.url) },
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -124,6 +113,6 @@ private fun ContactButtons(
 @Composable
 private fun ContactScreenPreview() {
     RouteePreviewTheme {
-        ContactScreen(onBackClick = {}, onKakaoClick = {}, onEmailClick = {})
+        ContactScreen(onBackClick = {}, onLinkClick = {})
     }
 }
