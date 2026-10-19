@@ -1,5 +1,7 @@
 package com.routee.android.feature.recordedit.editor
 
+import android.content.ActivityNotFoundException
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -38,6 +40,7 @@ import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.recordedit.R
+import com.routee.android.feature.recordedit.background.PickImageFromGallery
 import com.routee.android.feature.recordedit.background.RecapBackgroundCropResult
 import com.routee.android.feature.recordedit.component.editor.BrightnessSlider
 import com.routee.android.feature.recordedit.component.editor.ColorPalette
@@ -69,9 +72,12 @@ internal fun RecapEditorRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val messageState = LocalRouteeMessageState.current
     val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
-    val photoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) viewModel.onPhotoPickerCancel() else onNavigateToBackgroundCrop(uri.toString())
+    val onImagePicked: (Uri?) -> Unit = { uri ->
+        if (uri == null) viewModel.onGalleryCancel() else onNavigateToBackgroundCrop(uri.toString())
     }
+    val galleryLauncher = rememberLauncherForActivityResult(PickImageFromGallery(), onImagePicked)
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), onImagePicked)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -79,9 +85,11 @@ internal fun RecapEditorRoute(
 
             RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
 
-            RecapEditorSideEffect.LaunchPhotoPicker -> photoPickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-            )
+            RecapEditorSideEffect.OpenGallery -> try {
+                galleryLauncher.launch(Unit)
+            } catch (e: ActivityNotFoundException) {
+                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
         }
     }
 

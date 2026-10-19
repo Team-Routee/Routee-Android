@@ -5,5 +5,5 @@ internal sealed interface RecapEditorSideEffect {
 
     data object ShowNoRouteToast : RecapEditorSideEffect
 
-    data object LaunchPhotoPicker : RecapEditorSideEffect
+    data object OpenGallery : RecapEditorSideEffect
 }

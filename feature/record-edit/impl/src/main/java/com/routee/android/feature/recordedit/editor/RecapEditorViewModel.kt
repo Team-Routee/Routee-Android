@@ -53,7 +53,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
                         selectedSticker = if (it.selectedTab == RecapEditTab.STICKER) null else it.selectedSticker,
                     )
                 }
-                launchPhotoPicker()
+                openGallery()
             }
 
             RecapEditTab.BRIGHTNESS, RecapEditTab.COLOR, RecapEditTab.STICKER -> _uiState.update {
@@ -78,12 +78,12 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(recapColor = recapColor) }
     }
 
-    fun onPhotoPickerCancel() {
+    fun onGalleryCancel() {
         _uiState.update { it.copy(selectedTab = null) }
     }
 
     fun onBackgroundCropCancel() {
-        launchPhotoPicker()
+        openGallery()
     }
 
     fun onBackgroundCropComplete(imageUri: String) {
@@ -188,8 +188,8 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     private fun RecapEditorUiState.routeNames(): List<String> =
         (content as? UiState.Success)?.data?.routeNames.orEmpty()
 
-    private fun launchPhotoPicker() {
-        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.LaunchPhotoPicker) }
+    private fun openGallery() {
+        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.OpenGallery) }
     }
 
     private fun navigateBack() {
