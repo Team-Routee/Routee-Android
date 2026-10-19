@@ -41,7 +41,10 @@ internal fun MyLocationEffect(
     // 내 위치를 SDK 에 전달. 화면이 보일 때만 수집
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(map, myLocation, lifecycle) {
-        val locations = myLocation ?: return@LaunchedEffect
+        val locations = myLocation ?: run {
+            map.locationTrackingMode = LocationTrackingMode.None
+            return@LaunchedEffect
+        }
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             locations.collect { location ->
                 source.update(location)
