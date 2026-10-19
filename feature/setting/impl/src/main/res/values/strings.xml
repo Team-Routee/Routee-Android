@@ -27,6 +27,16 @@
     <string name="setting_contact_button_kakao">카카오톡 문의하기</string>
     <string name="setting_contact_button_email">이메일 문의하기</string>
 
+    <!-- 회원 탈퇴 -->
+    <string name="setting_withdraw_title">회원 탈퇴</string>
+    <string name="setting_withdraw_heading">회원 탈퇴하시겠습니까?</string>
+    <string name="setting_withdraw_warning_title">회원 탈퇴할 경우</string>
+    <string name="setting_withdraw_warning_data">루티 앱 계정의 모든 데이터가 삭제되며, 복구가 불가능합니다.\n중요한 정보가 있는지 다시 한 번 확인해주세요.</string>
+    <string name="setting_withdraw_warning_return">그러나 언제든지 마음이 바뀌면 돌아오셔서 새로운 루티 계정을\n만들어 소중한 경험을 이어나갈 수 있습니다.</string>
+    <string name="setting_withdraw_contact_title">혹시, 루티 이용의 불편함이 있으셨다면 알려주세요.</string>
+    <string name="setting_withdraw_agree">모든 것에 동의하고 탈퇴하겠습니다.</string>
+    <string name="setting_withdraw_button">루티 탈퇴하기</string>
+
     <!-- 프로필 변경 -->
     <string name="setting_profile_image_change_a11y">프로필 사진 변경</string>
 </resources>
