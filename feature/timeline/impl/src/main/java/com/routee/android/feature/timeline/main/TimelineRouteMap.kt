@@ -34,10 +34,10 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.map.RouteeMapState
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.model.MapMarker
 import com.routee.android.core.map.model.MapPoint
-import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.feature.timeline.api.TimelineMapPhoto
 import com.routee.android.feature.timeline.api.TimelineMapPoint
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +55,7 @@ private val MarkerBorder = 3.dp
 internal fun TimelineRouteMap(
     routePoints: List<TimelineMapPoint>,
     photos: List<TimelineMapPhoto>,
+    state: RouteeMapState,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -65,9 +66,8 @@ internal fun TimelineRouteMap(
     val cameraPadding = MarkerSize + RouteeTheme.spacing.Spacing12
     val route = remember(routePoints) { routePoints.map { MapPoint(it.latitude, it.longitude) } }
     val cameraPoints = remember(route, photos) {
-        route + photos.map { MapPoint(it.point.latitude, it.point.longitude) }
+        route + photos.map { MapPoint(it.latitude, it.longitude) }
     }
-    val state = rememberRouteeMapState()
     var mapSize by remember { mutableStateOf(IntSize.Zero) }
     val markers by produceState(emptyList<MapMarker>(), photos, density, markerColor, radiusDp, isPreview) {
         value = emptyList()
@@ -91,7 +91,7 @@ internal fun TimelineRouteMap(
                         val image = (result as? SuccessResult)?.image ?: return@withPermit null
                         MapMarker(
                             id = index.toString(),
-                            point = MapPoint(photo.point.latitude, photo.point.longitude),
+                            point = MapPoint(photo.latitude, photo.longitude),
                             icon = photoMarkerBitmap(image, size, radius, border, markerColor).asImageBitmap(),
                             size = MarkerSize,
                         )
