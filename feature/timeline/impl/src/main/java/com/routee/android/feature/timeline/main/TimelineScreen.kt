@@ -71,7 +71,7 @@ internal fun TimelineRoute(
     val uiState = remember(key, defaultTitle) {
         TimelineUiState(
             title = defaultTitle,
-            distance = String.format(Locale.US, "%.2f", key.distanceMeters / 1000),
+            distance = String.format(Locale.US, "%.2f", key.distanceMeters / 1000.0),
             duration = String.format(Locale.US, "%02d:%02d", key.durationSeconds / 3600, key.durationSeconds / 60 % 60),
             maxElevation = key.maxElevationMeters.toString(),
         )

@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 data class TimelineNavKey(
     val activityId: Long,
     val endedAtEpochMillis: Long,
-    val distanceMeters: Double,
-    val durationSeconds: Long,
+    val distanceMeters: Int,
+    val durationSeconds: Int,
     val maxElevationMeters: Int,
 ) : NavKey
