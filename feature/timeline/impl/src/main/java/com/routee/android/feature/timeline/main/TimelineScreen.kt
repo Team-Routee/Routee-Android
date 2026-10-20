@@ -133,7 +133,7 @@ internal fun TimelineRoute(
         focusManager.clearFocus()
     }
     fun draft() = TimelineDraft(
-        title = titleState.text.toString().trim(),
+        title = titleState.text.toString().trim().ifEmpty { defaultTitle },
         routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
     )
     val uiState = remember(key) {
