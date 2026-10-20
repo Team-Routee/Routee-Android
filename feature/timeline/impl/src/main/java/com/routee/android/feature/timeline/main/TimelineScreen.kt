@@ -2,30 +2,54 @@ package com.routee.android.feature.timeline.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
@@ -33,13 +57,18 @@ import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
+import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
+import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.api.TimelinePhoto
+import com.routee.android.feature.timeline.component.MyRouteEditor
+import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.component.TimelinePhotoSection
+import com.routee.android.feature.timeline.main.model.TimelineDraft
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
@@ -52,17 +81,25 @@ private val SectionTopSpacing = 52.dp
 private val SectionSpacing = 48.dp
 private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
+private const val MAX_TITLE_LENGTH = 16
+private const val MAX_ROUTE_POINT_COUNT = 20
+
+private val RoutePointsSaver = listSaver<SnapshotStateList<RoutePoint>, String>(
+    save = { points -> points.map { it.name.text.toString() } },
+    restore = { names ->
+        names.mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }.toMutableStateList()
+    },
+)
 
 @Composable
 internal fun TimelineRoute(
     key: TimelineNavKey,
     onBackClick: () -> Unit,
-    onCompleteClick: () -> Unit,
-    onEditTitleClick: () -> Unit,
-    onRecordEditClick: () -> Unit,
+    onCompleteClick: (TimelineDraft) -> Unit,
+    onRecordEditClick: (TimelineDraft) -> Unit,
     onPhotoSaveClick: (TimelinePhoto) -> Unit,
+    modifier: Modifier = Modifier,
     routeMap: (@Composable () -> Unit)? = null,
-    myRoute: (@Composable () -> Unit)? = null,
 ) {
     val recordDate = remember(key.endedAtEpochMillis) {
         Instant.ofEpochMilli(key.endedAtEpochMillis)
@@ -70,9 +107,37 @@ internal fun TimelineRoute(
             .format(RecordDateFormatter)
     }
     val defaultTitle = stringResource(R.string.timeline_default_record_title, recordDate)
-    val uiState = remember(key, defaultTitle) {
+    val titleState = rememberTextFieldState(defaultTitle)
+    var isTitleEditing by rememberSaveable { mutableStateOf(false) }
+    var isRouteFocused by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val routeBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val imeInsets = WindowInsets.ime
+    val isImeVisible by remember(density, imeInsets) { derivedStateOf { imeInsets.getBottom(density) > 0 } }
+    val points = rememberSaveable(key.activityId, key.photos, saver = RoutePointsSaver) {
+        key.photos.mapNotNull { photo -> photo.location?.takeIf(String::isNotBlank) }
+            .take(MAX_ROUTE_POINT_COUNT)
+            .mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }
+            .toMutableStateList()
+    }
+    LaunchedEffect(isTitleEditing) {
+        if (isTitleEditing) focusRequester.requestFocus()
+    }
+    LaunchedEffect(isImeVisible, isRouteFocused) {
+        if (isImeVisible && isRouteFocused) routeBringIntoViewRequester.bringIntoView()
+    }
+    fun finishTitleEdit() {
+        isTitleEditing = false
+        focusManager.clearFocus()
+    }
+    fun draft() = TimelineDraft(
+        title = titleState.text.toString().trim(),
+        routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
+    )
+    val uiState = remember(key) {
         TimelineUiState(
-            title = defaultTitle,
             distance = String.format(Locale.US, "%.2f", key.distanceMeters / 1000.0),
             duration = String.format(Locale.US, "%02d:%02d", key.durationSeconds / 3600, key.durationSeconds / 60 % 60),
             maxElevation = key.maxElevationMeters.toString(),
@@ -81,13 +146,43 @@ internal fun TimelineRoute(
     TimelineScreen(
         uiState = uiState,
         photos = key.photos,
+        titleState = titleState,
+        isTitleEditing = isTitleEditing,
+        focusRequester = focusRequester,
         onBackClick = onBackClick,
-        onCompleteClick = onCompleteClick,
-        onEditTitleClick = onEditTitleClick,
-        onRecordEditClick = onRecordEditClick,
+        onCompleteClick = {
+            finishTitleEdit()
+            onCompleteClick(draft())
+        },
+        onEditTitleClick = { isTitleEditing = true },
+        onTitleEditFinish = ::finishTitleEdit,
+        onTitleFocusLoss = { isTitleEditing = false },
+        onOutsideClick = { finishTitleEdit() },
+        onRecordEditClick = {
+            finishTitleEdit()
+            onRecordEditClick(draft())
+        },
         onPhotoSaveClick = onPhotoSaveClick,
+        modifier = modifier,
         routeMap = routeMap,
-        myRoute = myRoute,
+        myRoute = {
+            MyRouteEditor(
+                points = points,
+                onMovePoint = { from, to -> points.add(to, points.removeAt(from)) },
+                onRemovePoint = { index ->
+                    points.removeAt(index)
+                    focusManager.clearFocus()
+                },
+                onAddPoint = {
+                    focusManager.clearFocus()
+                    points.add(RoutePoint((points.maxOfOrNull { it.id } ?: -1L) + 1L, TextFieldState()))
+                },
+                modifier = Modifier
+                    .bringIntoViewRequester(routeBringIntoViewRequester)
+                    .onFocusChanged { isRouteFocused = it.hasFocus }
+                    .focusGroup(),
+            )
+        },
     )
 }
 
@@ -95,15 +190,22 @@ internal fun TimelineRoute(
 private fun TimelineScreen(
     uiState: TimelineUiState,
     photos: List<TimelinePhoto>,
+    titleState: TextFieldState,
+    isTitleEditing: Boolean,
+    focusRequester: FocusRequester,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onEditTitleClick: () -> Unit,
+    onTitleEditFinish: () -> Unit,
+    onTitleFocusLoss: () -> Unit,
+    onOutsideClick: () -> Unit,
     onRecordEditClick: () -> Unit,
     onPhotoSaveClick: (TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
     routeMap: (@Composable () -> Unit)? = null,
     myRoute: (@Composable () -> Unit)? = null,
 ) {
+    val focusManager = LocalFocusManager.current
     RouteeBgEllipse(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             RouteePageNavBar(
@@ -130,36 +232,23 @@ private fun TimelineScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding(),
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .clearFocus(focusManager, onOutsideClick),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = RouteeTheme.spacing.Spacing16),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = uiState.title,
-                            style = RouteeTheme.typography.titleSb20,
-                            color = RouteeTheme.colors.white,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Image(
-                            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_white),
-                            contentDescription = stringResource(R.string.timeline_edit_title),
-                            modifier = Modifier
-                                .size(EditIconTouchSize)
-                                .noRippleClickable(onClick = onEditTitleClick)
-                                .semantics { role = Role.Button }
-                                .padding(RouteeTheme.spacing.Spacing10),
-                        )
-                    }
+                    TimelineTitleRow(
+                        titleState = titleState,
+                        isEditing = isTitleEditing,
+                        focusRequester = focusRequester,
+                        onEditClick = onEditTitleClick,
+                        onEditFinish = onTitleEditFinish,
+                        onFocusLoss = onTitleFocusLoss,
+                    )
                     Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
                     RouteeWorkoutMetricCard(
                         distance = uiState.distance,
@@ -200,23 +289,92 @@ private fun TimelineScreen(
     }
 }
 
+@Composable
+private fun TimelineTitleRow(
+    titleState: TextFieldState,
+    isEditing: Boolean,
+    focusRequester: FocusRequester,
+    onEditClick: () -> Unit,
+    onEditFinish: () -> Unit,
+    onFocusLoss: () -> Unit,
+) {
+    var hadFocus by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isEditing) {
+            RouteeBasicTextField(
+                state = titleState,
+                textStyle = RouteeTheme.typography.titleSb20,
+                maxLength = MAX_TITLE_LENGTH,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                onKeyboardAction = { onEditFinish() },
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            hadFocus = true
+                        } else if (hadFocus) {
+                            hadFocus = false
+                            onFocusLoss()
+                        }
+                    },
+            )
+        } else {
+            Text(
+                text = titleState.text.toString(),
+                style = RouteeTheme.typography.titleSb20,
+                color = RouteeTheme.colors.white,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Image(
+            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_white),
+            contentDescription = stringResource(R.string.timeline_edit_title),
+            modifier = Modifier
+                .size(EditIconTouchSize)
+                .noRippleClickable(onClick = onEditClick)
+                .semantics { role = Role.Button }
+                .padding(RouteeTheme.spacing.Spacing10),
+        )
+    }
+}
+
 @PreviewDeviceSizes
 @Composable
 private fun TimelineScreenPreview() {
     RouteeTheme {
         TimelineScreen(
             uiState = TimelineUiState(
-                title = "2026.07.18 기록",
                 distance = "15.53",
                 duration = "03:20",
                 maxElevation = "2132",
             ),
             photos = emptyList(),
+            titleState = rememberTextFieldState("2026.07.18 기록"),
+            isTitleEditing = false,
+            focusRequester = remember { FocusRequester() },
             onBackClick = {},
             onCompleteClick = {},
             onEditTitleClick = {},
+            onTitleEditFinish = {},
+            onTitleFocusLoss = {},
+            onOutsideClick = {},
             onRecordEditClick = {},
             onPhotoSaveClick = {},
+            myRoute = {
+                MyRouteEditor(
+                    points = emptyList(),
+                    onMovePoint = { _, _ -> },
+                    onRemovePoint = {},
+                    onAddPoint = {},
+                )
+            },
         )
     }
 }

@@ -12,7 +12,6 @@ fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
             key = key,
             onBackClick = navigator::navigateBack,
             onCompleteClick = {}, // TODO #75 완료 동작 연결
-            onEditTitleClick = {}, // TODO #74 제목 편집 연결
             onRecordEditClick = {}, // TODO #75 기록 편집 이동 연결
             onPhotoSaveClick = {}, // TODO #80 사진 갤러리 저장 연결
         )
