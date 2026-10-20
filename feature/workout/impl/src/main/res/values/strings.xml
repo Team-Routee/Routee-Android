@@ -14,6 +14,13 @@
     <string name="workout_recording_camera_a11y">사진 촬영</string>
     <string name="workout_recording_exit_toast">한 번 더 누르면 앱이 닫히며,\n운동 기록은 계속됩니다.</string>
 
+    <!-- 운동 정지 -->
+    <string name="workout_pause_control_end">종료</string>
+    <string name="workout_pause_metric_distance_value">%1$.2fkm</string>
+    <string name="workout_pause_metric_duration_value">%1$02dh %2$02dm</string>
+    <string name="workout_pause_metric_max_elevation_value">%1$dm</string>
+    <string name="workout_pause_end_guide_toast">종료 버튼을 길게 누르면 기록이 종료됩니다</string>
+
     <!-- 운동 중 사진 타임라인 -->
     <string name="workout_recording_photo_delete_a11y">사진 삭제</string>
     <string name="workout_recording_photo_close_a11y">닫기</string>
