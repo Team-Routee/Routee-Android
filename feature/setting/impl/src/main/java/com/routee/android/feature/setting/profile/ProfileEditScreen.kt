@@ -29,6 +29,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
+import com.routee.android.core.designsystem.component.dialog.RouteeDialogAction
+import com.routee.android.core.designsystem.component.dialog.RouteeVerticalActionDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.component.textfield.RouteeNicknameTextField
@@ -65,11 +67,27 @@ internal fun ProfileEditRoute(
         uiState = uiState,
         nicknameState = viewModel.nicknameState,
         onBackClick = onBackClick,
-        // TODO 사진 설정 모달, 갤러리
-        onProfileImageClick = {},
+        onProfileImageClick = viewModel::onProfileImageClick,
         onNicknameFocusChange = viewModel::onNicknameFocusChange,
         onSaveClick = viewModel::onSaveClick,
     )
+
+    if (uiState.isPhotoDialogVisible) {
+        RouteeVerticalActionDialog(
+            title = stringResource(R.string.setting_profile_photo_dialog_title),
+            actions = listOf(
+                RouteeDialogAction(
+                    text = stringResource(R.string.setting_profile_photo_dialog_album),
+                    onClick = viewModel::onAlbumClick,
+                ),
+                RouteeDialogAction(
+                    text = stringResource(R.string.setting_profile_photo_dialog_default),
+                    onClick = viewModel::onDefaultImageClick,
+                ),
+            ),
+            onDismissRequest = viewModel::onPhotoDialogDismiss,
+        )
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

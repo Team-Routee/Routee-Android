@@ -44,4 +44,7 @@
     <string name="setting_profile_nickname_guide">한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)</string>
     <string name="setting_profile_save">변경하기</string>
     <string name="setting_profile_saved_toast">변경이 저장되었습니다.</string>
+    <string name="setting_profile_photo_dialog_title">프로필 사진 설정</string>
+    <string name="setting_profile_photo_dialog_album">앨범에서 선택</string>
+    <string name="setting_profile_photo_dialog_default">기본 이미지 적용</string>
 </resources>

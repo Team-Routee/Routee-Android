@@ -48,10 +48,35 @@ internal class ProfileEditViewModel @Inject constructor(
         if (trimmed.length != text.length) nicknameState.setTextAndPlaceCursorAtEnd(trimmed.toString())
     }
 
+    fun onProfileImageClick() {
+        // TODO 사진이 없으면 갤러리 바로 열기
+        if (_uiState.value.profileImageUrl == null) return
+        _uiState.update { it.copy(isPhotoDialogVisible = true) }
+    }
+
+    fun onPhotoDialogDismiss() {
+        _uiState.update { it.copy(isPhotoDialogVisible = false) }
+    }
+
+    fun onAlbumClick() {
+        // TODO 갤러리 열기
+        onPhotoDialogDismiss()
+    }
+
+    fun onDefaultImageClick() {
+        _uiState.update { it.copy(profileImageUrl = null, isPhotoDialogVisible = false) }
+    }
+
     fun onSaveClick() {
         if (!_uiState.value.isSaveEnabled) return
         // TODO 프로필 변경 API
-        _uiState.update { it.copy(savedNickname = it.nickname, validation = RouteeTextFieldValidation.None) }
+        _uiState.update {
+            it.copy(
+                savedNickname = it.nickname,
+                savedProfileImageUrl = it.profileImageUrl,
+                validation = RouteeTextFieldValidation.None,
+            )
+        }
         viewModelScope.launch { _sideEffect.send(ProfileEditSideEffect.ShowSavedToast) }
     }
 
