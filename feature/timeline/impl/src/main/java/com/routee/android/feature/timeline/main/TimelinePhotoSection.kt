@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.component.RouteePhotoTimelineCard
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
@@ -92,17 +91,21 @@ internal fun TimelinePhotoSection(
 @Composable
 private fun TimelinePhotoSectionPreview() {
     RouteeTheme {
-        val photo = TimelinePhoto(
-            imageUrl = "",
-            capturedAtEpochMillis = 1_782_825_200_000,
-            location = "창의문",
+        TimelinePhotoSection(
+            photos = listOf(TimelinePhoto("", 1_782_825_200_000, "창의문")),
+            onSaveClick = {},
         )
-        Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            TimelinePhotoSection(photos = listOf(photo), onSaveClick = {})
-            TimelinePhotoSection(
-                photos = List(6) { index -> if (index == 0) photo else photo.copy(location = null) },
-                onSaveClick = {},
-            )
-        }
+    }
+}
+
+@PreviewFontSizes
+@Composable
+private fun TimelinePhotoSectionMultiplePreview() {
+    RouteeTheme {
+        val photo = TimelinePhoto("", 1_782_825_200_000, "창의문")
+        TimelinePhotoSection(
+            photos = List(6) { index -> if (index == 0) photo else photo.copy(location = null) },
+            onSaveClick = {},
+        )
     }
 }
