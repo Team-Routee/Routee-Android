@@ -12,4 +12,5 @@ dependencies {
     implementation(projects.feature.timeline.api)
     implementation(projects.feature.recordEdit.api)
     implementation(libs.coil.compose)
+    implementation(libs.timber)
 }

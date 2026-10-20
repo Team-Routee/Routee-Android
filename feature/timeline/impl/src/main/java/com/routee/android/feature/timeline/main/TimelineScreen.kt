@@ -58,6 +58,7 @@ import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelinePhoto
 import com.routee.android.feature.timeline.component.MyRouteEditor
@@ -88,7 +89,6 @@ internal fun TimelineRoute(
     onExit: () -> Unit,
     onSaveSuccess: (TimelineSaveDestination) -> Unit,
     onSaveRecord: suspend (TimelineDraft) -> TimelineSaveResult,
-    onPhotoSaveClick: (TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
     routePointCount: Int? = null,
     routeMap: (@Composable () -> Unit)? = null,
@@ -102,6 +102,7 @@ internal fun TimelineRoute(
         if (!isSaving && dialog == TimelineDialog.None) dialog = TimelineDialog.Exit
     }
 
+    val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
     val recordDate = remember(viewModel.endedAtEpochMillis) {
         Instant.ofEpochMilli(viewModel.endedAtEpochMillis)
             .atZone(ZoneId.systemDefault())
@@ -150,8 +151,11 @@ internal fun TimelineRoute(
             finishTitleEdit()
             saveAndNavigate(TimelineSaveDestination.RecordEdit)
         },
-        onPhotoSaveClick = onPhotoSaveClick,
         modifier = modifier,
+        savedPhotoIndex = gallerySave.savedPhotoIndex,
+        onPhotoSaveClick = { index, photo ->
+            gallerySave.onSavePhoto(index, photo.imageUrl, photo.capturedAtEpochMillis)
+        },
         routeMap = routeMap,
         myRoute = {
             MyRouteEditor(
@@ -211,8 +215,9 @@ private fun TimelineScreen(
     onTitleFocusLoss: () -> Unit,
     onOutsideClick: () -> Unit,
     onRecordEditClick: () -> Unit,
-    onPhotoSaveClick: (TimelinePhoto) -> Unit,
+    onPhotoSaveClick: (Int, TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
+    savedPhotoIndex: Int = -1,
     routeMap: (@Composable () -> Unit)? = null,
     myRoute: (@Composable () -> Unit)? = null,
 ) {
@@ -274,7 +279,11 @@ private fun TimelineScreen(
                     Spacer(Modifier.height(SectionTopSpacing))
                 }
                 if (photos.isNotEmpty()) {
-                    TimelinePhotoSection(photos = photos, onSaveClick = onPhotoSaveClick)
+                    TimelinePhotoSection(
+                        photos = photos,
+                        onSaveClick = onPhotoSaveClick,
+                        savedPhotoIndex = savedPhotoIndex,
+                    )
                 }
                 if (photos.isNotEmpty() && myRoute != null) {
                     Spacer(Modifier.height(SectionSpacing))
@@ -383,7 +392,7 @@ private fun TimelineScreenPreview() {
             onTitleFocusLoss = { isTitleEditing = false },
             onOutsideClick = {},
             onRecordEditClick = {},
-            onPhotoSaveClick = {},
+            onPhotoSaveClick = { _, _ -> },
             myRoute = {
                 MyRouteEditor(
                     points = points,

@@ -30,8 +30,9 @@ private val PhotoDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 @Composable
 internal fun TimelinePhotoSection(
     photos: List<TimelinePhoto>,
-    onSaveClick: (TimelinePhoto) -> Unit,
+    onSaveClick: (Int, TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
+    savedPhotoIndex: Int = -1,
 ) {
     val firstPhoto = photos.firstOrNull() ?: return
     val date = remember(firstPhoto.capturedAtEpochMillis) {
@@ -70,7 +71,8 @@ internal fun TimelinePhotoSection(
             RouteePhotoTimelineCard(
                 imageUrl = photo.imageUrl,
                 location = photo.location,
-                onSaveClick = { onSaveClick(photo) },
+                isSaved = savedPhotoIndex == page,
+                onSaveClick = { onSaveClick(page, photo) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -92,7 +94,7 @@ private fun TimelinePhotoSectionPreview() {
     RouteeTheme {
         TimelinePhotoSection(
             photos = listOf(TimelinePhoto("", 1_782_825_200_000, "창의문")),
-            onSaveClick = {},
+            onSaveClick = { _, _ -> },
         )
     }
 }
@@ -104,7 +106,7 @@ private fun TimelinePhotoSectionMultiplePreview() {
         val photo = TimelinePhoto("", 1_782_825_200_000, "창의문")
         TimelinePhotoSection(
             photos = List(6) { index -> if (index == 0) photo else photo.copy(location = null) },
-            onSaveClick = {},
+            onSaveClick = { _, _ -> },
         )
     }
 }

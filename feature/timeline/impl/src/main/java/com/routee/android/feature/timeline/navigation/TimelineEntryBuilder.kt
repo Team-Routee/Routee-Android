@@ -24,7 +24,6 @@ fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
                 }
             },
             onSaveRecord = { TimelineSaveResult.Failed }, // TODO #78 서버 저장 연결
-            onPhotoSaveClick = {}, // TODO #80 사진 갤러리 저장 연결
             routePointCount = key.routePoints.size,
             routeMap = {
                 TimelineRouteMap(

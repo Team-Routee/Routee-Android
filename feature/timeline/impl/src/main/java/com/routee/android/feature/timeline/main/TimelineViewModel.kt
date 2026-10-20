@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.component.RoutePoint
@@ -17,12 +18,14 @@ import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import timber.log.Timber
 
 private const val MAX_ROUTE_POINT_COUNT = 20
 
 @HiltViewModel(assistedFactory = TimelineViewModel.Factory::class)
 internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
+    private val galleryImageStore: GalleryImageStore,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -44,6 +47,9 @@ internal class TimelineViewModel @AssistedInject constructor(
     val uiState = _uiState.asStateFlow()
 
     private var nextPointId = (points.maxOfOrNull(RoutePoint::id) ?: -1L) + 1L
+
+    suspend fun savePhoto(imageUrl: String, capturedAtEpochMillis: Long): Result<Unit> =
+        galleryImageStore.save(imageUrl, capturedAtEpochMillis).onFailure { Timber.e(it) }
 
     fun onEditTitleClick(defaultTitle: String) {
         if (titleState.text.isEmpty()) titleState.setTextAndPlaceCursorAtEnd(defaultTitle)
