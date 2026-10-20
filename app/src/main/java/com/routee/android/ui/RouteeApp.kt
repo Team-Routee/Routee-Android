@@ -49,8 +49,7 @@ internal fun RouteeApp(
     val navigator = rememberRouteeNavigator(backStack, homeKey = WorkoutMainNavKey)
 
     sessionExpired.CollectSideEffect {
-        // TODO 세션 만료 안내 문구 (기획 확인 후)
-        navigator.clearAndNavigateTo(LoginNavKey)
+        navigator.clearAndNavigateTo(LoginNavKey(isSessionExpired = true))
     }
 
     val messageState = rememberRouteeMessageState()

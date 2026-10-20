@@ -7,4 +7,6 @@ sealed class AuthException(message: String?) : Exception(message) {
     class RequiredAgreementNotAccepted(message: String?) : AuthException(message)
 
     class AlreadyRegistered(message: String?) : AuthException(message)
+
+    class NetworkUnavailable(message: String?) : AuthException(message)
 }

@@ -184,6 +184,20 @@ class AuthRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 네트워크 연결에 실패했을 때
+     * WHEN: 로그인하면
+     * THEN: NetworkUnavailable로 실패한다
+     */
+    @Test
+    fun `네트워크 오류면 NetworkUnavailable로 실패한다`() = runTest {
+        val repository = repository(FakeAuthService(onLogin = { throw IOException() }))
+
+        val result = repository.login(ID_TOKEN, SocialProvider.GOOGLE)
+
+        assertTrue(result.exceptionOrNull() is AuthException.NetworkUnavailable)
+    }
+
+    /**
      * GIVEN: 로그인된 상태일 때
      * WHEN: 로그아웃하면
      * THEN: Refresh Token으로 로그아웃 API를 호출하고 저장된 토큰을 지운다
