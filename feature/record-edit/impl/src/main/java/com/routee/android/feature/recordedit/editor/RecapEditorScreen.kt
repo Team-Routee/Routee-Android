@@ -22,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -36,12 +38,16 @@ import com.routee.android.feature.recordedit.component.editor.BrightnessSlider
 import com.routee.android.feature.recordedit.component.editor.ColorPalette
 import com.routee.android.feature.recordedit.component.editor.RecapEditNavBar
 import com.routee.android.feature.recordedit.component.editor.RecapPreview
+import com.routee.android.feature.recordedit.component.editor.RecapResetButton
+import com.routee.android.feature.recordedit.component.editor.StickerPalette
 import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
 import com.routee.android.feature.recordedit.editor.model.RecapRecordUiModel
+import com.routee.android.feature.recordedit.editor.model.StickerFrame
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
+import com.routee.android.feature.recordedit.model.StickerType
 
 // recap_image 9:16
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
@@ -53,10 +59,13 @@ internal fun RecapEditorRoute(
     onNavigateToHome: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val messageState = LocalRouteeMessageState.current
+    val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             RecapEditorSideEffect.NavigateBack -> onNavigateBack()
+            RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
         }
     }
 
@@ -70,6 +79,13 @@ internal fun RecapEditorRoute(
         onPreviewClick = viewModel::onPreviewClick,
         onBrightnessChange = viewModel::onBrightnessChange,
         onColorClick = viewModel::onColorClick,
+        onStickerItemClick = viewModel::onStickerItemClick,
+        onStickerClick = viewModel::onStickerClick,
+        onStickerFrameChange = viewModel::onStickerFrameChange,
+        onStickerDeleteClick = viewModel::onStickerDeleteClick,
+        onResetClick = viewModel::onResetClick,
+        onResetConfirm = viewModel::onResetConfirm,
+        onResetDismiss = viewModel::onResetDismiss,
         onEditStopConfirm = viewModel::onEditStopConfirm,
         onEditStopDismiss = viewModel::onEditStopDismiss,
         onRetryClick = viewModel::onRetryClick,
@@ -86,6 +102,13 @@ private fun RecapEditorScreen(
     onPreviewClick: () -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onColorClick: (RecapColor) -> Unit,
+    onStickerItemClick: (StickerType) -> Unit,
+    onStickerClick: (StickerType) -> Unit,
+    onStickerFrameChange: (StickerType, StickerFrame) -> Unit,
+    onStickerDeleteClick: (StickerType) -> Unit,
+    onResetClick: () -> Unit,
+    onResetConfirm: () -> Unit,
+    onResetDismiss: () -> Unit,
     onEditStopConfirm: () -> Unit,
     onEditStopDismiss: () -> Unit,
     onRetryClick: () -> Unit,
@@ -111,6 +134,11 @@ private fun RecapEditorScreen(
             onPreviewClick = onPreviewClick,
             onBrightnessChange = onBrightnessChange,
             onColorClick = onColorClick,
+            onStickerItemClick = onStickerItemClick,
+            onStickerClick = onStickerClick,
+            onStickerFrameChange = onStickerFrameChange,
+            onStickerDeleteClick = onStickerDeleteClick,
+            onResetClick = onResetClick,
             modifier = modifier,
         )
     }
@@ -125,6 +153,17 @@ private fun RecapEditorScreen(
             onDismissRequest = onEditStopDismiss,
         )
     }
+
+    if (uiState.isResetDialogVisible) {
+        RouteeTwoButtonDialog(
+            title = stringResource(R.string.record_edit_editor_reset_dialog_title),
+            description = stringResource(R.string.record_edit_editor_reset_dialog_description),
+            leftButtonText = stringResource(R.string.record_edit_editor_dialog_cancel),
+            rightButtonText = stringResource(R.string.record_edit_editor_dialog_confirm),
+            onRightButtonClick = onResetConfirm,
+            onDismissRequest = onResetDismiss,
+        )
+    }
 }
 
 @Composable
@@ -137,6 +176,11 @@ private fun RecapEditorContent(
     onPreviewClick: () -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onColorClick: (RecapColor) -> Unit,
+    onStickerItemClick: (StickerType) -> Unit,
+    onStickerClick: (StickerType) -> Unit,
+    onStickerFrameChange: (StickerType, StickerFrame) -> Unit,
+    onStickerDeleteClick: (StickerType) -> Unit,
+    onResetClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     RouteeBgEllipse(modifier = modifier) {
@@ -168,18 +212,37 @@ private fun RecapEditorContent(
                     .weight(1f)
                     .padding(top = RouteeTheme.spacing.Spacing12),
             ) {
-                RecapPreview(
-                    backgroundUrl = content.mapImageUrl,
-                    overlayOpacity = uiState.overlayOpacity,
-                    recapColor = uiState.recapColor,
-                    record = content.record,
-                    track = content.track,
-                    onBackgroundClick = onPreviewClick,
+                Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(horizontal = RouteeTheme.spacing.Spacing16)
                         .aspectRatio(PREVIEW_ASPECT_RATIO),
-                )
+                ) {
+                    RecapPreview(
+                        backgroundUrl = content.mapImageUrl,
+                        overlayOpacity = uiState.overlayOpacity,
+                        recapColor = uiState.recapColor,
+                        record = content.record,
+                        track = content.track,
+                        routeNames = content.routeNames,
+                        stickers = uiState.stickers,
+                        selectedSticker = uiState.selectedSticker,
+                        onBackgroundClick = onPreviewClick,
+                        onStickerClick = onStickerClick,
+                        onStickerFrameChange = onStickerFrameChange,
+                        onStickerDeleteClick = onStickerDeleteClick,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (uiState.selectedTab == null) {
+                        RecapResetButton(
+                            enabled = uiState.hasChanges,
+                            onClick = onResetClick,
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = RouteeTheme.spacing.Spacing16, bottom = RouteeTheme.spacing.Spacing18),
+                        )
+                    }
+                }
                 when (uiState.selectedTab) {
                     RecapEditTab.BRIGHTNESS -> BrightnessSlider(
                         value = uiState.brightness,
@@ -193,7 +256,15 @@ private fun RecapEditorContent(
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
 
-                    RecapEditTab.BACKGROUND, RecapEditTab.STICKER, null -> Unit
+                    RecapEditTab.STICKER -> StickerPalette(
+                        selectedSticker = uiState.selectedSticker,
+                        onStickerClick = onStickerItemClick,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .routeeMessageAnchor(),
+                    )
+
+                    RecapEditTab.BACKGROUND, null -> Unit
                 }
             }
             RecapEditNavBar(
@@ -219,6 +290,11 @@ private class RecapEditorUiStatePreviewParameterProvider : PreviewParameterProvi
         RecapEditorUiState(content = content),
         RecapEditorUiState(content = content, selectedTab = RecapEditTab.BRIGHTNESS),
         RecapEditorUiState(content = content, selectedTab = RecapEditTab.COLOR, recapColor = RecapColor.ORANGE),
+        RecapEditorUiState(
+            content = content,
+            selectedTab = RecapEditTab.STICKER,
+            selectedSticker = StickerType.WORKOUT_RECORD,
+        ),
     )
 }
 
@@ -236,6 +312,13 @@ private fun RecapEditorScreenPreview(
             onPreviewClick = {},
             onBrightnessChange = {},
             onColorClick = {},
+            onStickerItemClick = {},
+            onStickerClick = {},
+            onStickerFrameChange = { _, _ -> },
+            onStickerDeleteClick = {},
+            onResetClick = {},
+            onResetConfirm = {},
+            onResetDismiss = {},
             onEditStopConfirm = {},
             onEditStopDismiss = {},
             onRetryClick = {},
