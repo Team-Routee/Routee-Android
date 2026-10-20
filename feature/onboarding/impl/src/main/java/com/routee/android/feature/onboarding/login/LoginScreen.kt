@@ -48,7 +48,7 @@ import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
-import com.routee.android.core.ui.terms.TermsDocument
+import com.routee.android.core.ui.link.RouteeLink
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
 import com.routee.android.feature.onboarding.login.model.LoginUiState
@@ -190,8 +190,8 @@ private fun LoginScreen(
 private fun TermsNoticeText(modifier: Modifier = Modifier) {
     val html = stringResource(
         R.string.onboarding_login_terms_notice,
-        TermsDocument.SERVICE.url,
-        TermsDocument.PRIVACY.url,
+        RouteeLink.SERVICE_TERMS.url,
+        RouteeLink.PRIVACY_POLICY.url,
     )
     val text = remember(html) {
         AnnotatedString.fromHtml(

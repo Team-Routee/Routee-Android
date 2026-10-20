@@ -43,7 +43,7 @@ import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
-import com.routee.android.core.ui.terms.TermsDocument
+import com.routee.android.core.ui.link.RouteeLink
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.terms.model.TermsItem
 import com.routee.android.feature.onboarding.terms.model.TermsSideEffect
@@ -91,7 +91,7 @@ private fun TermsScreen(
     onBackClick: () -> Unit,
     onAllCheckedChange: (Boolean) -> Unit,
     onItemCheckedChange: (TermsItem, Boolean) -> Unit,
-    onDocumentClick: (TermsDocument) -> Unit,
+    onDocumentClick: (RouteeLink) -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -193,7 +193,7 @@ private fun TermsItemRow(
     item: TermsItem,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    onDocumentClick: (TermsDocument) -> Unit,
+    onDocumentClick: (RouteeLink) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val title = stringResource(item.titleRes)
