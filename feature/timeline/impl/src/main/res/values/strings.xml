@@ -6,6 +6,14 @@
     <string name="timeline_default_record_title">%1$s 기록</string>
     <!-- 사진 타임라인 -->
     <string name="timeline_photo_title">타임라인</string>
+    <string name="timeline_exit_title">기록을 저장하지 않고\n나가시겠습니까?</string>
+    <string name="timeline_exit_description">운동 기록이 저장되지 않고,\n기록을 복구할 수 없습니다.</string>
+    <string name="timeline_cancel">취소</string>
+    <string name="timeline_exit">나가기</string>
+    <string name="timeline_save_failed_title">기록 등록 실패</string>
+    <string name="timeline_invalid_route_description">운동 경로를 확인할 수 없어\n기록이 등록되지 않았어요.\n위치 정보를 확인한 후 다시 시도해주세요.</string>
+    <string name="timeline_save_failed_description">인터넷 연결이 불안정해서\n기록이 등록되지 않았어요.\n연결이 안정되면 다시 기록해주세요.\n\n(인터넷 연결 오프라인 상태)</string>
+    <string name="timeline_confirm">확인</string>
     <!-- 나의 루트 편집 -->
     <string name="timeline_route_title">나의 루트</string>
     <string name="timeline_route_point_count">(%1$d/%2$d)</string>
