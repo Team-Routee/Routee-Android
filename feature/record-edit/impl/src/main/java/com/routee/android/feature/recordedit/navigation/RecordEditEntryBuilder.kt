@@ -28,6 +28,7 @@ fun EntryProviderScope<NavKey>.recordEditEntries(navigator: RouteeNavigator) {
             onNavigateBack = navigator::navigateBack,
             onNavigateToHome = navigator::navigateToHome,
             onNavigateToBackgroundCrop = { imageUri -> navigator.navigateTo(RecapBackgroundCropNavKey(imageUri)) },
+            onNavigateToComplete = { imagePath -> navigator.navigateTo(RecapCompleteNavKey(imagePath)) },
         )
     }
     viewModelEntry<RecapCompleteNavKey, RecapCompleteViewModel, RecapCompleteViewModel.Factory> { _, viewModel ->

@@ -17,8 +17,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -44,6 +50,7 @@ import com.routee.android.feature.recordedit.background.PickImageFromGallery
 import com.routee.android.feature.recordedit.background.RecapBackgroundCropResult
 import com.routee.android.feature.recordedit.component.editor.BrightnessSlider
 import com.routee.android.feature.recordedit.component.editor.ColorPalette
+import com.routee.android.feature.recordedit.component.editor.RecapCompleteAnimation
 import com.routee.android.feature.recordedit.component.editor.RecapEditNavBar
 import com.routee.android.feature.recordedit.component.editor.RecapPreview
 import com.routee.android.feature.recordedit.component.editor.RecapResetButton
@@ -60,14 +67,18 @@ import com.routee.android.feature.recordedit.model.StickerType
 // recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
+private const val CAPTURE_WAIT_FRAMES = 2
+
 @Composable
 internal fun RecapEditorRoute(
     viewModel: RecapEditorViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToBackgroundCrop: (imageUri: String) -> Unit,
+    onNavigateToComplete: (imagePath: String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val recapLayer = rememberGraphicsLayer()
     val messageState = LocalRouteeMessageState.current
     val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
     val onImagePicked: (Uri?) -> Unit = { uri ->
@@ -88,6 +99,18 @@ internal fun RecapEditorRoute(
             } catch (e: ActivityNotFoundException) {
                 photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             }
+
+            RecapEditorSideEffect.CaptureRecap -> {
+                repeat(CAPTURE_WAIT_FRAMES) { withFrameNanos {} }
+                runCatching { recapLayer.toImageBitmap().asAndroidBitmap() }
+                    .onSuccess(viewModel::onRecapCaptured)
+                    .onFailure(viewModel::onRecapCaptureFailure)
+            }
+
+            is RecapEditorSideEffect.NavigateToComplete -> {
+                onNavigateToComplete(sideEffect.imagePath)
+                viewModel.onNavigatedToComplete()
+            }
         }
     }
 
@@ -102,6 +125,7 @@ internal fun RecapEditorRoute(
 
     RecapEditorScreen(
         uiState = uiState,
+        recapLayer = recapLayer,
         onBackClick = viewModel::onBackClick,
         onCompleteClick = viewModel::onCompleteClick,
         onTabClick = viewModel::onTabClick,
@@ -119,12 +143,14 @@ internal fun RecapEditorRoute(
         onEditStopDismiss = viewModel::onEditStopDismiss,
         onRetryClick = viewModel::onRetryClick,
         onHomeClick = onNavigateToHome,
+        onCompleteAnimationEnd = viewModel::onCompleteAnimationEnd,
     )
 }
 
 @Composable
 private fun RecapEditorScreen(
     uiState: RecapEditorUiState,
+    recapLayer: GraphicsLayer,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onTabClick: (RecapEditTab) -> Unit,
@@ -142,6 +168,7 @@ private fun RecapEditorScreen(
     onEditStopDismiss: () -> Unit,
     onRetryClick: () -> Unit,
     onHomeClick: () -> Unit,
+    onCompleteAnimationEnd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (val content = uiState.content) {
@@ -156,6 +183,7 @@ private fun RecapEditorScreen(
 
         is UiState.Success -> RecapEditorContent(
             uiState = uiState,
+            recapLayer = recapLayer,
             content = content.data,
             onBackClick = onBackClick,
             onCompleteClick = onCompleteClick,
@@ -168,6 +196,7 @@ private fun RecapEditorScreen(
             onStickerFrameChange = onStickerFrameChange,
             onStickerDeleteClick = onStickerDeleteClick,
             onResetClick = onResetClick,
+            onCompleteAnimationEnd = onCompleteAnimationEnd,
             modifier = modifier,
         )
     }
@@ -198,6 +227,7 @@ private fun RecapEditorScreen(
 @Composable
 private fun RecapEditorContent(
     uiState: RecapEditorUiState,
+    recapLayer: GraphicsLayer,
     content: RecapEditorContent,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
@@ -210,6 +240,7 @@ private fun RecapEditorContent(
     onStickerFrameChange: (StickerType, StickerFrame) -> Unit,
     onStickerDeleteClick: (StickerType) -> Unit,
     onResetClick: () -> Unit,
+    onCompleteAnimationEnd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     RouteeBgEllipse(modifier = modifier) {
@@ -260,7 +291,12 @@ private fun RecapEditorContent(
                         onStickerClick = onStickerClick,
                         onStickerFrameChange = onStickerFrameChange,
                         onStickerDeleteClick = onStickerDeleteClick,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawWithContent {
+                                recapLayer.record { this@drawWithContent.drawContent() }
+                                drawLayer(recapLayer)
+                            },
                     )
                     if (uiState.selectedTab == null) {
                         RecapResetButton(
@@ -301,6 +337,12 @@ private fun RecapEditorContent(
                 onTabClick = onTabClick,
             )
         }
+        if (uiState.isCompleteAnimationVisible) {
+            RecapCompleteAnimation(
+                onFinish = onCompleteAnimationEnd,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -335,6 +377,7 @@ private fun RecapEditorScreenPreview(
     RouteePreviewTheme {
         RecapEditorScreen(
             uiState = uiState,
+            recapLayer = rememberGraphicsLayer(),
             onBackClick = {},
             onCompleteClick = {},
             onTabClick = {},
@@ -352,6 +395,7 @@ private fun RecapEditorScreenPreview(
             onEditStopDismiss = {},
             onRetryClick = {},
             onHomeClick = {},
+            onCompleteAnimationEnd = {},
         )
     }
 }
