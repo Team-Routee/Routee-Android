@@ -17,12 +17,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.extension.noRippleClickable
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.onboarding.R
@@ -39,8 +37,7 @@ internal fun GoogleLoginButton(
             .defaultMinSize(minHeight = ButtonMinHeight)
             .clip(RoundedCornerShape(RouteeTheme.radius.Full))
             .background(RouteeTheme.colors.white)
-            .noRippleClickable(onClick = onClick)
-            .semantics { role = Role.Button }
+            .noRippleClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = RouteeTheme.spacing.Spacing16),
         horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
@@ -57,7 +54,7 @@ internal fun GoogleLoginButton(
     }
 }
 
-@Preview(widthDp = 360)
+@PreviewFontSizes
 @Composable
 private fun GoogleLoginButtonPreview() {
     RouteePreviewTheme {

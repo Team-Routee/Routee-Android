@@ -19,7 +19,7 @@ fun EntryProviderScope<NavKey>.settingEntries(navigator: RouteeNavigator) {
             onProfileClick = { navigator.navigateTo(ProfileEditNavKey) },
             onContactClick = { navigator.navigateTo(ContactNavKey) },
             onWithdrawClick = { navigator.navigateTo(WithdrawNavKey) },
-            onLogout = { navigator.clearAndNavigateTo(LoginNavKey) },
+            onLogout = { navigator.clearAndNavigateTo(LoginNavKey()) },
         )
     }
     entry<ContactNavKey> {
@@ -31,7 +31,7 @@ fun EntryProviderScope<NavKey>.settingEntries(navigator: RouteeNavigator) {
     entry<WithdrawNavKey> {
         WithdrawRoute(
             onBackClick = navigator::navigateBack,
-            onWithdrawn = { navigator.clearAndNavigateTo(LoginNavKey) },
+            onWithdrawn = { navigator.clearAndNavigateTo(LoginNavKey()) },
         )
     }
 }

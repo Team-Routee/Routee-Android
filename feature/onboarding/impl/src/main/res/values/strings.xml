@@ -2,4 +2,32 @@
 <resources>
     <!-- 로그인 -->
     <string name="onboarding_login_google_button">Continue with Google</string>
+    <string name="onboarding_login_terms_notice"><![CDATA[계속 진행하면 Routee의 서비스 <a href="%1$s">이용약관에 동의</a>하게 됩니다.<br>개인정보 처리 방식은 <a href="%2$s">개인정보 처리방침</a>에서 확인할 수 있습니다.]]></string>
+    <string name="onboarding_login_exit_toast">한 번 더 누르면 앱이 종료됩니다</string>
+    <string name="onboarding_login_session_expired_dialog_title">Welcome back to Routee!</string>
+    <string name="onboarding_login_session_expired_dialog_description">오랫동안 이용하지 않아\n다시 로그인이 필요해요.</string>
+    <string name="onboarding_login_session_expired_dialog_confirm">확인</string>
+
+    <!-- 이용약관 동의 -->
+    <string name="onboarding_terms_title">서비스 이용 약관에 동의해 주세요.</string>
+    <string name="onboarding_terms_all_agree">모두 동의합니다.</string>
+    <string name="onboarding_terms_required">[필수]</string>
+    <string name="onboarding_terms_optional">[선택]</string>
+    <string name="onboarding_terms_item_service">서비스 이용약관</string>
+    <string name="onboarding_terms_item_privacy">개인정보 처리방침</string>
+    <string name="onboarding_terms_item_location">위치기반 서비스 이용약관</string>
+    <string name="onboarding_terms_item_over_14">만 14세 이상입니다</string>
+    <string name="onboarding_terms_item_marketing">마케팅 활용 및 광고성 정보 수신 동의</string>
+    <string name="onboarding_terms_document_a11y">%1$s 보기</string>
+    <string name="onboarding_terms_next_button">다음</string>
+
+    <!-- 닉네임 작성 -->
+    <string name="onboarding_nickname_title">사용할 닉네임을 설정해주세요.</string>
+    <string name="onboarding_nickname_placeholder">닉네임을 입력해주세요</string>
+    <string name="onboarding_nickname_guide">한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)</string>
+    <string name="onboarding_nickname_start_button">시작하기</string>
+
+    <!-- 공통 -->
+    <string name="onboarding_network_error_toast">네트워크 연결을 확인해주세요</string>
+    <string name="onboarding_unknown_error_toast">일시적인 오류가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
 </resources>

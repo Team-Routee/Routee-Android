@@ -97,11 +97,14 @@ internal class AuthRepositoryImpl @Inject constructor(
         },
     )
 
-    private fun mapAuthException(exception: ApiException): Throwable = when (exception.serverCode) {
-        INVALID_ID_TOKEN, ID_TOKEN_EXPIRED, INVALID_TOKEN_CLAIMS -> AuthException.InvalidIdToken(exception.message)
-        REQUIRED_AGREEMENT_NOT_ACCEPTED -> AuthException.RequiredAgreementNotAccepted(exception.message)
-        ALREADY_REGISTERED_MEMBER -> AuthException.AlreadyRegistered(exception.message)
-        else -> exception
+    private fun mapAuthException(exception: ApiException): Throwable {
+        if (exception is ApiException.NetworkConnection) return AuthException.NetworkUnavailable(exception.message)
+        return when (exception.serverCode) {
+            INVALID_ID_TOKEN, ID_TOKEN_EXPIRED, INVALID_TOKEN_CLAIMS -> AuthException.InvalidIdToken(exception.message)
+            REQUIRED_AGREEMENT_NOT_ACCEPTED -> AuthException.RequiredAgreementNotAccepted(exception.message)
+            ALREADY_REGISTERED_MEMBER -> AuthException.AlreadyRegistered(exception.message)
+            else -> exception
+        }
     }
 
     private fun Agreements.toRequest() = AgreementsRequest(

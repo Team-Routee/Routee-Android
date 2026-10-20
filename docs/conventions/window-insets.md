@@ -4,6 +4,7 @@
 | --- | --- | --- | --- |
 | Tab first screen (tab bar visible) | `statusBarsPadding()` | `routeeNavBarPadding()` | `imePadding()` + scroll |
 | Other screens (no tab bar) | `statusBarsPadding()` | `navigationBarsPadding()` | `imePadding()` + scroll |
+| Bottom button hidden by keyboard | `statusBarsPadding()` | `navigationBarsPadding()` | `imePaddingAbove(button area)` + `scrollToEndOnFocus` on the scroll area |
 
 ```kotlin
 // 탭 첫 화면: 탭 Scene이 탭 바와 내비게이션 바 인셋을 이미 소비함. navigationBarsPadding() 금지
@@ -15,6 +16,9 @@ Column(Modifier.fillMaxSize().statusBarsPadding().imePadding().verticalScroll(re
     // 내용
     Spacer(Modifier.height(routeeNavBarPadding())) // 탭 아래면 스크롤 안쪽 끝에
 }
+
+// 키보드가 하단 버튼을 덮는 디자인: 바깥 imePadding 대신 스크롤 영역만 키보드 위로 줄임
+Column(Modifier.weight(1f).imePaddingAbove(buttonAreaHeight).scrollToEndOnFocus(scrollState).verticalScroll(scrollState)) { ... }
 
 // bringIntoViewOnFocus, preventCursorScroll은 imePadding + 스크롤로 부족할 때만
 ```

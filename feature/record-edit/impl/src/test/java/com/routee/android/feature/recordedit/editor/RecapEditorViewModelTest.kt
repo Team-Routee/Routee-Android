@@ -1,0 +1,127 @@
+package com.routee.android.feature.recordedit.editor
+
+import com.routee.android.feature.recordedit.api.RecapEditorNavKey
+import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
+import com.routee.android.feature.recordedit.editor.model.RecapSticker
+import com.routee.android.feature.recordedit.editor.model.StickerFrame
+import com.routee.android.feature.recordedit.model.RecapColor
+import com.routee.android.feature.recordedit.model.RecapEditTab
+import com.routee.android.feature.recordedit.model.StickerType
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class RecapEditorViewModelTest {
+
+    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L))
+    private val state get() = viewModel.uiState.value
+
+    /**
+     * GIVEN: 색을 바꿨다가
+     * WHEN: 처음 색으로 되돌리면
+     * THEN: 변경 사항이 없다
+     */
+    @Test
+    fun `처음 상태로 되돌리면 변경 사항이 없다`() {
+        viewModel.onColorClick(RecapColor.ORANGE)
+        assertTrue(state.hasChanges)
+
+        viewModel.onColorClick(RecapColor.DEFAULT)
+
+        assertFalse(state.hasChanges)
+    }
+
+    /**
+     * GIVEN: 처음 스티커를
+     * WHEN: 탭해서 선택하면
+     * THEN: 맨 위로 올라오지만 변경 사항은 아니다
+     */
+    @Test
+    fun `스티커를 선택하면 맨 위로 올라오고 변경 사항은 아니다`() {
+        viewModel.onStickerClick(StickerType.WORKOUT_RECORD)
+
+        assertEquals(StickerType.WORKOUT_RECORD, state.stickers.last().type)
+        assertEquals(StickerType.WORKOUT_RECORD, state.selectedSticker)
+        assertFalse(state.hasChanges)
+    }
+
+    /**
+     * GIVEN: 기록 스티커를 삭제한 뒤
+     * WHEN: 서브탭에서 다시 추가하면
+     * THEN: 가운데에 맨 위로 놓이고 선택된다
+     */
+    @Test
+    fun `삭제 후 다시 추가하면 가운데 맨 위에 놓인다`() {
+        viewModel.onStickerDeleteClick(StickerType.WORKOUT_RECORD)
+        assertTrue(state.stickers.none { it.type == StickerType.WORKOUT_RECORD })
+        assertTrue(state.hasChanges)
+
+        viewModel.onStickerItemClick(StickerType.WORKOUT_RECORD)
+
+        assertEquals(RecapSticker(StickerType.WORKOUT_RECORD, isCentered = true), state.stickers.last())
+        assertEquals(StickerType.WORKOUT_RECORD, state.selectedSticker)
+    }
+
+    /**
+     * GIVEN: 스티커가 선택된 상태에서
+     * WHEN: 스티커 탭을 열면
+     * THEN: 스티커 선택이 풀린다
+     */
+    @Test
+    fun `스티커 탭을 열면 스티커 선택이 풀린다`() {
+        viewModel.onStickerClick(StickerType.PHOTO_TIMELINE)
+
+        viewModel.onTabClick(RecapEditTab.STICKER)
+
+        assertEquals(RecapEditTab.STICKER, state.selectedTab)
+        assertNull(state.selectedSticker)
+    }
+
+    /**
+     * GIVEN: 스티커가 선택된 상태에서
+     * WHEN: 밝기 탭으로 바꾸면
+     * THEN: 스티커 선택이 유지된다
+     */
+    @Test
+    fun `스티커 탭이 아닌 탭끼리 바꾸면 스티커 선택이 유지된다`() {
+        viewModel.onTabClick(RecapEditTab.COLOR)
+        viewModel.onStickerClick(StickerType.PHOTO_TIMELINE)
+
+        viewModel.onTabClick(RecapEditTab.BRIGHTNESS)
+
+        assertEquals(StickerType.PHOTO_TIMELINE, state.selectedSticker)
+    }
+
+    /**
+     * GIVEN: 스티커를 옮기고 밝기와 색을 바꾼 뒤
+     * WHEN: 초기화를 확인하면
+     * THEN: 처음 상태로 돌아간다
+     */
+    @Test
+    fun `초기화하면 처음 상태로 돌아간다`() {
+        viewModel.onStickerFrameChange(StickerType.WORKOUT_RECORD, StickerFrame(x = 10f, y = 10f, scale = 2f))
+        viewModel.onBrightnessChange(0.2f)
+        viewModel.onColorClick(RecapColor.ORANGE)
+        viewModel.onResetClick()
+        assertTrue(state.isResetDialogVisible)
+
+        viewModel.onResetConfirm()
+
+        assertEquals(RecapEditorUiState(content = state.content), state)
+        assertFalse(state.hasChanges)
+    }
+
+    /**
+     * GIVEN: 변경 사항이 없을 때
+     * WHEN: 초기화 버튼을 누르면
+     * THEN: 모달을 띄우지 않는다
+     */
+    @Test
+    fun `변경 사항이 없으면 초기화 모달을 띄우지 않는다`() {
+        viewModel.onResetClick()
+
+        assertFalse(state.isResetDialogVisible)
+    }
+}

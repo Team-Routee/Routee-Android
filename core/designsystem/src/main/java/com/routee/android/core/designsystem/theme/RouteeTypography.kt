@@ -24,11 +24,15 @@ internal val Archivo = FontFamily(
     Font(R.font.archivo_bold_italic, FontWeight.Bold, FontStyle.Italic),
 )
 
-private fun pretendard(weight: FontWeight, size: Int) = TextStyle(
+private fun pretendard(
+    weight: FontWeight,
+    size: Int,
+    lineHeight: Double = 1.4, // 140%
+) = TextStyle(
     fontFamily = Pretendard,
     fontWeight = weight,
     fontSize = size.sp,
-    lineHeight = 1.4.em, // 140%
+    lineHeight = lineHeight.em,
     letterSpacing = (-0.01).em, // -1.0%
     platformStyle = PlatformTextStyle(includeFontPadding = false),
     lineHeightStyle = LineHeightStyle(
@@ -70,6 +74,7 @@ data class RouteeTypography(
     val labelSb12: TextStyle,
     val labelM12: TextStyle,
     val labelR12: TextStyle,
+    val labelR10: TextStyle,
 )
 
 val DefaultRouteeTypography = RouteeTypography(
@@ -97,6 +102,7 @@ val DefaultRouteeTypography = RouteeTypography(
     labelSb12 = pretendard(FontWeight.SemiBold, 12),
     labelM12 = pretendard(FontWeight.Medium, 12),
     labelR12 = pretendard(FontWeight.Normal, 12),
+    labelR10 = pretendard(FontWeight.Normal, 10, lineHeight = 1.5), // 150%
 )
 
 internal val LocalRouteeTypography = staticCompositionLocalOf { DefaultRouteeTypography }
