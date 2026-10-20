@@ -8,11 +8,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -133,15 +135,24 @@ private fun RecapCompleteScreen(
                 },
             )
             Spacer(modifier = Modifier.height(RecapImageTopSpacing))
-            RouteeAsyncImage(
-                url = imageUrl,
-                contentDescription = stringResource(R.string.record_edit_complete_image_a11y),
+            Box(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .widthIn(max = RecapImageMaxWidth)
-                    .aspectRatio(RECAP_ASPECT_RATIO)
-                    .routeeMessageAnchor(),
-            )
+                    .aspectRatio(RECAP_ASPECT_RATIO),
+            ) {
+                RouteeAsyncImage(
+                    url = imageUrl,
+                    contentDescription = stringResource(R.string.record_edit_complete_image_a11y),
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Spacer(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .routeeMessageAnchor(),
+                )
+            }
             Spacer(modifier = Modifier.height(ActionButtonTopSpacing))
             Row(horizontalArrangement = Arrangement.spacedBy(ActionButtonSpacing)) {
                 RecapActionButton(
