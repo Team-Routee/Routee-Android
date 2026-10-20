@@ -9,4 +9,5 @@ android {
 dependencies {
     implementation(projects.core.common)
     implementation(projects.feature.timeline.api)
+    implementation(projects.feature.recordEdit.api)
 }
