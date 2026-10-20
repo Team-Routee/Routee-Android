@@ -3,10 +3,14 @@ package com.routee.android.feature.workout.recording
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -90,17 +94,52 @@ private fun WorkoutRecordingScreen(
 ) {
     // TODO 내 위치, 경로선, 사진 마커 연결
     RouteeNaverMap(modifier = modifier.fillMaxSize()) {
-        if (uiState.mode != WorkoutMode.FINISHING) {
-            WorkoutRecordingContent(
-                distanceMeters = uiState.distanceMeters,
-                durationSec = uiState.durationSec,
-                maxElevationMeters = uiState.maxElevationMeters,
-                photoCount = uiState.photoCount,
-                isCameraEnabled = uiState.isCameraEnabled,
-                onMyLocationClick = onMyLocationClick,
-                onStopClick = onStopClick,
-                onCameraClick = onCameraClick,
-            )
+        AnimatedContent(
+            targetState = uiState.mode,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = { workoutModeTransition() },
+        ) { mode ->
+            when (mode) {
+                WorkoutMode.COUNTDOWN -> RouteeLottie(
+                    resId = DesignSystemR.raw.lottie_workout_countdown,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(RouteeTheme.colors.black)
+                        .pointerInput(Unit) {},
+                    contentScale = ContentScale.Crop,
+                    onFinish = onCountdownFinish,
+                )
+
+                WorkoutMode.RECORDING -> WorkoutRecordingContent(
+                    distanceMeters = uiState.distanceMeters,
+                    durationSec = uiState.durationSec,
+                    maxElevationMeters = uiState.maxElevationMeters,
+                    photoCount = uiState.photoCount,
+                    isCameraEnabled = uiState.isCameraEnabled,
+                    onMyLocationClick = onMyLocationClick,
+                    onStopClick = onStopClick,
+                    onCameraClick = onCameraClick,
+                )
+
+                WorkoutMode.PAUSED -> WorkoutPauseContent(
+                    distanceMeters = uiState.distanceMeters,
+                    durationSec = uiState.durationSec,
+                    maxElevationMeters = uiState.maxElevationMeters,
+                    onRestartClick = onRestartClick,
+                    onEndClick = onEndClick,
+                    onEndLongPress = onEndLongPress,
+                )
+
+                WorkoutMode.FINISHING -> RouteeLottie(
+                    resId = DesignSystemR.raw.lottie_workout_finish,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {},
+                    speed = FINISH_ANIMATION_SPEED,
+                    contentScale = ContentScale.Crop,
+                    onFinish = onFinishAnimationEnd,
+                )
+            }
         }
         // 네이버 로고: 오른쪽 아래
         Spacer(
@@ -113,44 +152,17 @@ private fun WorkoutRecordingScreen(
                     inset = RouteeTheme.spacing.Spacing14,
                 ),
         )
-        AnimatedVisibility(
-            visible = uiState.mode == WorkoutMode.COUNTDOWN,
-            enter = EnterTransition.None,
-            exit = fadeOut(tween(COUNTDOWN_FADE_OUT_MILLIS)),
-        ) {
-            RouteeLottie(
-                resId = DesignSystemR.raw.lottie_workout_countdown,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(RouteeTheme.colors.black)
-                    .pointerInput(Unit) {},
-                contentScale = ContentScale.Crop,
-                onFinish = onCountdownFinish,
-            )
-        }
-        if (uiState.mode == WorkoutMode.PAUSED) {
-            WorkoutPauseContent(
-                distanceMeters = uiState.distanceMeters,
-                durationSec = uiState.durationSec,
-                maxElevationMeters = uiState.maxElevationMeters,
-                onRestartClick = onRestartClick,
-                onEndClick = onEndClick,
-                onEndLongPress = onEndLongPress,
-            )
-        }
-        if (uiState.mode == WorkoutMode.FINISHING) {
-            RouteeLottie(
-                resId = DesignSystemR.raw.lottie_workout_finish,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {},
-                speed = FINISH_ANIMATION_SPEED,
-                contentScale = ContentScale.Crop,
-                onFinish = onFinishAnimationEnd,
-            )
-        }
     }
 }
+
+private fun AnimatedContentTransitionScope<WorkoutMode>.workoutModeTransition(): ContentTransform =
+    if (initialState == WorkoutMode.COUNTDOWN) {
+        (EnterTransition.None togetherWith fadeOut(tween(COUNTDOWN_FADE_OUT_MILLIS))).apply {
+            targetContentZIndex = -1f
+        }
+    } else {
+        EnterTransition.None togetherWith ExitTransition.None
+    }
 
 @Composable
 private fun RecordingBackHandler(mode: WorkoutMode) {
