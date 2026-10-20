@@ -9,7 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import kotlin.math.roundToInt
 
 /**
@@ -94,7 +95,7 @@ private class MapLogoAboveNode(
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
         val anchor = currentValueOf(LocalMapLogoAnchor) ?: return
-        val bounds = coordinates.boundsInRoot()
+        val bounds = Rect(coordinates.positionInRoot(), coordinates.size.toSize())
         this.anchor = anchor
         placedBounds = bounds
         anchor.bounds = bounds
