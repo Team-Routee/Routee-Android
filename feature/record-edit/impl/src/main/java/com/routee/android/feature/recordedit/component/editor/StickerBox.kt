@@ -32,12 +32,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.extension.noRippleClickable
+import com.routee.android.core.designsystem.theme.RouteeBorder
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.R
 import com.routee.android.feature.recordedit.editor.model.StickerFrame
 
 // sticker_bounding_box
-private val BorderWidth = 1.dp
 
 /**
  * 캔버스 위 스티커 틀 (sticker_bounding_box)
@@ -159,7 +159,7 @@ private fun StickerDecoration(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(RouteeTheme.spacing.Spacing12)
-                .border(BorderWidth, RouteeTheme.colors.statusInfo),
+                .border(RouteeBorder.Thickness, RouteeTheme.colors.statusInfo),
         )
         StickerHandle.entries.forEach { handle ->
             ResizeHandle(
@@ -217,7 +217,7 @@ private fun BoxScope.ResizeHandle(
             modifier = Modifier
                 .size(RouteeTheme.spacing.Spacing8)
                 .background(RouteeTheme.colors.white)
-                .border(BorderWidth, RouteeTheme.colors.statusInfo),
+                .border(RouteeTheme.border.Thickness, RouteeTheme.colors.statusInfo),
         )
     }
 }
