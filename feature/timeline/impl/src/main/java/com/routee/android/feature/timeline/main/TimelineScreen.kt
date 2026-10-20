@@ -45,6 +45,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val RecordDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+private val EditIconTouchSize = 44.dp
+private val SectionTopSpacing = 52.dp
+private val SectionSpacing = 48.dp
+private val CtaTopSpacing = 40.dp
+private val BottomSpacing = 28.dp
 
 @Composable
 internal fun TimelineRoute(
@@ -145,7 +150,7 @@ private fun TimelineScreen(
                             imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_white),
                             contentDescription = stringResource(R.string.timeline_edit_title),
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(EditIconTouchSize)
                                 .noRippleClickable(onClick = onEditTitleClick)
                                 .semantics { role = Role.Button }
                                 .padding(RouteeTheme.spacing.Spacing10),
@@ -164,18 +169,18 @@ private fun TimelineScreen(
                     }
                 }
                 if (photoTimeline != null || myRoute != null) {
-                    Spacer(Modifier.height(52.dp))
+                    Spacer(Modifier.height(SectionTopSpacing))
                 }
                 photoTimeline?.invoke()
                 if (photoTimeline != null && myRoute != null) {
-                    Spacer(Modifier.height(48.dp))
+                    Spacer(Modifier.height(SectionSpacing))
                 }
                 if (myRoute != null) {
                     Column(modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16)) {
                         myRoute()
                     }
                 }
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(CtaTopSpacing))
                 RouteeCtaPrimaryButton(
                     text = stringResource(R.string.timeline_edit_record),
                     onClick = onRecordEditClick,
@@ -183,7 +188,7 @@ private fun TimelineScreen(
                         .fillMaxWidth()
                         .padding(horizontal = RouteeTheme.spacing.Spacing16),
                 )
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(BottomSpacing))
             }
         }
     }
