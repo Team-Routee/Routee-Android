@@ -44,6 +44,7 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.link.RouteeLink
+import com.routee.android.core.ui.link.tryOpenUri
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.terms.model.TermsItem
 import com.routee.android.feature.onboarding.terms.model.TermsSideEffect
@@ -80,7 +81,7 @@ internal fun TermsRoute(
         onBackClick = viewModel::onBackClick,
         onAllCheckedChange = viewModel::onAllCheckedChange,
         onItemCheckedChange = viewModel::onItemCheckedChange,
-        onDocumentClick = { document -> uriHandler.openUri(document.url) },
+        onDocumentClick = { document -> uriHandler.tryOpenUri(document.url) },
         onNextClick = viewModel::onNextClick,
     )
 }
