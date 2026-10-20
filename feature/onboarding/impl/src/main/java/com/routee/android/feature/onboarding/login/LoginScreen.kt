@@ -35,10 +35,13 @@ import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
@@ -48,6 +51,7 @@ import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.terms.TermsDocument
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
+import com.routee.android.feature.onboarding.login.model.LoginUiState
 import kotlinx.coroutines.launch
 
 private const val BACKGROUND_HEIGHT = 639f
@@ -62,10 +66,11 @@ private val LogoAlignment = BiasAlignment(
 
 @Composable
 internal fun LoginRoute(
+    viewModel: LoginViewModel,
     onNavigateToHome: () -> Unit,
     onNavigateToTerms: (idToken: String) -> Unit,
-    viewModel: LoginViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
     val messageState = LocalRouteeMessageState.current
     val coroutineScope = rememberCoroutineScope()
@@ -104,6 +109,8 @@ internal fun LoginRoute(
     }
 
     LoginScreen(
+        uiState = uiState,
+        onSessionExpiredDialogDismiss = viewModel::onSessionExpiredDialogDismiss,
         onGoogleLoginClick = {
             if (activity != null && !isRequestingIdToken) {
                 isRequestingIdToken = true
@@ -118,6 +125,8 @@ internal fun LoginRoute(
 
 @Composable
 private fun LoginScreen(
+    uiState: LoginUiState,
+    onSessionExpiredDialogDismiss: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,6 +174,16 @@ private fun LoginScreen(
             TermsNoticeText(modifier = Modifier.fillMaxWidth())
         }
     }
+
+    if (uiState.isSessionExpiredDialogVisible) {
+        RouteeOneButtonDialog(
+            title = stringResource(R.string.onboarding_login_session_expired_dialog_title),
+            description = stringResource(R.string.onboarding_login_session_expired_dialog_description),
+            buttonText = stringResource(R.string.onboarding_login_session_expired_dialog_confirm),
+            onButtonClick = onSessionExpiredDialogDismiss,
+            onDismissRequest = onSessionExpiredDialogDismiss,
+        )
+    }
 }
 
 @Composable
@@ -190,11 +209,22 @@ private fun TermsNoticeText(modifier: Modifier = Modifier) {
     )
 }
 
+private class LoginUiStatePreviewParameterProvider : PreviewParameterProvider<LoginUiState> {
+    override val values = sequenceOf(
+        LoginUiState(),
+        LoginUiState(isSessionExpiredDialogVisible = true),
+    )
+}
+
 @PreviewScreenSizes
 @Composable
-private fun LoginScreenPreview() {
+private fun LoginScreenPreview(
+    @PreviewParameter(LoginUiStatePreviewParameterProvider::class) uiState: LoginUiState,
+) {
     RouteePreviewTheme {
         LoginScreen(
+            uiState = uiState,
+            onSessionExpiredDialogDismiss = {},
             onGoogleLoginClick = {},
         )
     }

@@ -3,8 +3,15 @@ package com.routee.android.feature.onboarding.api
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
+/**
+ * 로그인 화면 키
+ *
+ * @param isSessionExpired 토큰 재발급까지 실패해 다시 로그인해야 할 때 true. 진입 시 안내 다이얼로그 노출
+ */
 @Serializable
-data object LoginNavKey : NavKey
+data class LoginNavKey(
+    val isSessionExpired: Boolean = false,
+) : NavKey
 
 /**
  * 이용약관 동의 화면 키

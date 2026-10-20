@@ -6,18 +6,30 @@ import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.navigation.util.NavKeyViewModelFactory
+import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
+import com.routee.android.feature.onboarding.login.model.LoginUiState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@HiltViewModel
-internal class LoginViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = LoginViewModel.Factory::class)
+internal class LoginViewModel @AssistedInject constructor(
+    @Assisted key: LoginNavKey,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(LoginUiState(isSessionExpiredDialogVisible = key.isSessionExpired))
+    val uiState = _uiState.asStateFlow()
+
     private val _sideEffect = Channel<LoginSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
@@ -33,6 +45,10 @@ internal class LoginViewModel @Inject constructor(
             login(idToken)
             isLoggingIn = false
         }
+    }
+
+    fun onSessionExpiredDialogDismiss() {
+        _uiState.update { it.copy(isSessionExpiredDialogVisible = false) }
     }
 
     private suspend fun login(idToken: String) {
@@ -53,4 +69,7 @@ internal class LoginViewModel @Inject constructor(
                 }
             }
     }
+
+    @AssistedFactory
+    interface Factory : NavKeyViewModelFactory<LoginNavKey, LoginViewModel>
 }
