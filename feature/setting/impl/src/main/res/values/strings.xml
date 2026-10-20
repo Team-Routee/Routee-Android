@@ -38,5 +38,10 @@
     <string name="setting_withdraw_button">루티 탈퇴하기</string>
 
     <!-- 프로필 변경 -->
+    <string name="setting_profile_title">프로필 변경</string>
     <string name="setting_profile_image_change_a11y">프로필 사진 변경</string>
+    <string name="setting_profile_nickname_placeholder">닉네임을 입력해주세요</string>
+    <string name="setting_profile_nickname_guide">한글, 영문, 숫자만 입력 가능해요 (공백 연속 불가, 최대 12자)</string>
+    <string name="setting_profile_save">변경하기</string>
+    <string name="setting_profile_saved_toast">변경이 저장되었습니다.</string>
 </resources>
