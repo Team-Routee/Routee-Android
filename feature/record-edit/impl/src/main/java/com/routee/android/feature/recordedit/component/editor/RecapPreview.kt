@@ -17,7 +17,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import com.routee.android.core.designsystem.component.RouteeAsyncImage
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -93,9 +92,9 @@ internal fun RecapPreview(
                 .fillMaxSize()
                 .background(RouteeTheme.colors.black.copy(alpha = overlayOpacity)),
         )
-        stickers.forEachIndexed { index, sticker ->
+        stickers.forEach { sticker ->
             // TODO 그릴 경로가 없을 때 사진 타임라인 스티커 처리(기획확인필요)
-            if (sticker.type == StickerType.PHOTO_TIMELINE && timelineLayout == null) return@forEachIndexed
+            if (sticker.type == StickerType.PHOTO_TIMELINE && timelineLayout == null) return@forEach
 
             key(sticker.type) {
                 StickerBox(
@@ -106,8 +105,7 @@ internal fun RecapPreview(
                     onFrameChange = { onStickerFrameChange(sticker.type, it) },
                     onDeleteClick = { onStickerDeleteClick(sticker.type) },
                     modifier = Modifier
-                        .fillMaxSize()
-                        .zIndex(index.toFloat()),
+                        .fillMaxSize(),
                 ) {
                     when (sticker.type) {
                         StickerType.WORKOUT_RECORD -> WorkoutRecordSticker(

@@ -60,8 +60,6 @@ import com.routee.android.feature.recordedit.model.StickerType
 // recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
-// btn_reset_recap
-
 @Composable
 internal fun RecapEditorRoute(
     viewModel: RecapEditorViewModel,
