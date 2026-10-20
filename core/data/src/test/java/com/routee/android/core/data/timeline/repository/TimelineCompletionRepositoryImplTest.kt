@@ -41,8 +41,20 @@ class TimelineCompletionRepositoryImplTest {
 
         service.calls.clear()
         service.failComplete = true
-        assertTrue(repository.complete(input(listOf("창의문")), "map/key").isFailure)
+        val failingRepository = TimelineCompletionRepositoryImpl(service, ApiResponseHandler(Json))
+        assertTrue(failingRepository.complete(input(listOf("창의문")), "map/key").isFailure)
         assertEquals(listOf("complete"), service.calls)
+    }
+
+    @Test
+    fun retryAfterRouteFailureDoesNotCompleteActivityAgain() = runTest {
+        val service = FakeService().apply { failRoutes = true }
+        val repository = TimelineCompletionRepositoryImpl(service, ApiResponseHandler(Json))
+
+        assertTrue(repository.complete(input(listOf("창의문")), "map/key").isFailure)
+        service.failRoutes = false
+        assertTrue(repository.complete(input(listOf("창의문")), "map/key").isSuccess)
+        assertEquals(listOf("complete", "routes", "routes"), service.calls)
     }
 
     private fun input(names: List<String>) = TimelineCompletion(
@@ -62,6 +74,7 @@ class TimelineCompletionRepositoryImplTest {
     private class FakeService : TimelineCompletionService {
         val calls = mutableListOf<String>()
         var failComplete = false
+        var failRoutes = false
         var completed: ActivityCompleteRequest? = null
         var routes: RoutesCreateRequest? = null
 
@@ -74,6 +87,7 @@ class TimelineCompletionRepositoryImplTest {
 
         override suspend fun createRoutes(activityId: Long, request: RoutesCreateRequest): BaseResponse<JsonElement> {
             calls += "routes"
+            if (failRoutes) throw IOException("offline")
             routes = request
             return response()
         }

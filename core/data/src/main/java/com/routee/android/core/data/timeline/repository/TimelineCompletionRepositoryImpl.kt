@@ -15,6 +15,8 @@ internal class TimelineCompletionRepositoryImpl @Inject constructor(
     private val service: TimelineCompletionService,
     private val apiResponseHandler: ApiResponseHandler,
 ) : TimelineCompletionRepository {
+    private val completedActivityIds = mutableSetOf<Long>()
+
     override suspend fun complete(input: TimelineCompletion, mapImageObjectKey: String): Result<Unit> {
         val title = input.title.trim()
         val names = input.routeNames.map(String::trim).filter(String::isNotEmpty)
@@ -38,8 +40,11 @@ internal class TimelineCompletionRepositoryImpl @Inject constructor(
             endedAt = Instant.ofEpochMilli(input.endedAtEpochMillis)
                 .atZone(ZoneId.systemDefault()).toLocalDateTime().toString(),
         )
-        apiResponseHandler.safeUnitApiCall { service.complete(input.activityId, request) }.exceptionOrNull()
-            ?.let { return Result.failure(it) }
+        if (input.activityId !in completedActivityIds) {
+            apiResponseHandler.safeUnitApiCall { service.complete(input.activityId, request) }.exceptionOrNull()
+                ?.let { return Result.failure(it) }
+            completedActivityIds += input.activityId
+        }
         if (names.isEmpty()) return Result.success(Unit)
         return apiResponseHandler.safeUnitApiCall {
             service.createRoutes(
