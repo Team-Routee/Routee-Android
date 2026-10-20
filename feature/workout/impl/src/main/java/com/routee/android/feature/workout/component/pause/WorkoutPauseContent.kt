@@ -23,6 +23,8 @@ import com.routee.android.core.designsystem.component.message.routeeMessageAncho
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.format.formatDistanceKm
+import com.routee.android.core.ui.format.formatDurationHourMinute
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.main.WorkoutMetricLargeText
 import com.routee.android.feature.workout.component.main.WorkoutStopButton
@@ -59,13 +61,12 @@ internal fun WorkoutPauseContent(
             .pointerInput(Unit) {},
     ) {
         WorkoutMetricLargeText(
-            distance = stringResource(R.string.workout_pause_metric_distance_value, distanceMeters / 1000.0),
-            duration = stringResource(
-                R.string.workout_pause_metric_duration_value,
-                durationSec / 3600,
-                durationSec % 3600 / 60,
+            distance = stringResource(R.string.workout_pause_metric_distance_value, formatDistanceKm(distanceMeters)),
+            duration = formatDurationHourMinute(durationSec),
+            maxElevation = stringResource(
+                R.string.workout_pause_metric_max_elevation_value,
+                maxElevationMeters.toString(),
             ),
-            maxElevation = stringResource(R.string.workout_pause_metric_max_elevation_value, maxElevationMeters),
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(y = MetricOffsetY)

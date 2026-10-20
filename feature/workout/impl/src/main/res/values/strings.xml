@@ -16,9 +16,8 @@
 
     <!-- 운동 정지 -->
     <string name="workout_pause_control_end">종료</string>
-    <string name="workout_pause_metric_distance_value">%1$.2fkm</string>
-    <string name="workout_pause_metric_duration_value">%1$02dh %2$02dm</string>
-    <string name="workout_pause_metric_max_elevation_value">%1$dm</string>
+    <string name="workout_pause_metric_distance_value">%1$skm</string>
+    <string name="workout_pause_metric_max_elevation_value">%1$sm</string>
     <string name="workout_pause_end_guide_toast">종료 버튼을 길게 누르면 기록이 종료됩니다</string>
 
     <!-- 운동 중 사진 타임라인 -->

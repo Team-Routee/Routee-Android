@@ -18,11 +18,12 @@ import com.routee.android.core.designsystem.component.message.routeeMessageAncho
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.format.formatDistanceKm
+import com.routee.android.core.ui.format.formatDurationClock
 import com.routee.android.feature.workout.component.main.MyLocationButton
 import com.routee.android.feature.workout.component.main.WorkoutStopButton
 import com.routee.android.feature.workout.component.main.WorkoutTopGradient
 import com.routee.android.feature.workout.recording.model.MAX_PHOTO_COUNT
-import java.util.Locale
 
 private val MetricTopSpacing = 24.dp
 private val ControlBottomSpacing = 28.dp
@@ -55,7 +56,7 @@ internal fun WorkoutRecordingContent(
         WorkoutTopGradient(modifier = Modifier.align(Alignment.TopCenter))
         RouteeWorkoutMetricCard(
             distance = formatDistanceKm(distanceMeters),
-            duration = formatDuration(durationSec),
+            duration = formatDurationClock(durationSec),
             maxElevation = maxElevationMeters.toString(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -101,11 +102,6 @@ internal fun WorkoutRecordingContent(
         }
     }
 }
-
-private fun formatDistanceKm(distanceMeters: Int): String = String.format(Locale.US, "%.2f", distanceMeters / 1000.0)
-
-private fun formatDuration(durationSec: Int): String =
-    String.format(Locale.US, "%02d:%02d", durationSec / 3600, durationSec % 3600 / 60)
 
 @PreviewDeviceSizes
 @Composable
