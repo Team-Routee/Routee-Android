@@ -20,8 +20,10 @@ class ValidateNicknameUseCaseTest {
     }
 
     @Test
-    fun `특수문자와 연속 공백과 앞뒤 공백과 빈 값은 실패`() {
+    fun `특수문자와 자모만 있는 값과 연속 공백과 앞뒤 공백과 빈 값은 실패`() {
         assertFalse(validateNickname("날다람쥐^&^"))
+        assertFalse(validateNickname("ㄱㄴ"))
+        assertFalse(validateNickname("관악산_날다람쥐"))
         assertFalse(validateNickname("관악산  날다람쥐"))
         assertFalse(validateNickname(" 날다람쥐"))
         assertFalse(validateNickname("날다람쥐 "))
