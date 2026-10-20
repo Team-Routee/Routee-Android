@@ -7,6 +7,7 @@ import com.routee.android.core.navigation.util.viewModelEntry
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.main.TimelineRoute
+import com.routee.android.feature.timeline.main.TimelineRouteMap
 import com.routee.android.feature.timeline.main.TimelineViewModel
 import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
 import com.routee.android.feature.timeline.main.model.TimelineSaveResult
@@ -24,6 +25,13 @@ fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
             },
             onSaveRecord = { TimelineSaveResult.Failed }, // TODO #78 서버 저장 연결
             onPhotoSaveClick = {}, // TODO #80 사진 갤러리 저장 연결
+            routePointCount = key.routePoints.size,
+            routeMap = {
+                TimelineRouteMap(
+                    routePoints = key.routePoints,
+                    photos = key.photoMarkers,
+                )
+            },
         )
     }
 }
