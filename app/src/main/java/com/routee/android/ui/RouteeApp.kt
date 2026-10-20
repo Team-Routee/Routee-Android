@@ -33,6 +33,7 @@ import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.navigation.onboardingEntries
 import com.routee.android.feature.recordedit.navigation.recordEditEntries
 import com.routee.android.feature.setting.navigation.settingEntries
+import com.routee.android.feature.timeline.navigation.timelineEntries
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
 import com.routee.android.feature.workout.navigation.workoutEntries
 import com.routee.android.navigation.rememberRouteeTabSceneDecorator
@@ -101,6 +102,7 @@ private fun RouteeNavDisplay(
             recordEditEntries(navigator)
             archiveEntries(navigator)
             settingEntries(navigator)
+            timelineEntries(navigator)
         },
     )
 }
