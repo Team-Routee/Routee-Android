@@ -12,6 +12,7 @@ data class TimelineNavKey(
     val durationSeconds: Int,
     val maxElevationMeters: Int,
     val photos: List<TimelinePhoto> = emptyList(),
+    val photoUploads: List<TimelinePhotoUploadData> = emptyList(),
     val routePoints: List<TimelineMapPoint> = emptyList(),
     val photoMarkers: List<TimelineMapPhoto> = emptyList(),
 ) : NavKey

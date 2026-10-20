@@ -7,11 +7,14 @@ import kotlinx.serialization.Serializable
 data class TimelineMapPoint(
     val latitude: Double,
     val longitude: Double,
+    val elevation: Int,
+    val pointIndex: Int,
 )
 
 /** [TimelineNavKey]로 전달할 사진 촬영 좌표와 이미지 URL */
 @Serializable
 data class TimelineMapPhoto(
     val imageUrl: String,
-    val point: TimelineMapPoint,
+    val latitude: Double,
+    val longitude: Double,
 )
