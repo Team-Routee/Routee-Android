@@ -20,15 +20,16 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.R
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
 private const val SCREEN_HEIGHT = 800f
@@ -76,7 +77,7 @@ fun RouteeLoadingHost(
     var isContentVisible by remember { mutableStateOf(showDelayMillis <= 0) }
 
     LaunchedEffect(showDelayMillis) {
-        delay(showDelayMillis)
+        delay(showDelayMillis.milliseconds)
         isContentVisible = true
     }
 
@@ -125,7 +126,7 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
     }
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun RouteeLoadingOverlayPreview() {
     RouteeTheme {

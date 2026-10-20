@@ -11,10 +11,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapColor
@@ -80,7 +80,7 @@ private class RouteStickerPreviewParameterProvider : PreviewParameterProvider<Re
     override val values = sequenceOf(RecapColor.DEFAULT, RecapColor.ORANGE, RecapColor.WHITE)
 }
 
-@Preview
+@PreviewFontSizes
 @Composable
 private fun RouteStickerPreview(
     @PreviewParameter(RouteStickerPreviewParameterProvider::class) recapColor: RecapColor,

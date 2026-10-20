@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPopTransitionSpec
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageHost
 import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
@@ -44,7 +45,7 @@ internal fun RouteeApp(
 ) {
     // TODO 시작 화면 결정: 토큰 없음 -> LoginNavKey / 진행 중인 운동 있음 -> 운동 중(정지) 화면 / 그 외 -> WorkoutMainNavKey
     val backStack = rememberNavBackStack(WorkoutMainNavKey)
-    val navigator = rememberRouteeNavigator(backStack)
+    val navigator = rememberRouteeNavigator(backStack, homeKey = WorkoutMainNavKey)
 
     sessionExpired.CollectSideEffect {
         // TODO 세션 만료 안내 문구 (기획 확인 후)
@@ -85,6 +86,7 @@ private fun RouteeNavDisplay(
         backStack = backStack,
         modifier = modifier.fillMaxSize(),
         onBack = navigator::navigateBack,
+        predictivePopTransitionSpec = { defaultPopTransitionSpec<NavKey>()(this) },
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator(),
