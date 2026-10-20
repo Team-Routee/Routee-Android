@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -48,10 +47,8 @@ import java.io.File
 
 // recap_image
 private const val RECAP_ASPECT_RATIO = 9f / 16f
-private val RecapImageMaxWidth = 300.dp
-private val RecapImageTopSpacing = 24.dp
+private val RecapImageHorizontalPadding = 30.dp
 private val ActionButtonTopSpacing = 35.dp
-private val ActionButtonSpacing = 20.dp
 
 @Composable
 internal fun RecapCompleteRoute(
@@ -134,11 +131,11 @@ private fun RecapCompleteScreen(
                     )
                 },
             )
-            Spacer(modifier = Modifier.height(RecapImageTopSpacing))
+            Spacer(modifier = Modifier.height(RouteeTheme.spacing.Spacing24))
             Box(
                 modifier = Modifier
                     .weight(1f, fill = false)
-                    .widthIn(max = RecapImageMaxWidth)
+                    .padding(horizontal = RecapImageHorizontalPadding)
                     .aspectRatio(RECAP_ASPECT_RATIO),
             ) {
                 RouteeAsyncImage(
@@ -154,7 +151,7 @@ private fun RecapCompleteScreen(
                 )
             }
             Spacer(modifier = Modifier.height(ActionButtonTopSpacing))
-            Row(horizontalArrangement = Arrangement.spacedBy(ActionButtonSpacing)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing20)) {
                 RecapActionButton(
                     iconRes = DesignSystemR.drawable.ic_download_recap_lg,
                     contentDescription = stringResource(R.string.record_edit_complete_download_a11y),
