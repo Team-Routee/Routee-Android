@@ -37,7 +37,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
@@ -45,6 +44,7 @@ import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDial
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
@@ -216,7 +216,7 @@ private class LoginUiStatePreviewParameterProvider : PreviewParameterProvider<Lo
     )
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun LoginScreenPreview(
     @PreviewParameter(LoginUiStatePreviewParameterProvider::class) uiState: LoginUiState,

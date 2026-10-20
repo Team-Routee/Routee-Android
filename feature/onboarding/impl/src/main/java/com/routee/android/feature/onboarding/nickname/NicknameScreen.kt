@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
@@ -38,6 +37,7 @@ import com.routee.android.core.designsystem.component.textfield.RouteeNicknameTe
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.imePaddingAbove
 import com.routee.android.core.designsystem.extension.scrollToEndOnFocus
+import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
@@ -153,7 +153,7 @@ private fun NicknameScreen(
     }
 }
 
-@PreviewScreenSizes
+@PreviewDeviceSizes
 @Composable
 private fun NicknameScreenPreview() {
     RouteePreviewTheme {
