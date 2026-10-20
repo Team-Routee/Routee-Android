@@ -21,7 +21,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
  * 로띠 애니메이션
  *
  * @param resId          `res/raw` 로띠 파일 (`.json`, `.lottie`)
- * @param isPlaying      false 이면 첫 프레임으로 되돌림, true 가 되면 처음부터 재생
  * @param speed          재생 배속 (예: 1.5f)
  * @param durationMillis 이 시간에 맞춰 재생. null 이 아니면 [speed] 대신 사용
  * @param contentScale   영역에 맞추는 방식
@@ -31,7 +30,6 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 fun RouteeLottie(
     @RawRes resId: Int,
     modifier: Modifier = Modifier,
-    isPlaying: Boolean = true,
     speed: Float = 1f,
     durationMillis: Int? = null,
     contentScale: ContentScale = ContentScale.Fit,
@@ -41,12 +39,8 @@ fun RouteeLottie(
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(resId))
     val animatable = rememberLottieAnimatable()
 
-    LaunchedEffect(composition, isPlaying, speed, durationMillis) {
+    LaunchedEffect(composition, speed, durationMillis) {
         val loaded = composition ?: return@LaunchedEffect
-        if (!isPlaying) {
-            animatable.snapTo(loaded, progress = 0f, iteration = 1)
-            return@LaunchedEffect
-        }
         animatable.animate(
             composition = loaded,
             iteration = 1,
