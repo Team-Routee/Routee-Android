@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -151,7 +152,8 @@ private fun WorkoutRecordingScreen(
                 resId = DesignSystemR.raw.lottie_workout_countdown,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(RouteeTheme.colors.black),
+                    .background(RouteeTheme.colors.black)
+                    .pointerInput(Unit) {},
                 contentScale = ContentScale.Crop,
                 onFinish = onCountdownFinish,
             )
