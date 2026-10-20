@@ -68,6 +68,7 @@ internal class ProfileEditViewModel @Inject constructor(
     }
 
     fun onSaveClick() {
+        onNicknameChange(nicknameState.text)
         if (!_uiState.value.isSaveEnabled) return
         // TODO 프로필 변경 API
         _uiState.update {
@@ -84,11 +85,12 @@ internal class ProfileEditViewModel @Inject constructor(
         viewModelScope.launch {
             snapshotFlow { nicknameState.text.toString() to nicknameState.composition }
                 .filter { (_, composition) -> composition == null }
-                .collect { (text, _) -> onNicknameChange(text.trimEnd()) }
+                .collect { (text, _) -> onNicknameChange(text) }
         }
     }
 
-    private fun onNicknameChange(nickname: String) {
+    private fun onNicknameChange(text: CharSequence) {
+        val nickname = text.trimEnd().toString()
         _uiState.update {
             it.copy(nickname = nickname, validation = nicknameValidation(nickname, it.savedNickname))
         }
