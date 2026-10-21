@@ -26,6 +26,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 private const val ROTATION_DEGREES = 90
+private const val MAX_OUTPUT_SIZE = 2048
 private val BorderLineThickness = 1.dp
 private val CornerThickness = 5.dp
 private val CornerLength = 15.dp
@@ -64,6 +65,9 @@ class RouteeImageCropperState internal constructor() {
         cropImageView?.resetCropRect()
     }
 
+    /**
+     * 긴 변 최대 [MAX_OUTPUT_SIZE]px로 잘라 캐시에 저장한다
+     */
     suspend fun crop(): Result<Uri> = mutex.withLock {
         val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
         if (!isImageLoaded || view.imageUri == null) {
@@ -82,7 +86,7 @@ class RouteeImageCropperState internal constructor() {
                 )
             }
             continuation.invokeOnCancellation { view.setOnCropImageCompleteListener(null) }
-            view.croppedImageAsync()
+            view.croppedImageAsync(reqWidth = MAX_OUTPUT_SIZE, reqHeight = MAX_OUTPUT_SIZE)
         }
     }
 }
