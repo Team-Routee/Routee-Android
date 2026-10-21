@@ -1,0 +1,54 @@
+package com.routee.android.core.database.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Upsert
+import com.routee.android.core.database.entity.ActivityEntity
+import com.routee.android.core.database.entity.TrackPointEntity
+
+/** 운동 기록(`activity`), 경로 점(`track_point`) 테이블 읽기, 쓰기 */
+@Dao
+interface WorkoutDao {
+    /** 저장된 기록, 없으면 null */
+    @Query("SELECT * FROM activity LIMIT 1")
+    suspend fun getActivity(): ActivityEntity?
+
+    /** 기록 추가 또는 수정, 경로 점은 유지 */
+    @Upsert
+    suspend fun upsertActivity(activity: ActivityEntity)
+
+    /** 경로 점 추가 */
+    @Insert
+    suspend fun insertTrackPoint(point: TrackPointEntity)
+
+    /** 경로 점 추가와 기록 갱신(거리, 마지막 기록 시각)을 한 트랜잭션으로 */
+    @Transaction
+    suspend fun insertTrackPoint(
+        activity: ActivityEntity,
+        point: TrackPointEntity,
+    ) {
+        insertTrackPoint(point)
+        upsertActivity(activity)
+    }
+
+    /** 기존 기록과 경로 점을 모두 지우고 새 기록 저장 */
+    @Transaction
+    suspend fun replaceActivity(activity: ActivityEntity) {
+        deleteActivities()
+        upsertActivity(activity)
+    }
+
+    /** 기록의 경로 점, `point_index` 순서 */
+    @Query("SELECT * FROM track_point WHERE activity_id = :activityId ORDER BY point_index")
+    suspend fun getTrackPoints(activityId: Long): List<TrackPointEntity>
+
+    /** 기록 삭제, 경로 점도 같이 삭제 */
+    @Query("DELETE FROM activity WHERE id = :activityId")
+    suspend fun deleteActivity(activityId: Long)
+
+    /** 모든 기록과 경로 점 삭제 */
+    @Query("DELETE FROM activity")
+    suspend fun deleteActivities()
+}
