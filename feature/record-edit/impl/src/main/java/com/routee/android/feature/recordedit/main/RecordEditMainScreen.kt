@@ -32,7 +32,6 @@ import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeMonthControl
 import com.routee.android.core.designsystem.component.RouteePageHeader
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
-import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
@@ -67,9 +66,7 @@ internal fun RecordEditMainRoute(
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             is RecordEditMainSideEffect.NavigateToEditor -> onNavigateToEditor(sideEffect.activityId)
-
-            RecordEditMainSideEffect.ShowNetworkErrorToast ->
-                messageState.showToast(text = networkErrorText, duration = RouteeMessageDuration.LONG)
+            RecordEditMainSideEffect.ShowNetworkErrorToast -> messageState.showToast(text = networkErrorText)
         }
     }
 
