@@ -1,5 +1,7 @@
 package com.routee.android.feature.recordedit.editor
 
+import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
+import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.complete.FakeRecapImageRepository
@@ -25,7 +27,8 @@ class RecapEditorViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L), FakeRecapImageRepository())
+    private val recapRepository = FakeRecapRepository()
+    private val viewModel by lazy { createViewModel() }
     private val state get() = viewModel.uiState.value
 
     /**
@@ -215,4 +218,10 @@ class RecapEditorViewModelTest {
 
         assertFalse(state.isCompleteAnimationVisible)
     }
+
+    private fun createViewModel() = RecapEditorViewModel(
+        RecapEditorNavKey(activityId = 1L),
+        FakeRecapImageRepository(),
+        GetRecapEditorDataUseCase(recapRepository),
+    )
 }

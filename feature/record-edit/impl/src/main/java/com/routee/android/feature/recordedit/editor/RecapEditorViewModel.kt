@@ -3,16 +3,17 @@ package com.routee.android.feature.recordedit.editor
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.complete.RecapImageRepository
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
-import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
 import com.routee.android.feature.recordedit.editor.model.RecapSticker
 import com.routee.android.feature.recordedit.editor.model.StickerFrame
+import com.routee.android.feature.recordedit.editor.model.toRecapEditorContent
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
@@ -33,6 +34,7 @@ import timber.log.Timber
 internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
     private val recapImageRepository: RecapImageRepository,
+    private val getRecapEditorData: GetRecapEditorDataUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
     val uiState = _uiState.asStateFlow()
@@ -218,9 +220,18 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(isCompleteAnimationVisible = false) }
     }
 
-    // TODO API 연동 시 key.activityId로 GET /recap, /track 결과를 채운다 (실패 시 UiState.Failure)
     private fun loadContent() {
-        _uiState.update { it.copy(content = UiState.Success(RecapEditorContent.EMPTY)) }
+        _uiState.update { it.copy(content = UiState.Loading) }
+        viewModelScope.launch {
+            getRecapEditorData(key.activityId)
+                .onSuccess { data ->
+                    _uiState.update { it.copy(content = UiState.Success(data.toRecapEditorContent())) }
+                }
+                .onFailure { e ->
+                    Timber.e(e)
+                    _uiState.update { it.copy(content = UiState.Failure(e)) }
+                }
+        }
     }
 
     private fun RecapEditorUiState.routeNames(): List<String> =
