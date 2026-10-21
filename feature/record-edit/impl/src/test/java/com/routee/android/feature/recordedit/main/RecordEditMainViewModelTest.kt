@@ -3,14 +3,18 @@ package com.routee.android.feature.recordedit.main
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
+import com.routee.android.feature.recordedit.main.model.RecordEditMainSideEffect
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -122,6 +126,35 @@ class RecordEditMainViewModelTest {
         editTitle(viewModel, "관악산")
 
         assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `카드를 누르면 편집 데이터를 불러온 뒤 편집 화면으로 이동한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onRecapClick(1)
+
+        assertEquals(RecordEditMainSideEffect.NavigateToEditor(1), viewModel.sideEffect.first())
+    }
+
+    @Test
+    fun `네트워크가 끊겨 편집 데이터를 못 불러오면 이동하지 않고 토스트를 띄운다`() = runTest {
+        recapRepository.editorError = RecapException.NetworkUnavailable(null)
+        val viewModel = createViewModel()
+
+        viewModel.onRecapClick(1)
+
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+    }
+
+    @Test
+    fun `네트워크가 아닌 이유로 실패하면 편집 화면으로 이동해 에러 화면을 보여준다`() = runTest {
+        recapRepository.editorError = IllegalStateException()
+        val viewModel = createViewModel()
+
+        viewModel.onRecapClick(1)
+
+        assertEquals(RecordEditMainSideEffect.NavigateToEditor(1), viewModel.sideEffect.first())
     }
 
     private fun createViewModelWithRecap(): RecordEditMainViewModel {
