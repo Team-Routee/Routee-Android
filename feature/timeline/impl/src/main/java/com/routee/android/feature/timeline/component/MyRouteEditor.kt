@@ -31,7 +31,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,13 +91,11 @@ internal fun MyRouteEditor(
 ) {
     val currentOnMovePoint by rememberUpdatedState(onMovePoint)
     val currentOnRemovePoint by rememberUpdatedState(onRemovePoint)
-    val knownPointIds = remember { points.mapTo(mutableSetOf()) { it.id } }
-    SideEffect { points.forEach { knownPointIds.add(it.id) } }
+    val initialPointIds = remember { points.map(RoutePoint::id).toSet() }
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var targetIndex by remember { mutableIntStateOf(-1) }
     var dragStepPx by remember { mutableFloatStateOf(0f) }
     var dragOffsetPx by remember { mutableFloatStateOf(0f) }
-    var dragVersion by remember { mutableIntStateOf(0) }
     var settling by remember { mutableStateOf(false) }
     var removingPointId by remember { mutableStateOf<Long?>(null) }
     val scope = rememberCoroutineScope()
@@ -111,9 +109,9 @@ internal fun MyRouteEditor(
         )
         Column {
             points.forEachIndexed { index, point ->
-                key(point.id, dragVersion) {
+                key(point.id) {
                     val visibilityState = remember {
-                        MutableTransitionState(point.id in knownPointIds).apply { targetState = true }
+                        MutableTransitionState(point.id in initialPointIds).apply { targetState = true }
                     }
                     if (removingPointId == point.id) {
                         LaunchedEffect(visibilityState) {
@@ -121,7 +119,6 @@ internal fun MyRouteEditor(
                             points.indexOfFirst { it.id == point.id }
                                 .takeIf { it >= 0 }
                                 ?.let(currentOnRemovePoint)
-                            knownPointIds.remove(point.id)
                             removingPointId = null
                         }
                     }
@@ -143,7 +140,12 @@ internal fun MyRouteEditor(
                         modifier = Modifier
                             .zIndex(if (index == draggedIndex) 1f else 0f)
                             .offset {
-                                IntOffset(0, (if (index == draggedIndex) dragOffsetPx else shiftPx).roundToInt())
+                                val offset = when {
+                                    index == draggedIndex -> dragOffsetPx
+                                    draggedIndex == -1 -> 0f
+                                    else -> shiftPx
+                                }
+                                IntOffset(0, offset.roundToInt())
                             },
                     ) {
                         Column {
@@ -179,18 +181,19 @@ internal fun MyRouteEditor(
                                             ) { value, _ ->
                                                 dragOffsetPx = value
                                             }
-                                            if (
-                                                from != to &&
-                                                points.getOrNull(from)?.id == point.id &&
-                                                to in points.indices
-                                            ) {
-                                                currentOnMovePoint(from, to)
-                                                dragVersion++
+                                            Snapshot.withMutableSnapshot {
+                                                if (
+                                                    from != to &&
+                                                    points.getOrNull(from)?.id == point.id &&
+                                                    to in points.indices
+                                                ) {
+                                                    currentOnMovePoint(from, to)
+                                                }
+                                                draggedIndex = -1
+                                                targetIndex = -1
+                                                dragOffsetPx = 0f
+                                                settling = false
                                             }
-                                            draggedIndex = -1
-                                            targetIndex = -1
-                                            dragOffsetPx = 0f
-                                            settling = false
                                         }
                                     }
                                 },
