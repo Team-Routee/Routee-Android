@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 11 이하용 백업 규칙. data_extraction_rules와 동일하게 서버 토큰을 제외한다 -->
+<!-- Android 11 이하용 백업 규칙. data_extraction_rules와 동일하게 서버 토큰, 운동 기록 DB, 지도 캡처를 제외한다 -->
 <full-backup-content>
     <exclude domain="file" path="datastore/routee_token.preferences_pb" />
+    <exclude domain="database" path="routee.db" />
+    <exclude domain="database" path="routee.db-wal" />
+    <exclude domain="database" path="routee.db-shm" />
+    <exclude domain="file" path="workout_map/" />
 </full-backup-content>
