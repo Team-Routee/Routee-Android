@@ -104,10 +104,20 @@ private class FakeRecapRepository : RecapRepository {
     var recaps: List<ActivityRecap> = emptyList()
     var error: Throwable? = null
     val requestedMonths = mutableListOf<YearMonth>()
+    var titleError: Throwable? = null
+    val updatedTitles = mutableListOf<Pair<Long, String>>()
 
     override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> {
         requestedMonths += month
         return error?.let { Result.failure(it) } ?: Result.success(recaps)
+    }
+
+    override suspend fun updateRecapTitle(
+        activityId: Long,
+        title: String,
+    ): Result<Unit> {
+        updatedTitles += activityId to title
+        return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
     }
 }
 

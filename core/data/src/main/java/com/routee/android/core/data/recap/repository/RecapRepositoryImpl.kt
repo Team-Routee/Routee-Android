@@ -1,6 +1,7 @@
 package com.routee.android.core.data.recap.repository
 
 import com.routee.android.core.data.recap.model.ActivityRecap
+import com.routee.android.core.data.recap.remote.dto.request.UpdateRecapTitleRequest
 import com.routee.android.core.data.recap.remote.dto.response.ActivityRecapResponse
 import com.routee.android.core.data.recap.remote.service.RecapService
 import com.routee.android.core.network.util.ApiResponseHandler
@@ -17,6 +18,13 @@ internal class RecapRepositoryImpl @Inject constructor(
         apiResponseHandler.safeApiCall {
             recapService.getMonthlyRecaps(year = month.year, month = month.monthValue)
         }.mapCatching { response -> response.activities.map { it.toActivityRecap() } }
+
+    override suspend fun updateRecapTitle(
+        activityId: Long,
+        title: String,
+    ): Result<Unit> = apiResponseHandler.safeUnitApiCall {
+        recapService.updateRecapTitle(activityId = activityId, request = UpdateRecapTitleRequest(title = title))
+    }
 
     private fun ActivityRecapResponse.toActivityRecap() = ActivityRecap(
         activityId = activityId,
