@@ -5,6 +5,7 @@
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
 | `core:common` | Kotlin utilities (`suspendRunCatching`) |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
+| `core:domain` | UseCases shared by features (`ValidateNicknameUseCase`). May use `core:data` ([domain-layer](domain-layer.md)) |
 | `core:map` | `RouteeNaverMap`, `RouteeMapState`, `MapPoint`. Naver Map SDK stays inside (`implementation`). Only features that show a map depend on it |
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
 | `core:ui` | `UiState`, `CollectSideEffect`, shared screen-level UI (loading, error). Uses `core:designsystem` |
@@ -41,5 +42,6 @@ dependencies {
 | Modifier extension | `core/designsystem/.../extension/ModifierExt.kt` |
 | Feature strings | `feature/<x>/impl/src/main/res/values/strings.xml` |
 | Repository, DTO, model | `core/data/.../<domain>/` |
+| UseCase | `core/domain/.../<domain>/` |
 
 New module: team decision first → `settings.gradle.kts` → `app/build.gradle.kts` → `RouteeApp`

@@ -10,11 +10,12 @@ import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldValidation
+import com.routee.android.core.domain.member.NicknameValidation
+import com.routee.android.core.domain.member.ValidateNicknameUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.onboarding.api.NicknameNavKey
 import com.routee.android.feature.onboarding.nickname.model.NicknameSideEffect
 import com.routee.android.feature.onboarding.nickname.model.NicknameUiState
-import com.routee.android.feature.onboarding.nickname.model.NicknameValidator
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -32,6 +33,7 @@ import timber.log.Timber
 internal class NicknameViewModel @AssistedInject constructor(
     @Assisted private val key: NicknameNavKey,
     private val authRepository: AuthRepository,
+    private val validateNickname: ValidateNicknameUseCase,
 ) : ViewModel() {
     val nicknameState = TextFieldState()
 
@@ -48,7 +50,7 @@ internal class NicknameViewModel @AssistedInject constructor(
             snapshotFlow { nicknameState.text.toString() to nicknameState.composition }
                 .filter { (_, composition) -> composition == null }
                 .collect { (text, _) ->
-                    _uiState.update { it.copy(validation = NicknameValidator.validate(text)) }
+                    _uiState.update { it.copy(validation = nicknameValidation(text)) }
                 }
         }
     }
@@ -62,7 +64,7 @@ internal class NicknameViewModel @AssistedInject constructor(
 
     fun onStartClick() {
         if (isRegistering) return
-        val validation = NicknameValidator.validate(nicknameState.text)
+        val validation = nicknameValidation(nicknameState.text)
         _uiState.update { it.copy(validation = validation) }
         if (validation != RouteeTextFieldValidation.Valid) return
         isRegistering = true
@@ -90,6 +92,12 @@ internal class NicknameViewModel @AssistedInject constructor(
                 }
             isRegistering = false
         }
+    }
+
+    private fun nicknameValidation(text: CharSequence): RouteeTextFieldValidation = when (validateNickname(text)) {
+        NicknameValidation.EMPTY -> RouteeTextFieldValidation.None
+        NicknameValidation.VALID -> RouteeTextFieldValidation.Valid
+        NicknameValidation.INVALID -> RouteeTextFieldValidation.Invalid
     }
 
     @AssistedFactory

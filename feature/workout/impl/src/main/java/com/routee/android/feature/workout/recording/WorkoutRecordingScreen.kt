@@ -3,20 +3,18 @@ package com.routee.android.feature.workout.recording
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -27,50 +25,57 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
-import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
-import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
-import com.routee.android.feature.workout.component.main.MyLocationButton
-import com.routee.android.feature.workout.component.main.WorkoutStopButton
-import com.routee.android.feature.workout.component.main.WorkoutTopGradient
-import com.routee.android.feature.workout.component.recording.CameraButton
-import com.routee.android.feature.workout.recording.model.MAX_PHOTO_COUNT
+import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
+import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
+import com.routee.android.feature.workout.recording.model.WorkoutMode
+import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
-import java.util.Locale
 
-private val MetricTopSpacing = 24.dp
-private val ControlBottomSpacing = 28.dp
 private const val COUNTDOWN_FADE_OUT_MILLIS = 300
+private const val FINISH_ANIMATION_SPEED = 1.5f
 
 @Composable
 internal fun WorkoutRecordingRoute(
+    onFinish: () -> Unit,
     viewModel: WorkoutRecordingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val messageState = LocalRouteeMessageState.current
+    val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
 
-    RecordingExitBackHandler(enabled = !uiState.isCountingDown)
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
+        when (sideEffect) {
+            WorkoutRecordingSideEffect.NavigateToTimeline -> onFinish()
+        }
+    }
+
+    RecordingBackHandler(mode = uiState.mode)
 
     WorkoutRecordingScreen(
         uiState = uiState,
         // TODO 지도를 내 위치로 이동
         onMyLocationClick = {},
-        // TODO 정지 화면
-        onStopClick = {},
+        onStopClick = viewModel::onStopClick,
         // TODO 카메라 권한 확인 후 촬영
         onCameraClick = {},
         onCountdownFinish = viewModel::onCountdownFinish,
+        onRestartClick = viewModel::onRestartClick,
+        onEndClick = { messageState.showToast(text = endGuideText, duration = RouteeMessageDuration.BRIEF) },
+        onEndLongPress = viewModel::onEndLongPress,
+        onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
 }
 
@@ -81,54 +86,58 @@ private fun WorkoutRecordingScreen(
     onStopClick: () -> Unit,
     onCameraClick: () -> Unit,
     onCountdownFinish: () -> Unit,
+    onRestartClick: () -> Unit,
+    onEndClick: () -> Unit,
+    onEndLongPress: () -> Unit,
+    onFinishAnimationEnd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // TODO 내 위치, 경로선, 사진 마커 연결
     RouteeNaverMap(modifier = modifier.fillMaxSize()) {
-        WorkoutTopGradient(modifier = Modifier.align(Alignment.TopCenter))
-        RouteeWorkoutMetricCard(
-            distance = String.format(Locale.US, "%.2f", uiState.distanceMeters / 1000.0),
-            duration = formatDuration(uiState.durationSec),
-            maxElevation = uiState.maxElevationMeters.toString(),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(
-                    start = RouteeTheme.spacing.Spacing16,
-                    end = RouteeTheme.spacing.Spacing16,
-                    top = MetricTopSpacing,
+        AnimatedContent(
+            targetState = uiState.mode,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = { workoutModeTransition() },
+        ) { mode ->
+            when (mode) {
+                WorkoutMode.COUNTDOWN -> RouteeLottie(
+                    resId = DesignSystemR.raw.lottie_workout_countdown,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(RouteeTheme.colors.black)
+                        .pointerInput(Unit) {},
+                    contentScale = ContentScale.Crop,
+                    onFinish = onCountdownFinish,
                 )
-                .fillMaxWidth(),
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(
-                    start = RouteeTheme.spacing.Spacing16,
-                    end = RouteeTheme.spacing.Spacing16,
-                    bottom = ControlBottomSpacing,
-                ),
-            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12),
-            horizontalAlignment = Alignment.End,
-        ) {
-            MyLocationButton(onClick = onMyLocationClick)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .routeeMessageAnchor(),
-                horizontalArrangement = Arrangement.spacedBy(
-                    RouteeTheme.spacing.Spacing12,
-                    Alignment.CenterHorizontally,
-                ),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                WorkoutStopButton(isStopped = false, onClick = onStopClick)
-                CameraButton(
-                    count = "${uiState.photoCount}/$MAX_PHOTO_COUNT",
-                    onClick = onCameraClick,
-                    enabled = uiState.isCameraEnabled,
+
+                WorkoutMode.RECORDING -> WorkoutRecordingContent(
+                    distanceMeters = uiState.distanceMeters,
+                    durationSec = uiState.durationSec,
+                    maxElevationMeters = uiState.maxElevationMeters,
+                    photoCount = uiState.photoCount,
+                    isCameraEnabled = uiState.isCameraEnabled,
+                    onMyLocationClick = onMyLocationClick,
+                    onStopClick = onStopClick,
+                    onCameraClick = onCameraClick,
+                )
+
+                WorkoutMode.PAUSED -> WorkoutPauseContent(
+                    distanceMeters = uiState.distanceMeters,
+                    durationSec = uiState.durationSec,
+                    maxElevationMeters = uiState.maxElevationMeters,
+                    onRestartClick = onRestartClick,
+                    onEndClick = onEndClick,
+                    onEndLongPress = onEndLongPress,
+                )
+
+                WorkoutMode.FINISHING -> RouteeLottie(
+                    resId = DesignSystemR.raw.lottie_workout_finish,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {},
+                    speed = FINISH_ANIMATION_SPEED,
+                    contentScale = ContentScale.Crop,
+                    onFinish = onFinishAnimationEnd,
                 )
             }
         }
@@ -143,32 +152,27 @@ private fun WorkoutRecordingScreen(
                     inset = RouteeTheme.spacing.Spacing14,
                 ),
         )
-        AnimatedVisibility(
-            visible = uiState.isCountingDown,
-            enter = EnterTransition.None,
-            exit = fadeOut(tween(COUNTDOWN_FADE_OUT_MILLIS)),
-        ) {
-            RouteeLottie(
-                resId = DesignSystemR.raw.lottie_workout_countdown,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(RouteeTheme.colors.black)
-                    .pointerInput(Unit) {},
-                contentScale = ContentScale.Crop,
-                onFinish = onCountdownFinish,
-            )
-        }
     }
 }
 
+private fun AnimatedContentTransitionScope<WorkoutMode>.workoutModeTransition(): ContentTransform =
+    if (initialState == WorkoutMode.COUNTDOWN) {
+        (EnterTransition.None togetherWith fadeOut(tween(COUNTDOWN_FADE_OUT_MILLIS))).apply {
+            targetContentZIndex = -1f
+        }
+    } else {
+        EnterTransition.None togetherWith ExitTransition.None
+    }
+
 @Composable
-private fun RecordingExitBackHandler(enabled: Boolean) {
+private fun RecordingBackHandler(mode: WorkoutMode) {
     val messageState = LocalRouteeMessageState.current
     val activity = LocalActivity.current
     val exitText = stringResource(R.string.workout_recording_exit_toast)
-    var lastBackPressedAt by remember { mutableLongStateOf(0L) }
+    var lastBackPressedAt by remember(mode) { mutableLongStateOf(0L) }
 
-    BackHandler(enabled = enabled) {
+    BackHandler(enabled = mode != WorkoutMode.COUNTDOWN) {
+        if (mode == WorkoutMode.FINISHING) return@BackHandler
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackPressedAt < RouteeMessageDuration.MEDIUM.millis) {
             activity?.finish()
@@ -177,12 +181,6 @@ private fun RecordingExitBackHandler(enabled: Boolean) {
             messageState.showToast(text = exitText, duration = RouteeMessageDuration.MEDIUM)
         }
     }
-}
-
-private fun formatDuration(durationSec: Int): String {
-    val hours = durationSec / 3600
-    val minutes = durationSec % 3600 / 60
-    return String.format(Locale.US, "%02d:%02d", hours, minutes)
 }
 
 @PreviewDeviceSizes
@@ -194,13 +192,17 @@ private fun WorkoutRecordingScreenPreview() {
                 distanceMeters = 15_530,
                 durationSec = 12_000,
                 maxElevationMeters = 2132,
-                isCountingDown = false,
+                mode = WorkoutMode.RECORDING,
                 photoCount = 20,
             ),
             onMyLocationClick = {},
             onStopClick = {},
             onCameraClick = {},
             onCountdownFinish = {},
+            onRestartClick = {},
+            onEndClick = {},
+            onEndLongPress = {},
+            onFinishAnimationEnd = {},
         )
     }
 }

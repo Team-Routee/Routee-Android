@@ -38,6 +38,8 @@ import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelineNavKey
+import com.routee.android.feature.timeline.api.TimelinePhoto
+import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
@@ -58,8 +60,8 @@ internal fun TimelineRoute(
     onCompleteClick: () -> Unit,
     onEditTitleClick: () -> Unit,
     onRecordEditClick: () -> Unit,
+    onPhotoSaveClick: (TimelinePhoto) -> Unit,
     routeMap: (@Composable () -> Unit)? = null,
-    photoTimeline: (@Composable () -> Unit)? = null,
     myRoute: (@Composable () -> Unit)? = null,
 ) {
     val recordDate = remember(key.endedAtEpochMillis) {
@@ -78,12 +80,13 @@ internal fun TimelineRoute(
     }
     TimelineScreen(
         uiState = uiState,
+        photos = key.photos,
         onBackClick = onBackClick,
         onCompleteClick = onCompleteClick,
         onEditTitleClick = onEditTitleClick,
         onRecordEditClick = onRecordEditClick,
+        onPhotoSaveClick = onPhotoSaveClick,
         routeMap = routeMap,
-        photoTimeline = photoTimeline,
         myRoute = myRoute,
     )
 }
@@ -91,13 +94,14 @@ internal fun TimelineRoute(
 @Composable
 private fun TimelineScreen(
     uiState: TimelineUiState,
+    photos: List<TimelinePhoto>,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onEditTitleClick: () -> Unit,
     onRecordEditClick: () -> Unit,
+    onPhotoSaveClick: (TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
     routeMap: (@Composable () -> Unit)? = null,
-    photoTimeline: (@Composable () -> Unit)? = null,
     myRoute: (@Composable () -> Unit)? = null,
 ) {
     RouteeBgEllipse(modifier = modifier) {
@@ -168,11 +172,13 @@ private fun TimelineScreen(
                         routeMap()
                     }
                 }
-                if (photoTimeline != null || myRoute != null) {
+                if (photos.isNotEmpty() || myRoute != null) {
                     Spacer(Modifier.height(SectionTopSpacing))
                 }
-                photoTimeline?.invoke()
-                if (photoTimeline != null && myRoute != null) {
+                if (photos.isNotEmpty()) {
+                    TimelinePhotoSection(photos = photos, onSaveClick = onPhotoSaveClick)
+                }
+                if (photos.isNotEmpty() && myRoute != null) {
                     Spacer(Modifier.height(SectionSpacing))
                 }
                 if (myRoute != null) {
@@ -205,10 +211,12 @@ private fun TimelineScreenPreview() {
                 duration = "03:20",
                 maxElevation = "2132",
             ),
+            photos = emptyList(),
             onBackClick = {},
             onCompleteClick = {},
             onEditTitleClick = {},
             onRecordEditClick = {},
+            onPhotoSaveClick = {},
         )
     }
 }

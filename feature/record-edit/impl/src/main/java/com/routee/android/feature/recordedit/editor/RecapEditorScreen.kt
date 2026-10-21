@@ -1,6 +1,5 @@
 package com.routee.android.feature.recordedit.editor
 
-import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,7 +45,6 @@ import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.recordedit.R
-import com.routee.android.feature.recordedit.background.PickImageFromGallery
 import com.routee.android.feature.recordedit.background.RecapBackgroundCropResult
 import com.routee.android.feature.recordedit.component.editor.BrightnessSlider
 import com.routee.android.feature.recordedit.component.editor.ColorPalette
@@ -84,7 +82,6 @@ internal fun RecapEditorRoute(
     val onImagePicked: (Uri?) -> Unit = { uri ->
         if (uri == null) viewModel.onGalleryCancel() else onNavigateToBackgroundCrop(uri.toString())
     }
-    val galleryLauncher = rememberLauncherForActivityResult(PickImageFromGallery(), onImagePicked)
     val photoPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), onImagePicked)
 
@@ -94,11 +91,9 @@ internal fun RecapEditorRoute(
 
             RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
 
-            RecapEditorSideEffect.OpenGallery -> try {
-                galleryLauncher.launch(Unit)
-            } catch (e: ActivityNotFoundException) {
-                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            }
+            RecapEditorSideEffect.OpenGallery -> photoPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
 
             RecapEditorSideEffect.CaptureRecap -> {
                 repeat(CAPTURE_WAIT_FRAMES) { withFrameNanos {} }
