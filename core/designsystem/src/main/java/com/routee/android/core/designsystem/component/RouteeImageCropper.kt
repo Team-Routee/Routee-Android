@@ -20,13 +20,17 @@ import com.canhub.cropper.CropImageView
 import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import java.io.File
 import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 private const val ROTATION_DEGREES = 90
 private const val MAX_OUTPUT_SIZE = 2048
+private const val CROPPED_FILE_PREFIX = "cropped"
 private val BorderLineThickness = 1.dp
 private val CornerThickness = 5.dp
 private val CornerLength = 15.dp
@@ -66,14 +70,14 @@ class RouteeImageCropperState internal constructor() {
     }
 
     /**
-     * 긴 변 최대 [MAX_OUTPUT_SIZE]px로 잘라 캐시에 저장한다
+     * 긴 변 최대 [MAX_OUTPUT_SIZE]px로 잘라 캐시에 저장하고, 성공하면 이전에 자른 파일은 지운다
      */
     suspend fun crop(): Result<Uri> = mutex.withLock {
         val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
         if (!isImageLoaded || view.imageUri == null) {
             return Result.failure(IllegalStateException("Image is not loaded"))
         }
-        suspendCancellableCoroutine { continuation ->
+        val cropResult = suspendCancellableCoroutine { continuation ->
             view.setOnCropImageCompleteListener { _, result ->
                 view.setOnCropImageCompleteListener(null)
                 val uri = result.uriContent
@@ -88,6 +92,18 @@ class RouteeImageCropperState internal constructor() {
             continuation.invokeOnCancellation { view.setOnCropImageCompleteListener(null) }
             view.croppedImageAsync(reqWidth = MAX_OUTPUT_SIZE, reqHeight = MAX_OUTPUT_SIZE)
         }
+        cropResult.onSuccess { uri ->
+            deletePreviousCroppedFiles(directory = view.context.cacheDir, keepFileName = uri.lastPathSegment)
+        }
+    }
+
+    private suspend fun deletePreviousCroppedFiles(
+        directory: File,
+        keepFileName: String?,
+    ) = withContext(Dispatchers.IO) {
+        directory
+            .listFiles { file -> file.name.startsWith(CROPPED_FILE_PREFIX) && file.name != keepFileName }
+            ?.forEach(File::delete)
     }
 }
 
