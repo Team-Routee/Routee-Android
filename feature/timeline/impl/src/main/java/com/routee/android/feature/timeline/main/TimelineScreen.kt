@@ -39,6 +39,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.api.TimelinePhoto
+import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId

@@ -1,4 +1,4 @@
-package com.routee.android.feature.timeline.main
+package com.routee.android.feature.timeline.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,6 @@ import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelinePhoto
-import com.routee.android.feature.timeline.component.PaginationDots
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
