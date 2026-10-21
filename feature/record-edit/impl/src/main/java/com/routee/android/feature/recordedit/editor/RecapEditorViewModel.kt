@@ -1,10 +1,12 @@
 package com.routee.android.feature.recordedit.editor
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
+import com.routee.android.feature.recordedit.complete.RecapImageRepository
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
@@ -25,16 +27,21 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @HiltViewModel(assistedFactory = RecapEditorViewModel.Factory::class)
 internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
+    private val recapImageRepository: RecapImageRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _sideEffect = Channel<RecapEditorSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
+
+    private var isCompleting = false
+    private var completedImagePath: String? = null
 
     init {
         loadContent()
@@ -177,8 +184,39 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(isEditStopDialogVisible = false) }
     }
 
-    // TODO #66 완료 애니메이션, 결과 화면
-    fun onCompleteClick() = Unit
+    fun onCompleteClick() {
+        if (isCompleting) return
+        isCompleting = true
+        _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }
+        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.CaptureRecap) }
+    }
+
+    fun onRecapCaptured(bitmap: Bitmap) {
+        viewModelScope.launch {
+            recapImageRepository.saveWithWatermark(bitmap)
+                .onSuccess { imagePath ->
+                    completedImagePath = imagePath
+                    _uiState.update { it.copy(isCompleteAnimationVisible = true) }
+                }
+                .onFailure(::onRecapCaptureFailure)
+        }
+    }
+
+    fun onRecapCaptureFailure(throwable: Throwable) {
+        Timber.e(throwable)
+        isCompleting = false
+    }
+
+    fun onCompleteAnimationEnd() {
+        val imagePath = completedImagePath ?: return
+        completedImagePath = null
+        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.NavigateToComplete(imagePath)) }
+    }
+
+    fun onNavigatedToComplete() {
+        isCompleting = false
+        _uiState.update { it.copy(isCompleteAnimationVisible = false) }
+    }
 
     // TODO API 연동 시 key.activityId로 GET /recap, /track 결과를 채운다 (실패 시 UiState.Failure)
     private fun loadContent() {

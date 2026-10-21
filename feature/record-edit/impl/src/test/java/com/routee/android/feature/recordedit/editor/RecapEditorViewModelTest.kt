@@ -1,22 +1,31 @@
 package com.routee.android.feature.recordedit.editor
 
+import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
+import com.routee.android.feature.recordedit.complete.FakeRecapImageRepository
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
+import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
 import com.routee.android.feature.recordedit.editor.model.RecapSticker
 import com.routee.android.feature.recordedit.editor.model.StickerFrame
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 
 class RecapEditorViewModelTest {
 
-    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L))
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L), FakeRecapImageRepository())
     private val state get() = viewModel.uiState.value
 
     /**
@@ -172,5 +181,38 @@ class RecapEditorViewModelTest {
         viewModel.onResetClick()
 
         assertFalse(state.isResetDialogVisible)
+    }
+
+    /**
+     * GIVEN: 탭이 열려 있고 스티커가 선택된 상태에서
+     * WHEN: 완료를 누르면
+     * THEN: 탭과 선택을 닫고 미리보기 캡처를 요청한다
+     */
+    @Test
+    fun `완료를 누르면 선택을 풀고 캡처를 요청한다`() = runTest {
+        viewModel.onTabClick(RecapEditTab.COLOR)
+        viewModel.onStickerClick(StickerType.WORKOUT_RECORD)
+
+        viewModel.onCompleteClick()
+
+        assertNull(state.selectedTab)
+        assertNull(state.selectedSticker)
+        assertEquals(RecapEditorSideEffect.CaptureRecap, viewModel.sideEffect.first())
+    }
+
+    /**
+     * GIVEN: 완료를 누른 뒤
+     * WHEN: 완료를 한 번 더 누르면
+     * THEN: 캡처를 다시 요청하지 않는다
+     */
+    @Test
+    fun `완료를 두 번 눌러도 캡처는 한 번만 요청한다`() = runTest {
+        viewModel.onCompleteClick()
+        viewModel.sideEffect.first()
+
+        viewModel.onCompleteClick()
+        viewModel.onCompleteAnimationEnd()
+
+        assertFalse(state.isCompleteAnimationVisible)
     }
 }

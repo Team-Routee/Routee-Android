@@ -7,9 +7,11 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.feature.recordEdit.api)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.coil.compose)
+    implementation(libs.lottie.compose)
     implementation(libs.timber)
 
     testImplementation(libs.junit)

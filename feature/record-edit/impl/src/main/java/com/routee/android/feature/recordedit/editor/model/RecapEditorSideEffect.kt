@@ -6,4 +6,8 @@ internal sealed interface RecapEditorSideEffect {
     data object ShowNoRouteToast : RecapEditorSideEffect
 
     data object OpenGallery : RecapEditorSideEffect
+
+    data object CaptureRecap : RecapEditorSideEffect
+
+    data class NavigateToComplete(val imagePath: String) : RecapEditorSideEffect
 }
