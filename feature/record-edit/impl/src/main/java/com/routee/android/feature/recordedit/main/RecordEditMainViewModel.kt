@@ -5,8 +5,10 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.member.repository.MemberRepository
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.data.recap.repository.RecapRepository
+import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.main.model.RecordEditMainSideEffect
 import com.routee.android.feature.recordedit.main.model.RecordEditMainUiState
@@ -31,6 +33,7 @@ import timber.log.Timber
 internal class RecordEditMainViewModel @Inject constructor(
     private val recapRepository: RecapRepository,
     private val memberRepository: MemberRepository,
+    private val getRecapEditorData: GetRecapEditorDataUseCase,
 ) : ViewModel() {
     val titleEditingState = TextFieldState()
 
@@ -41,6 +44,7 @@ internal class RecordEditMainViewModel @Inject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
 
     private var loadJob: Job? = null
+    private var openEditorJob: Job? = null
 
     init {
         loadRecaps()
@@ -62,8 +66,20 @@ internal class RecordEditMainViewModel @Inject constructor(
 
     fun onRecapClick(activityId: Long) {
         completeTitleEdit()
-        // TODO API 연동 시 편집 리소스를 먼저 불러오고, 실패하면 이동하지 않고 ShowNetworkErrorToast
-        viewModelScope.launch { _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId)) }
+        if (openEditorJob?.isActive == true) return
+        openEditorJob = viewModelScope.launch {
+            getRecapEditorData(activityId)
+                .onSuccess { _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId)) }
+                .onFailure { e ->
+                    Timber.e(e)
+                    val sideEffect = if (e is RecapException.NetworkUnavailable) {
+                        RecordEditMainSideEffect.ShowNetworkErrorToast
+                    } else {
+                        RecordEditMainSideEffect.NavigateToEditor(activityId)
+                    }
+                    _sideEffect.send(sideEffect)
+                }
+        }
     }
 
     fun onEditTitleClick(activityId: Long) {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.recap.model.ActivityRecap
+import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
@@ -25,7 +26,8 @@ class RecordEditMainViewModelTest {
     private val recapRepository = FakeRecapRepository()
     private val memberRepository = FakeMemberRepository()
 
-    private fun createViewModel() = RecordEditMainViewModel(recapRepository, memberRepository)
+    private fun createViewModel() =
+        RecordEditMainViewModel(recapRepository, memberRepository, GetRecapEditorDataUseCase(recapRepository))
 
     @Test
     fun `가입 월을 불러오면 그달에서 이전 달 이동이 막힌다`() {
