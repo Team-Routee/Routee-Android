@@ -1,12 +1,14 @@
 package com.routee.android.feature.recordedit.editor.model
 
 import androidx.compose.runtime.Immutable
+import com.routee.android.core.domain.recap.RecapEditorData
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 /**
  * 기록 편집 화면 상태
@@ -73,3 +75,27 @@ internal data class RecapEditorContent(
         )
     }
 }
+
+internal fun RecapEditorData.toRecapEditorContent() = RecapEditorContent(
+    mapImageUrl = resource.mapImageUrl,
+    record = RecapRecordUiModel.from(
+        distanceMeters = resource.distanceMeters,
+        durationSeconds = resource.durationSeconds,
+        maxElevationMeters = resource.maxElevationMeters,
+    ),
+    track = RecapTrackUiModel(
+        trackPoints = track.trackPoints
+            .sortedBy { it.pointIndex }
+            .map { RecapTrackUiModel.GeoPoint(latitude = it.latitude, longitude = it.longitude) }
+            .toImmutableList(),
+        markers = track.timelineMarkers
+            .map {
+                RecapTrackUiModel.TimelineMarker(
+                    timelineId = it.timelineId,
+                    thumbnailUrl = it.thumbnailUrl,
+                    point = RecapTrackUiModel.GeoPoint(latitude = it.latitude, longitude = it.longitude),
+                )
+            }.toImmutableList(),
+    ),
+    routeNames = resource.routes.sortedBy { it.sequence }.map { it.name }.toImmutableList(),
+)
