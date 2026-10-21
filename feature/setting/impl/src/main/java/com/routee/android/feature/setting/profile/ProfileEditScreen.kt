@@ -32,7 +32,6 @@ import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.dialog.RouteeDialogAction
 import com.routee.android.core.designsystem.component.dialog.RouteeVerticalActionDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
-import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.component.textfield.RouteeNicknameTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
@@ -157,8 +156,7 @@ private fun ProfileEditScreen(
                         start = RouteeTheme.spacing.Spacing16,
                         end = RouteeTheme.spacing.Spacing16,
                         bottom = BottomSpacing,
-                    )
-                    .routeeMessageAnchor(),
+                    ),
             )
         }
     }
