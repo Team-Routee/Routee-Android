@@ -87,6 +87,25 @@ class TimelinePhotoRepositoryImplTest {
         assertEquals(403, (result.exceptionOrNull() as ApiException.Http).statusCode)
     }
 
+    @Test
+    fun clearUploadStateAllowsCompletedActivityToUploadAgain() = runTest {
+        val service = FakeService("http://127.0.0.1:${server.address.port}/upload", failFirstRegistration = false)
+        val repository = TimelinePhotoRepositoryImpl(
+            service = service,
+            uploader = PresignedImageUploader(OkHttpClient()),
+            apiResponseHandler = ApiResponseHandler(Json),
+        )
+        val photos = listOf(photo("photo.jpg"))
+
+        repository.uploadPhotos(1, photos)
+        repository.clearUploadState(1)
+        repository.uploadPhotos(1, photos)
+
+        assertEquals(2, service.urlRequests)
+        assertEquals(2, service.registerRequests)
+        assertEquals(2, putCount.get())
+    }
+
     private fun photo(name: String): TimelinePhotoUpload = TimelinePhotoUpload(
         clientId = name,
         file = File(folder.root, name).apply { writeText(name) },

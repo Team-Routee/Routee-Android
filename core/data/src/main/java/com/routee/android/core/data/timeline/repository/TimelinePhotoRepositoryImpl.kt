@@ -59,6 +59,14 @@ internal class TimelinePhotoRepositoryImpl @Inject constructor(
         return TimelinePhotoUploadResult(photo.clientId, result)
     }
 
+    override suspend fun clearUploadState(activityId: Long) = batchMutex.withLock {
+        stateMutex.withLock {
+            registered.keys.removeAll { it.first == activityId }
+            uploaded.keys.removeAll { it.first == activityId }
+        }
+        Unit
+    }
+
     private suspend fun uploadPhoto(activityId: Long, photo: TimelinePhotoUpload): Result<Long> {
         if (!photo.file.isFile) return Result.failure(FileNotFoundException(photo.file.name))
         val key = activityId to photo.clientId
