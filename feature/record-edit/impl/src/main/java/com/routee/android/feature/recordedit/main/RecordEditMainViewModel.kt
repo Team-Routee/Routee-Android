@@ -81,17 +81,34 @@ internal class RecordEditMainViewModel @Inject constructor(
     private fun completeTitleEdit() {
         val activityId = _uiState.value.editingActivityId ?: return
         val title = titleEditingState.text.toString()
-        if (title.isBlank()) {
-            _uiState.update { it.copy(editingActivityId = null) }
-            return
+        val originalTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
+        _uiState.update { it.copy(editingActivityId = null) }
+        if (title.isBlank() || originalTitle == null || title == originalTitle) return
+
+        updateTitle(activityId = activityId, title = title)
+        viewModelScope.launch {
+            recapRepository.updateRecapTitle(activityId = activityId, title = title)
+                .onFailure { e ->
+                    Timber.e(e)
+                    restoreTitle(activityId = activityId, failedTitle = title, originalTitle = originalTitle)
+                }
         }
-        _uiState.update { state ->
-            state.copy(
-                editingActivityId = null,
-                recaps = state.recaps.updateTitle(activityId = activityId, title = title),
-            )
-        }
-        // TODO API 연동 시 제목이 바뀌었으면 PATCH /api/v1/activity/{activityId}/title
+    }
+
+    private fun updateTitle(
+        activityId: Long,
+        title: String,
+    ) {
+        _uiState.update { it.copy(recaps = it.recaps.updateTitle(activityId = activityId, title = title)) }
+    }
+
+    private fun restoreTitle(
+        activityId: Long,
+        failedTitle: String,
+        originalTitle: String,
+    ) {
+        val currentTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
+        if (currentTitle == failedTitle) updateTitle(activityId = activityId, title = originalTitle)
     }
 
     private fun moveMonth(month: YearMonth) {
