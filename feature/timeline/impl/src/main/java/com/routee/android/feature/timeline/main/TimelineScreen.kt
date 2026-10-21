@@ -1,24 +1,18 @@
 package com.routee.android.feature.timeline.main
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
@@ -27,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +35,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -109,24 +101,12 @@ internal fun TimelineRoute(
     val defaultTitle = stringResource(R.string.timeline_default_record_title, recordDate)
     val titleState = rememberTextFieldState(defaultTitle)
     var isTitleEditing by rememberSaveable { mutableStateOf(false) }
-    var isRouteFocused by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
-    val routeBringIntoViewRequester = remember { BringIntoViewRequester() }
     val focusManager = LocalFocusManager.current
-    val density = LocalDensity.current
-    val imeInsets = WindowInsets.ime
-    val isImeVisible by remember(density, imeInsets) { derivedStateOf { imeInsets.getBottom(density) > 0 } }
     val points = rememberSaveable(key.activityId, key.photos, saver = RoutePointsSaver) {
         key.photos.mapNotNull { photo -> photo.location?.takeIf(String::isNotBlank) }
             .take(MAX_ROUTE_POINT_COUNT)
             .mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }
             .toMutableStateList()
-    }
-    LaunchedEffect(isTitleEditing) {
-        if (isTitleEditing) focusRequester.requestFocus()
-    }
-    LaunchedEffect(isImeVisible, isRouteFocused) {
-        if (isImeVisible && isRouteFocused) routeBringIntoViewRequester.bringIntoView()
     }
     fun finishTitleEdit() {
         isTitleEditing = false
@@ -148,7 +128,6 @@ internal fun TimelineRoute(
         photos = key.photos,
         titleState = titleState,
         isTitleEditing = isTitleEditing,
-        focusRequester = focusRequester,
         onBackClick = onBackClick,
         onCompleteClick = {
             finishTitleEdit()
@@ -177,10 +156,6 @@ internal fun TimelineRoute(
                     focusManager.clearFocus()
                     points.add(RoutePoint((points.maxOfOrNull { it.id } ?: -1L) + 1L, TextFieldState()))
                 },
-                modifier = Modifier
-                    .bringIntoViewRequester(routeBringIntoViewRequester)
-                    .onFocusChanged { isRouteFocused = it.hasFocus }
-                    .focusGroup(),
             )
         },
     )
@@ -192,7 +167,6 @@ private fun TimelineScreen(
     photos: List<TimelinePhoto>,
     titleState: TextFieldState,
     isTitleEditing: Boolean,
-    focusRequester: FocusRequester,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onEditTitleClick: () -> Unit,
@@ -210,9 +184,7 @@ private fun TimelineScreen(
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             RouteePageNavBar(
                 onBackClick = onBackClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(RouteeTheme.colors.bgPrimary),
+                modifier = Modifier.fillMaxWidth(),
                 actions = {
                     Text(
                         text = stringResource(R.string.timeline_complete),
@@ -231,9 +203,9 @@ private fun TimelineScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
                     .imePadding()
+                    .verticalScroll(rememberScrollState())
                     .clearFocus(focusManager, onOutsideClick),
             ) {
                 Column(
@@ -244,7 +216,6 @@ private fun TimelineScreen(
                     TimelineTitleRow(
                         titleState = titleState,
                         isEditing = isTitleEditing,
-                        focusRequester = focusRequester,
                         onEditClick = onEditTitleClick,
                         onEditFinish = onTitleEditFinish,
                         onFocusLoss = onTitleFocusLoss,
@@ -293,7 +264,6 @@ private fun TimelineScreen(
 private fun TimelineTitleRow(
     titleState: TextFieldState,
     isEditing: Boolean,
-    focusRequester: FocusRequester,
     onEditClick: () -> Unit,
     onEditFinish: () -> Unit,
     onFocusLoss: () -> Unit,
@@ -305,6 +275,8 @@ private fun TimelineTitleRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (isEditing) {
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(focusRequester) { focusRequester.requestFocus() }
             RouteeBasicTextField(
                 state = titleState,
                 textStyle = RouteeTheme.typography.titleSb20,
@@ -349,6 +321,12 @@ private fun TimelineTitleRow(
 @Composable
 private fun TimelineScreenPreview() {
     RouteeTheme {
+        var isTitleEditing by remember { mutableStateOf(false) }
+        val points = remember {
+            listOf("창의문", "청운대", "말바위")
+                .mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }
+                .toMutableStateList()
+        }
         TimelineScreen(
             uiState = TimelineUiState(
                 distance = "15.53",
@@ -357,22 +335,23 @@ private fun TimelineScreenPreview() {
             ),
             photos = emptyList(),
             titleState = rememberTextFieldState("2026.07.18 기록"),
-            isTitleEditing = false,
-            focusRequester = remember { FocusRequester() },
+            isTitleEditing = isTitleEditing,
             onBackClick = {},
             onCompleteClick = {},
-            onEditTitleClick = {},
-            onTitleEditFinish = {},
-            onTitleFocusLoss = {},
+            onEditTitleClick = { isTitleEditing = true },
+            onTitleEditFinish = { isTitleEditing = false },
+            onTitleFocusLoss = { isTitleEditing = false },
             onOutsideClick = {},
             onRecordEditClick = {},
             onPhotoSaveClick = {},
             myRoute = {
                 MyRouteEditor(
-                    points = emptyList(),
-                    onMovePoint = { _, _ -> },
-                    onRemovePoint = {},
-                    onAddPoint = {},
+                    points = points,
+                    onMovePoint = { from, to -> points.add(to, points.removeAt(from)) },
+                    onRemovePoint = points::removeAt,
+                    onAddPoint = {
+                        points.add(RoutePoint((points.maxOfOrNull { it.id } ?: -1L) + 1L, TextFieldState()))
+                    },
                 )
             },
         )
