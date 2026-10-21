@@ -4,8 +4,8 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.recap.model.ActivityRecap
-import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import java.io.IOException
 import java.time.LocalDate
@@ -149,27 +149,6 @@ class RecordEditMainViewModelTest {
         activityDate = date,
         timelineImageUrls = List(photoCount) { "https://example.com/$it.jpg" },
     )
-}
-
-private class FakeRecapRepository : RecapRepository {
-    var recaps: List<ActivityRecap> = emptyList()
-    var error: Throwable? = null
-    val requestedMonths = mutableListOf<YearMonth>()
-    var titleError: Throwable? = null
-    val updatedTitles = mutableListOf<Pair<Long, String>>()
-
-    override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> {
-        requestedMonths += month
-        return error?.let { Result.failure(it) } ?: Result.success(recaps)
-    }
-
-    override suspend fun updateRecapTitle(
-        activityId: Long,
-        title: String,
-    ): Result<Unit> {
-        updatedTitles += activityId to title
-        return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
-    }
 }
 
 private class FakeMemberRepository : MemberRepository {
