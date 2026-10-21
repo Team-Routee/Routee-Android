@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f5ab0652e2fe11f7740f2ca8dd8295fd",
+    "identityHash": "4d4c3e7a6085ecea86e5ac2fb1717a52",
     "entities": [
       {
-        "tableName": "activity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `activity_type` TEXT NOT NULL, `activity_status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `segment_started_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
+        "tableName": "workout",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `segment_started_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,14 +21,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "activityType",
-            "columnName": "activity_type",
+            "fieldPath": "type",
+            "columnName": "type",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "activityStatus",
-            "columnName": "activity_status",
+            "fieldPath": "status",
+            "columnName": "status",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -96,11 +96,11 @@
       },
       {
         "tableName": "track_point",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`activity_id` INTEGER NOT NULL, `point_index` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `elevation` REAL NOT NULL, `recorded_at` INTEGER NOT NULL, PRIMARY KEY(`activity_id`, `point_index`), FOREIGN KEY(`activity_id`) REFERENCES `activity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`workout_id` INTEGER NOT NULL, `point_index` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `elevation` REAL NOT NULL, `recorded_at` INTEGER NOT NULL, PRIMARY KEY(`workout_id`, `point_index`), FOREIGN KEY(`workout_id`) REFERENCES `workout`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
-            "fieldPath": "activityId",
-            "columnName": "activity_id",
+            "fieldPath": "workoutId",
+            "columnName": "workout_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -138,17 +138,17 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "activity_id",
+            "workout_id",
             "point_index"
           ]
         },
         "foreignKeys": [
           {
-            "table": "activity",
+            "table": "workout",
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "activity_id"
+              "workout_id"
             ],
             "referencedColumns": [
               "id"
@@ -159,7 +159,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f5ab0652e2fe11f7740f2ca8dd8295fd')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4d4c3e7a6085ecea86e5ac2fb1717a52')"
     ]
   }
 }
