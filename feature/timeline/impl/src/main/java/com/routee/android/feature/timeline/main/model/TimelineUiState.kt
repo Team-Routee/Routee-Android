@@ -7,4 +7,5 @@ internal data class TimelineUiState(
     val distance: String,
     val duration: String,
     val maxElevation: String,
+    val isTitleEditing: Boolean = false,
 )

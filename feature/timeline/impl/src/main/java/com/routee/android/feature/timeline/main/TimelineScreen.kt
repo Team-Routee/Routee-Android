@@ -24,10 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
@@ -55,7 +53,6 @@ import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.timeline.R
-import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.api.TimelinePhoto
 import com.routee.android.feature.timeline.component.MyRouteEditor
 import com.routee.android.feature.timeline.component.RoutePoint
@@ -65,7 +62,6 @@ import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val RecordDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 private val EditIconTouchSize = 44.dp
@@ -74,18 +70,10 @@ private val SectionSpacing = 48.dp
 private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
 private const val MAX_TITLE_LENGTH = 16
-private const val MAX_ROUTE_POINT_COUNT = 20
-
-private val RoutePointsSaver = listSaver<SnapshotStateList<RoutePoint>, String>(
-    save = { points -> points.map { it.name.text.toString() } },
-    restore = { names ->
-        names.mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }.toMutableStateList()
-    },
-)
 
 @Composable
 internal fun TimelineRoute(
-    key: TimelineNavKey,
+    viewModel: TimelineViewModel,
     onBackClick: () -> Unit,
     onCompleteClick: (TimelineDraft) -> Unit,
     onRecordEditClick: (TimelineDraft) -> Unit,
@@ -93,68 +81,51 @@ internal fun TimelineRoute(
     modifier: Modifier = Modifier,
     routeMap: (@Composable () -> Unit)? = null,
 ) {
-    val recordDate = remember(key.endedAtEpochMillis) {
-        Instant.ofEpochMilli(key.endedAtEpochMillis)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val recordDate = remember(viewModel.endedAtEpochMillis) {
+        Instant.ofEpochMilli(viewModel.endedAtEpochMillis)
             .atZone(ZoneId.systemDefault())
             .format(RecordDateFormatter)
     }
     val defaultTitle = stringResource(R.string.timeline_default_record_title, recordDate)
-    val titleState = rememberTextFieldState(defaultTitle)
-    var isTitleEditing by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
-    val points = rememberSaveable(key.activityId, key.photos, saver = RoutePointsSaver) {
-        key.photos.mapNotNull { photo -> photo.location?.takeIf(String::isNotBlank) }
-            .take(MAX_ROUTE_POINT_COUNT)
-            .mapIndexed { index, name -> RoutePoint(index.toLong(), TextFieldState(name)) }
-            .toMutableStateList()
-    }
     fun finishTitleEdit() {
-        isTitleEditing = false
+        viewModel.onTitleEditFinish()
         focusManager.clearFocus()
-    }
-    fun draft() = TimelineDraft(
-        title = titleState.text.toString().trim().ifEmpty { defaultTitle },
-        routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
-    )
-    val uiState = remember(key) {
-        TimelineUiState(
-            distance = String.format(Locale.US, "%.2f", key.distanceMeters / 1000.0),
-            duration = String.format(Locale.US, "%02d:%02d", key.durationSeconds / 3600, key.durationSeconds / 60 % 60),
-            maxElevation = key.maxElevationMeters.toString(),
-        )
     }
     TimelineScreen(
         uiState = uiState,
-        photos = key.photos,
-        titleState = titleState,
-        isTitleEditing = isTitleEditing,
+        photos = viewModel.photos,
+        titleState = viewModel.titleState,
+        defaultTitle = defaultTitle,
+        isTitleEditing = uiState.isTitleEditing,
         onBackClick = onBackClick,
         onCompleteClick = {
             finishTitleEdit()
-            onCompleteClick(draft())
+            onCompleteClick(viewModel.draft(defaultTitle))
         },
-        onEditTitleClick = { isTitleEditing = true },
+        onEditTitleClick = { viewModel.onEditTitleClick(defaultTitle) },
         onTitleEditFinish = ::finishTitleEdit,
-        onTitleFocusLoss = { isTitleEditing = false },
+        onTitleFocusLoss = viewModel::onTitleEditFinish,
         onOutsideClick = { finishTitleEdit() },
         onRecordEditClick = {
             finishTitleEdit()
-            onRecordEditClick(draft())
+            onRecordEditClick(viewModel.draft(defaultTitle))
         },
         onPhotoSaveClick = onPhotoSaveClick,
         modifier = modifier,
         routeMap = routeMap,
         myRoute = {
             MyRouteEditor(
-                points = points,
-                onMovePoint = { from, to -> points.add(to, points.removeAt(from)) },
+                points = viewModel.points,
+                onMovePoint = viewModel::onMovePoint,
                 onRemovePoint = { index ->
-                    points.removeAt(index)
+                    viewModel.onRemovePoint(index)
                     focusManager.clearFocus()
                 },
                 onAddPoint = {
                     focusManager.clearFocus()
-                    points.add(RoutePoint((points.maxOfOrNull { it.id } ?: -1L) + 1L, TextFieldState()))
+                    viewModel.onAddPoint()
                 },
             )
         },
@@ -166,6 +137,7 @@ private fun TimelineScreen(
     uiState: TimelineUiState,
     photos: List<TimelinePhoto>,
     titleState: TextFieldState,
+    defaultTitle: String,
     isTitleEditing: Boolean,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
@@ -215,6 +187,7 @@ private fun TimelineScreen(
                 ) {
                     TimelineTitleRow(
                         titleState = titleState,
+                        defaultTitle = defaultTitle,
                         isEditing = isTitleEditing,
                         onEditClick = onEditTitleClick,
                         onEditFinish = onTitleEditFinish,
@@ -263,6 +236,7 @@ private fun TimelineScreen(
 @Composable
 private fun TimelineTitleRow(
     titleState: TextFieldState,
+    defaultTitle: String,
     isEditing: Boolean,
     onEditClick: () -> Unit,
     onEditFinish: () -> Unit,
@@ -297,7 +271,7 @@ private fun TimelineTitleRow(
             )
         } else {
             Text(
-                text = titleState.text.toString(),
+                text = titleState.text.toString().ifEmpty { defaultTitle },
                 style = RouteeTheme.typography.titleSb20,
                 color = RouteeTheme.colors.white,
                 maxLines = 1,
@@ -335,6 +309,7 @@ private fun TimelineScreenPreview() {
             ),
             photos = emptyList(),
             titleState = rememberTextFieldState("2026.07.18 기록"),
+            defaultTitle = "2026.07.18 기록",
             isTitleEditing = isTitleEditing,
             onBackClick = {},
             onCompleteClick = {},
