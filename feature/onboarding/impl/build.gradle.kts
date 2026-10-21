@@ -29,6 +29,8 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.domain)
+
     implementation(projects.feature.onboarding.api)
     implementation(projects.feature.workout.api)
 

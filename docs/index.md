@@ -5,6 +5,7 @@
 | Modules, dependencies, file locations | [modularization](architecture/modularization.md) |
 | NavKey, entries, moving between screens, tabs | [navigation](architecture/navigation.md) |
 | Repository, Service, DTO, DataStore, Retrofit qualifiers | [data-layer](architecture/data-layer.md) |
+| UseCase, logic shared by 2+ screens | [domain-layer](architecture/domain-layer.md) |
 | Screen state class, loading/empty/success/failure field | [ui-state](architecture/ui-state.md) |
 | Route, Screen, lambdas or onEvent, side effects | [screen](architecture/screen.md) |
 | Failures, server error codes, logging | [error-handling](architecture/error-handling.md) |
