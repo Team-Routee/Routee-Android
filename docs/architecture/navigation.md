@@ -19,6 +19,7 @@ data class RecapDetailNavKey(val activityId: Long) : NavKey
 | `backStack.removeLast()` | `navigator.navigateBack()` |
 | `backStack.clear()` | `navigator.clearAndNavigateTo(key)` |
 | Dialog or bottom sheet as a `NavKey` | `isXxxDialogVisible` in UiState |
+| Lists or large objects in a `NavKey` | Ids or a few small values. The next screen loads the rest from the data layer |
 | Shared singleton for results | `ResultEventBus` between nav entries |
 | Switching tabs from a screen | Tab bar only |
 
