@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.main
 
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.recap.model.ActivityRecap
@@ -14,6 +15,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+
+private const val ORIGINAL_TITLE = "2026.07.14 기록"
 
 class RecordEditMainViewModelTest {
     @get:Rule
@@ -88,13 +91,61 @@ class RecordEditMainViewModelTest {
         assertEquals(YearMonth.now().minusMonths(1), recapRepository.requestedMonths.last())
     }
 
+    @Test
+    fun `제목을 바꾸고 편집을 끝내면 수정 요청을 보낸다`() {
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+
+        assertEquals(listOf(1L to "관악산"), recapRepository.updatedTitles)
+        assertEquals("관악산", titleOf(viewModel))
+    }
+
+    @Test
+    fun `제목이 그대로거나 공백뿐이면 수정 요청을 보내지 않는다`() {
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, ORIGINAL_TITLE)
+        editTitle(viewModel, "   ")
+
+        assertTrue(recapRepository.updatedTitles.isEmpty())
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `제목 수정에 실패하면 원래 제목으로 되돌린다`() {
+        recapRepository.titleError = IOException()
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    private fun createViewModelWithRecap(): RecordEditMainViewModel {
+        recapRepository.recaps = listOf(recap(activityId = 1, date = LocalDate.of(2026, 7, 14), photoCount = 0))
+        return createViewModel()
+    }
+
+    private fun editTitle(
+        viewModel: RecordEditMainViewModel,
+        title: String,
+    ) {
+        viewModel.onEditTitleClick(1)
+        viewModel.titleEditingState.setTextAndPlaceCursorAtEnd(title)
+        viewModel.onEditTitleComplete(1)
+    }
+
+    private fun titleOf(viewModel: RecordEditMainViewModel): String =
+        (viewModel.uiState.value.recaps as UiState.Success).data.first { it.activityId == 1L }.title
+
     private fun recap(
         activityId: Long,
         date: LocalDate,
         photoCount: Int,
     ) = ActivityRecap(
         activityId = activityId,
-        title = "${date}의 기록",
+        title = ORIGINAL_TITLE,
         activityDate = date,
         timelineImageUrls = List(photoCount) { "https://example.com/$it.jpg" },
     )
