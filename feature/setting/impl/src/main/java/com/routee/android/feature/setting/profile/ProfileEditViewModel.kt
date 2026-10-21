@@ -6,6 +6,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldValidation
+import com.routee.android.core.domain.member.NicknameValidation
 import com.routee.android.core.domain.member.ValidateNicknameUseCase
 import com.routee.android.feature.setting.profile.model.ProfileEditSideEffect
 import com.routee.android.feature.setting.profile.model.ProfileEditUiState
@@ -96,9 +97,12 @@ internal class ProfileEditViewModel @Inject constructor(
         }
     }
 
-    private fun nicknameValidation(nickname: String, savedNickname: String): RouteeTextFieldValidation = when {
-        nickname.isEmpty() || nickname == savedNickname -> RouteeTextFieldValidation.None
-        validateNickname(nickname) -> RouteeTextFieldValidation.Valid
-        else -> RouteeTextFieldValidation.Invalid
+    private fun nicknameValidation(nickname: String, savedNickname: String): RouteeTextFieldValidation {
+        if (nickname == savedNickname) return RouteeTextFieldValidation.None
+        return when (validateNickname(nickname)) {
+            NicknameValidation.EMPTY -> RouteeTextFieldValidation.None
+            NicknameValidation.VALID -> RouteeTextFieldValidation.Valid
+            NicknameValidation.INVALID -> RouteeTextFieldValidation.Invalid
+        }
     }
 }

@@ -10,6 +10,7 @@ import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldValidation
+import com.routee.android.core.domain.member.NicknameValidation
 import com.routee.android.core.domain.member.ValidateNicknameUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.onboarding.api.NicknameNavKey
@@ -93,13 +94,10 @@ internal class NicknameViewModel @AssistedInject constructor(
         }
     }
 
-    private fun nicknameValidation(text: CharSequence): RouteeTextFieldValidation {
-        val nickname = text.trimEnd().toString()
-        return when {
-            nickname.isEmpty() -> RouteeTextFieldValidation.None
-            validateNickname(nickname) -> RouteeTextFieldValidation.Valid
-            else -> RouteeTextFieldValidation.Invalid
-        }
+    private fun nicknameValidation(text: CharSequence): RouteeTextFieldValidation = when (validateNickname(text)) {
+        NicknameValidation.EMPTY -> RouteeTextFieldValidation.None
+        NicknameValidation.VALID -> RouteeTextFieldValidation.Valid
+        NicknameValidation.INVALID -> RouteeTextFieldValidation.Invalid
     }
 
     @AssistedFactory

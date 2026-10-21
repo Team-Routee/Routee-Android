@@ -26,7 +26,7 @@ class GetWorkoutWithPhotosUseCase @Inject constructor(
 
 // 여러 화면이 같이 쓰는 규칙
 class ValidateNicknameUseCase @Inject constructor() {
-    operator fun invoke(nickname: String): Boolean = ... // 결과는 도메인 값으로. 화면 상태 변환은 ViewModel에서
+    operator fun invoke(nickname: CharSequence): NicknameValidation = ... // 결과는 도메인 값(EMPTY, VALID, INVALID)으로
 }
 
 // ViewModel: UseCase와 Repository를 같이 써도 됨
