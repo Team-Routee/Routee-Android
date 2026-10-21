@@ -4,6 +4,8 @@
     <string name="timeline_edit_title">기록 제목 수정</string>
     <string name="timeline_edit_record">기록 편집 바로가기</string>
     <string name="timeline_default_record_title">%1$s 기록</string>
+    <!-- 사진 타임라인 -->
+    <string name="timeline_photo_title">타임라인</string>
     <!-- 나의 루트 편집 -->
     <string name="timeline_route_title">나의 루트</string>
     <string name="timeline_route_point_count">(%1$d/%2$d)</string>
