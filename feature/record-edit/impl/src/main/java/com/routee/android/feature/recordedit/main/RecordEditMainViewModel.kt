@@ -62,7 +62,6 @@ internal class RecordEditMainViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onEditTitleComplete(activityId: Long) {
-        // 다른 기록 편집을 시작하면 앞 입력창이 사라지며 완료가 늦게 오므로 무시
         if (_uiState.value.editingActivityId != activityId) return
         completeTitleEdit()
     }

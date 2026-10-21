@@ -26,7 +26,7 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.recordedit.model.RecapEditTab
 
-// recap_tab_android 선택 시 상단 강조선 두께
+// recap_tab_android
 private val SelectedIndicatorThickness = 2.dp
 
 /**

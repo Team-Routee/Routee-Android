@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
+import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
@@ -45,11 +46,17 @@ internal class RecapEditorViewModel @AssistedInject constructor(
 
     fun onTabClick(tab: RecapEditTab) {
         when (tab) {
-            // TODO #65 갤러리 사진 선택으로 이동
-            RecapEditTab.BACKGROUND -> Unit
+            RecapEditTab.BACKGROUND -> {
+                _uiState.update {
+                    it.copy(
+                        selectedTab = tab,
+                        selectedSticker = if (it.selectedTab == RecapEditTab.STICKER) null else it.selectedSticker,
+                    )
+                }
+                openGallery()
+            }
 
             RecapEditTab.BRIGHTNESS, RecapEditTab.COLOR, RecapEditTab.STICKER -> _uiState.update {
-                // 스티커 탭을 열거나 닫으면 선택을 푼다. 서브탭은 처음에 미선택 (RT-EDIT-007)
                 val isStickerTabToggled = tab == RecapEditTab.STICKER || it.selectedTab == RecapEditTab.STICKER
                 it.copy(
                     selectedTab = if (it.selectedTab == tab) null else tab,
@@ -71,6 +78,25 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(recapColor = recapColor) }
     }
 
+    fun onGalleryCancel() {
+        _uiState.update { it.copy(selectedTab = null) }
+    }
+
+    fun onBackgroundCropCancel() {
+        openGallery()
+    }
+
+    fun onBackgroundCropComplete(imageUri: String) {
+        _uiState.update {
+            it.copy(
+                selectedTab = null,
+                backgroundUri = imageUri,
+                baseOpacity = RecapBrightness.PHOTO_BASE_OPACITY,
+                brightness = RecapBrightness.DEFAULT_SLIDER_VALUE,
+            )
+        }
+    }
+
     fun onStickerItemClick(type: StickerType) {
         val state = _uiState.value
         if (type == StickerType.ROUTE && state.routeNames().isEmpty()) {
@@ -80,7 +106,6 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         if (state.stickers.any { it.type == type }) {
             onStickerClick(type)
         } else {
-            // 삭제 후 다시 추가하거나 루트를 처음 추가하면 가운데 (RT-EDIT-007)
             _uiState.update {
                 it.copy(
                     stickers = (it.stickers + RecapSticker(type = type, isCentered = true)).toImmutableList(),
@@ -162,6 +187,10 @@ internal class RecapEditorViewModel @AssistedInject constructor(
 
     private fun RecapEditorUiState.routeNames(): List<String> =
         (content as? UiState.Success)?.data?.routeNames.orEmpty()
+
+    private fun openGallery() {
+        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.OpenGallery) }
+    }
 
     private fun navigateBack() {
         viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.NavigateBack) }
