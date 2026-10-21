@@ -10,6 +10,7 @@
 | `core:navigation` | `RouteeNavigator`, `viewModelEntry` |
 | `core:ui` | `UiState`, `CollectSideEffect`, shared screen-level UI (loading, error). Uses `core:designsystem` |
 | `core:data` | Repository, DataSource, DTO, model |
+| `core:database` | Room DB, DAO, entity. Only `core:data` depends on it ([data-layer](data-layer.md#room)) |
 | `core:network` | Retrofit, `ApiResponseHandler`, `ApiException` |
 | `feature:<x>:api` | `NavKey`, result types |
 | `feature:<x>:impl` | Route, Screen, ViewModel, entry builder |
@@ -42,6 +43,7 @@ dependencies {
 | Modifier extension | `core/designsystem/.../extension/ModifierExt.kt` |
 | Feature strings | `feature/<x>/impl/src/main/res/values/strings.xml` |
 | Repository, DTO, model | `core/data/.../<domain>/` |
+| Room DAO, entity | `core/database/.../dao/`, `entity/` |
 | UseCase | `core/domain/.../<domain>/` |
 
 New module: team decision first → `settings.gradle.kts` → `app/build.gradle.kts` → `RouteeApp`
