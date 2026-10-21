@@ -29,6 +29,7 @@ internal class WithdrawViewModel @Inject constructor() : ViewModel() {
     fun onWithdrawClick() {
         if (!_uiState.value.isAgreed) return
         // TODO 회원 탈퇴 API(DELETE /api/v1/member/withdraw) 연결, 실패 처리
+        // TODO 탈퇴 성공 시 기기 운동 기록 삭제
         viewModelScope.launch { _sideEffect.send(WithdrawSideEffect.NavigateToLogin) }
     }
 }
