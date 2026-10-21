@@ -8,10 +8,24 @@
 | `exception/` | `AuthException` |
 | `remote/service/` | `AuthService` |
 | `remote/dto/request\|response/` | `LoginRequest`, `TokenResponse` |
-| `local/` | `TokenLocalDataSource` |
+| `local/` | `TokenLocalDataSource`, `WorkoutMapImageLocalDataSource`, `WorkoutEntityMapper` |
 | `repository/` | `AuthRepository`, `AuthRepositoryImpl` |
 
-Hilt modules live in `core/data/.../di/`.
+| Path under `core/database/.../` | Example |
+| --- | --- |
+| (root) | `RouteeDatabase` (one Room DB for the app, internal) |
+| `dao/` | `WorkoutDao` |
+| `entity/` | `WorkoutEntity`, `TrackPointEntity` |
+
+Hilt modules live in `core/data/.../di/` and `core/database/.../di/`.
+
+## Room
+
+| Item | Rule |
+| --- | --- |
+| Entity ↔ model | `core/data/.../<domain>/local/` |
+| Schema | Commit `core/database/schemas/`. New version → `@AutoMigration`, no destructive migration |
+| Update parent row | `@Upsert`, not `REPLACE` |
 
 ## Service and DTO
 
