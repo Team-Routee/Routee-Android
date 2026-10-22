@@ -252,6 +252,58 @@ class AuthRepositoryImplTest {
         assertNull(logoutService.lastRequest)
     }
 
+    /**
+     * GIVEN: 로그인된 상태일 때
+     * WHEN: 회원 탈퇴하면
+     * THEN: Refresh Token으로 탈퇴 API를 호출하고 저장된 토큰을 지운다
+     */
+    @Test
+    fun `회원 탈퇴하면 서버에 요청하고 토큰을 지운다`() = runTest {
+        val tokenStore = loggedInTokenStore()
+        val withdrawService = FakeWithdrawService()
+        val repository = repository(FakeAuthService(), tokenStore, withdrawService = withdrawService)
+
+        val result = repository.withdraw()
+
+        assertTrue(result.isSuccess)
+        assertEquals("refresh", withdrawService.lastRequest?.refreshToken)
+        assertNull(tokenStore.getAccessToken())
+        assertNull(tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: 네트워크가 끊겼을 때
+     * WHEN: 회원 탈퇴하면
+     * THEN: NetworkUnavailable로 실패하고 저장된 토큰은 남긴다
+     */
+    @Test
+    fun `회원 탈퇴 중 네트워크 오류면 NetworkUnavailable로 실패하고 토큰을 남긴다`() = runTest {
+        val tokenStore = loggedInTokenStore()
+        val withdrawService = FakeWithdrawService(onWithdraw = { throw IOException() })
+        val repository = repository(FakeAuthService(), tokenStore, withdrawService = withdrawService)
+
+        val result = repository.withdraw()
+
+        assertTrue(result.exceptionOrNull() is AuthException.NetworkUnavailable)
+        assertEquals("refresh", tokenStore.getRefreshToken())
+    }
+
+    /**
+     * GIVEN: 저장된 Refresh Token이 없을 때
+     * WHEN: 회원 탈퇴하면
+     * THEN: 탈퇴 API를 호출하지 않고 실패한다
+     */
+    @Test
+    fun `Refresh Token이 없으면 탈퇴 API를 호출하지 않고 실패한다`() = runTest {
+        val withdrawService = FakeWithdrawService()
+        val repository = repository(FakeAuthService(), tokenStore(), withdrawService = withdrawService)
+
+        val result = repository.withdraw()
+
+        assertTrue(result.isFailure)
+        assertNull(withdrawService.lastRequest)
+    }
+
     private suspend fun TestScope.loggedInTokenStore() = tokenStore().apply {
         saveTokens(accessToken = "access", refreshToken = "refresh")
     }
