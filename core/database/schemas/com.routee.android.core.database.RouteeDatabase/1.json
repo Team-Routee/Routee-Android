@@ -6,7 +6,7 @@
     "entities": [
       {
         "tableName": "workout",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `segment_started_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `resumed_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -45,8 +45,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "segmentStartedAt",
-            "columnName": "segment_started_at",
+            "fieldPath": "resumedAt",
+            "columnName": "resumed_at",
             "affinity": "INTEGER"
           },
           {

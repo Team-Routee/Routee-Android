@@ -126,7 +126,7 @@ class WorkoutDaoTest {
         status = "ACTIVITY_IN_PROGRESS",
         startedAt = Instant.ofEpochMilli(1_000),
         durationMillis = 0,
-        segmentStartedAt = Instant.ofEpochMilli(1_000),
+        resumedAt = Instant.ofEpochMilli(1_000),
         pausedAt = null,
         lastRecordedAt = Instant.ofEpochMilli(1_000),
         distance = 0.0,
