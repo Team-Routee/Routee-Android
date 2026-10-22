@@ -1,9 +1,17 @@
 package com.routee.android.feature.recordedit.editor
 
+import com.routee.android.core.data.recap.exception.RecapException
+import com.routee.android.core.data.recap.model.ActivityTrack
+import com.routee.android.core.data.recap.model.RecapResource
+import com.routee.android.core.data.recap.model.RecapRoute
+import com.routee.android.core.data.recap.model.TrackPoint
+import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.complete.FakeRecapImageStore
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
+import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
 import com.routee.android.feature.recordedit.editor.model.RecapSticker
@@ -11,7 +19,10 @@ import com.routee.android.feature.recordedit.editor.model.StickerFrame
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
+import java.io.IOException
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,7 +36,8 @@ class RecapEditorViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L), FakeRecapImageStore())
+    private val recapRepository = FakeRecapRepository()
+    private val viewModel by lazy { createViewModel() }
     private val state get() = viewModel.uiState.value
 
     /**
@@ -215,4 +227,60 @@ class RecapEditorViewModelTest {
 
         assertFalse(state.isCompleteAnimationVisible)
     }
+
+    @Test
+    fun `편집 데이터를 불러오면 루트는 순번대로, 경로는 좌표 기록 순서대로 보여준다`() {
+        recapRepository.resource = RecapResource(
+            distanceMeters = 15_500,
+            durationSeconds = 12_000,
+            maxElevationMeters = 2132,
+            mapImageUrl = "https://example.com/map.png",
+            routes = listOf(RecapRoute(sequence = 2, name = "백운대"), RecapRoute(sequence = 1, name = "북한산성")),
+        )
+        recapRepository.track = ActivityTrack(
+            trackPoints = listOf(trackPoint(index = 2, latitude = 37.2), trackPoint(index = 1, latitude = 37.1)),
+            timelineMarkers = emptyList(),
+        )
+
+        val content = (state.content as UiState.Success<RecapEditorContent>).data
+
+        assertEquals(listOf("북한산성", "백운대"), content.routeNames)
+        assertEquals(listOf(37.1, 37.2), content.track.trackPoints.map { it.latitude })
+        assertEquals("15.50km", content.record.distance)
+        assertEquals("https://example.com/map.png", content.mapImageUrl)
+    }
+
+    @Test
+    fun `편집 데이터를 못 불러오면 실패 상태고 다시 시도하면 불러온다`() {
+        recapRepository.editorError = IOException()
+        assertTrue(state.content is UiState.Failure)
+
+        recapRepository.editorError = null
+        viewModel.onRetryClick()
+
+        assertTrue(state.content is UiState.Success)
+    }
+
+    @Test
+    fun `네트워크가 끊겨 편집 데이터를 못 불러오면 토스트를 띄우고 뒤로 간다`() = runTest {
+        recapRepository.editorError = RecapException.NetworkUnavailable(null)
+
+        val sideEffects = viewModel.sideEffect.take(2).toList()
+
+        assertEquals(
+            listOf(RecapEditorSideEffect.ShowNetworkErrorToast, RecapEditorSideEffect.NavigateBack),
+            sideEffects,
+        )
+    }
+
+    private fun createViewModel() = RecapEditorViewModel(
+        RecapEditorNavKey(activityId = 1L),
+        FakeRecapImageStore(),
+        recapRepository,
+    )
+
+    private fun trackPoint(
+        index: Int,
+        latitude: Double,
+    ) = TrackPoint(latitude = latitude, longitude = 127.0, elevation = 0.0, pointIndex = index)
 }
