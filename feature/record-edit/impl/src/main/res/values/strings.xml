@@ -2,7 +2,6 @@
 <resources>
     <!-- 기록 편집 메인 -->
     <string name="record_edit_main_title">운동 기록 편집</string>
-    <string name="record_edit_main_network_error_toast">네트워크 연결을 확인해주세요.</string>
     <string name="record_edit_main_empty_title">기록이 없어요.</string>
     <string name="record_edit_main_recap_title_edit_a11y">기록 제목 편집</string>
 
@@ -19,6 +18,7 @@
     <string name="record_edit_editor_reset_dialog_title">편집 내용을 초기화하시겠습니까?</string>
     <string name="record_edit_editor_reset_dialog_description">초기화 시 변경 사항이 저장되지 않습니다.</string>
     <string name="record_edit_editor_sticker_delete_a11y">스티커 삭제</string>
+    <string name="record_edit_editor_network_error_toast">네트워크 연결을 확인해주세요.</string>
     <string name="record_edit_editor_no_route_toast">불러올 루트가 없습니다.</string>
 
     <!-- 기록 편집 완료 -->

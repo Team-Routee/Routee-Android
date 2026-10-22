@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.editor
 
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityTrack
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.model.RecapRoute
@@ -21,6 +22,8 @@ import com.routee.android.feature.recordedit.model.RecapEditTab
 import com.routee.android.feature.recordedit.model.StickerType
 import java.io.IOException
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -257,6 +260,18 @@ class RecapEditorViewModelTest {
         viewModel.onRetryClick()
 
         assertTrue(state.content is UiState.Success)
+    }
+
+    @Test
+    fun `네트워크가 끊겨 편집 데이터를 못 불러오면 토스트를 띄우고 뒤로 간다`() = runTest {
+        recapRepository.editorError = RecapException.NetworkUnavailable(null)
+
+        val sideEffects = viewModel.sideEffect.take(2).toList()
+
+        assertEquals(
+            listOf(RecapEditorSideEffect.ShowNetworkErrorToast, RecapEditorSideEffect.NavigateBack),
+            sideEffects,
+        )
     }
 
     private fun createViewModel() = RecapEditorViewModel(

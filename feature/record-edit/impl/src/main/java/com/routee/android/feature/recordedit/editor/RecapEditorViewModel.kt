@@ -3,6 +3,7 @@ package com.routee.android.feature.recordedit.editor
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
@@ -229,7 +230,12 @@ internal class RecapEditorViewModel @AssistedInject constructor(
                 }
                 .onFailure { e ->
                     Timber.e(e)
-                    _uiState.update { it.copy(content = UiState.Failure(e)) }
+                    if (e is RecapException.NetworkUnavailable) {
+                        _sideEffect.send(RecapEditorSideEffect.ShowNetworkErrorToast)
+                        _sideEffect.send(RecapEditorSideEffect.NavigateBack)
+                    } else {
+                        _uiState.update { it.copy(content = UiState.Failure(e)) }
+                    }
                 }
         }
     }

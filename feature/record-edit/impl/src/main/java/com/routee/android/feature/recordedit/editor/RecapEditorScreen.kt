@@ -80,6 +80,7 @@ internal fun RecapEditorRoute(
     val recapLayer = rememberGraphicsLayer()
     val messageState = LocalRouteeMessageState.current
     val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
+    val networkErrorMessage = stringResource(R.string.record_edit_editor_network_error_toast)
     val onImagePicked: (Uri?) -> Unit = { uri ->
         if (uri == null) viewModel.onGalleryCancel() else onNavigateToBackgroundCrop(uri.toString())
     }
@@ -91,6 +92,8 @@ internal fun RecapEditorRoute(
             RecapEditorSideEffect.NavigateBack -> onNavigateBack()
 
             RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
+
+            RecapEditorSideEffect.ShowNetworkErrorToast -> messageState.showToast(text = networkErrorMessage)
 
             RecapEditorSideEffect.OpenGallery -> photoPickerLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
