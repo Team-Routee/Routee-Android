@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 @HiltViewModel
@@ -41,6 +43,8 @@ internal class RecordEditMainViewModel @Inject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
 
     private var loadJob: Job? = null
+    private val titleSaveMutex = Mutex()
+    private val savedTitles = mutableMapOf<Long, String>()
 
     init {
         loadRecaps()
@@ -81,17 +85,21 @@ internal class RecordEditMainViewModel @Inject constructor(
     private fun completeTitleEdit() {
         val activityId = _uiState.value.editingActivityId ?: return
         val title = titleEditingState.text.toString()
-        val originalTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
+        val currentTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
         _uiState.update { it.copy(editingActivityId = null) }
-        if (title.isBlank() || originalTitle == null || title == originalTitle) return
+        if (title.isBlank() || currentTitle == null || title == currentTitle) return
 
+        savedTitles.getOrPut(activityId) { currentTitle }
         updateTitle(activityId = activityId, title = title)
         viewModelScope.launch {
-            recapRepository.updateRecapTitle(activityId = activityId, title = title)
-                .onFailure { e ->
-                    Timber.e(e)
-                    restoreTitle(activityId = activityId, failedTitle = title, originalTitle = originalTitle)
-                }
+            titleSaveMutex.withLock {
+                recapRepository.updateRecapTitle(activityId = activityId, title = title)
+                    .onSuccess { savedTitles[activityId] = title }
+                    .onFailure { e ->
+                        Timber.e(e)
+                        restoreTitle(activityId = activityId, failedTitle = title)
+                    }
+            }
         }
     }
 
@@ -105,10 +113,10 @@ internal class RecordEditMainViewModel @Inject constructor(
     private fun restoreTitle(
         activityId: Long,
         failedTitle: String,
-        originalTitle: String,
     ) {
         val currentTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
-        if (currentTitle == failedTitle) updateTitle(activityId = activityId, title = originalTitle)
+        val savedTitle = savedTitles[activityId] ?: return
+        if (currentTitle == failedTitle) updateTitle(activityId = activityId, title = savedTitle)
     }
 
     private fun moveMonth(month: YearMonth) {
