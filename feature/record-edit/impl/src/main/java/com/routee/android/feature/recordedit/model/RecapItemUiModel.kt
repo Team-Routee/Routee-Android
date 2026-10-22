@@ -1,7 +1,13 @@
 package com.routee.android.feature.recordedit.model
 
 import androidx.compose.runtime.Immutable
+import com.routee.android.core.data.recap.model.ActivityRecap
+import java.time.format.DateTimeFormatter
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+
+private const val MAX_THUMBNAIL_COUNT = 4
+private val WorkoutDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
 /**
  * 기록 편집 메인의 기록 카드 1개
@@ -17,4 +23,11 @@ internal data class RecapItemUiModel(
     val title: String,
     val workoutDate: String,
     val thumbnailUrls: ImmutableList<String>,
+)
+
+internal fun ActivityRecap.toRecapItemUiModel() = RecapItemUiModel(
+    activityId = activityId,
+    title = title,
+    workoutDate = activityDate.format(WorkoutDateFormatter),
+    thumbnailUrls = timelineImageUrls.take(MAX_THUMBNAIL_COUNT).toImmutableList(),
 )
