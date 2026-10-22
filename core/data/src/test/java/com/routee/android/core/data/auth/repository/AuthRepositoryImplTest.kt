@@ -18,6 +18,7 @@ import com.routee.android.core.data.auth.remote.service.WithdrawService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.model.BaseResponse
 import com.routee.android.core.network.session.AuthSessionManager
+import com.routee.android.core.network.token.TokenProvider
 import com.routee.android.core.network.util.ApiResponseHandler
 import java.io.File
 import java.io.IOException
@@ -304,6 +305,31 @@ class AuthRepositoryImplTest {
         assertNull(withdrawService.lastRequest)
     }
 
+    /**
+     * GIVEN: 서버 탈퇴는 성공했지만 기기 토큰 삭제가 실패했을 때
+     * WHEN: 다시 회원 탈퇴하면
+     * THEN: 탈퇴 API는 다시 부르지 않고 토큰 삭제만 다시 시도한다
+     */
+    @Test
+    fun `서버 탈퇴 후 토큰 삭제만 실패했으면 재시도 때 토큰 삭제만 다시 한다`() = runTest {
+        val tokenStore = loggedInTokenStore()
+        val withdrawService = FakeWithdrawService()
+        val repository = repository(
+            FakeAuthService(),
+            tokenStore,
+            withdrawService = withdrawService,
+            tokenProvider = FailOnceClearTokenProvider(tokenStore),
+        )
+
+        val first = repository.withdraw()
+        val retry = repository.withdraw()
+
+        assertTrue(first.isFailure)
+        assertTrue(retry.isSuccess)
+        assertEquals(1, withdrawService.requestCount)
+        assertNull(tokenStore.getRefreshToken())
+    }
+
     private suspend fun TestScope.loggedInTokenStore() = tokenStore().apply {
         saveTokens(accessToken = "access", refreshToken = "refresh")
     }
@@ -320,12 +346,13 @@ class AuthRepositoryImplTest {
         tokenStore: TokenLocalDataSource = tokenStore(),
         logoutService: LogoutService = FakeLogoutService(),
         withdrawService: WithdrawService = FakeWithdrawService(),
+        tokenProvider: TokenProvider = tokenStore,
     ) = AuthRepositoryImpl(
         authService = authService,
         logoutService = logoutService,
         withdrawService = withdrawService,
         tokenLocalDataSource = tokenStore,
-        authSessionManager = AuthSessionManager(tokenStore),
+        authSessionManager = AuthSessionManager(tokenProvider),
         apiResponseHandler = ApiResponseHandler(Json { ignoreUnknownKeys = true }),
     )
 
@@ -369,10 +396,26 @@ class AuthRepositoryImplTest {
         private val onWithdraw: () -> Unit = {},
     ) : WithdrawService {
         var lastRequest: WithdrawRequest? = null
+        var requestCount = 0
 
         override suspend fun withdraw(request: WithdrawRequest) {
             lastRequest = request
+            requestCount++
             onWithdraw()
+        }
+    }
+
+    private class FailOnceClearTokenProvider(
+        private val delegate: TokenProvider,
+    ) : TokenProvider by delegate {
+        private var shouldFail = true
+
+        override suspend fun clearTokens() {
+            if (shouldFail) {
+                shouldFail = false
+                throw IOException()
+            }
+            delegate.clearTokens()
         }
     }
 
