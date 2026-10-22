@@ -2,6 +2,7 @@ package com.routee.android.feature.recordedit
 
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.data.recap.model.ActivityTrack
+import com.routee.android.core.data.recap.model.RecapEditorData
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.repository.RecapRepository
 import java.time.YearMonth
@@ -43,4 +44,7 @@ internal class FakeRecapRepository : RecapRepository {
 
     override suspend fun getActivityTrack(activityId: Long): Result<ActivityTrack> =
         editorError?.let { Result.failure(it) } ?: Result.success(track)
+
+    override suspend fun getRecapEditorData(activityId: Long): Result<RecapEditorData> =
+        editorError?.let { Result.failure(it) } ?: Result.success(RecapEditorData(resource = resource, track = track))
 }

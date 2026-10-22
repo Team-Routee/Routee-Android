@@ -2,6 +2,7 @@ package com.routee.android.core.domain.recap
 
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.data.recap.model.ActivityTrack
+import com.routee.android.core.data.recap.model.RecapEditorData
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.repository.RecapRepository
 import java.io.IOException
@@ -62,6 +63,8 @@ class GetRecapEditorDataUseCaseTest {
             }
             return trackError?.let { Result.failure(it) } ?: Result.success(TRACK)
         }
+
+        override suspend fun getRecapEditorData(activityId: Long): Result<RecapEditorData> = error("not used")
 
         override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> = Result.success(
             emptyList(),

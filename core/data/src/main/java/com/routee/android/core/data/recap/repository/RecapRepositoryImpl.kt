@@ -1,8 +1,10 @@
 package com.routee.android.core.data.recap.repository
 
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.data.recap.model.ActivityTrack
+import com.routee.android.core.data.recap.model.RecapEditorData
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.model.RecapRoute
 import com.routee.android.core.data.recap.model.TimelineMarker
@@ -18,6 +20,8 @@ import com.routee.android.core.network.util.ApiResponseHandler
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal class RecapRepositoryImpl @Inject constructor(
     private val recapService: RecapService,
@@ -45,6 +49,14 @@ internal class RecapRepositoryImpl @Inject constructor(
         apiResponseHandler.safeApiCall { recapService.getActivityTrack(activityId) }
             .map { it.toActivityTrack() }
             .mapApiException(::mapRecapException)
+
+    override suspend fun getRecapEditorData(activityId: Long): Result<RecapEditorData> = suspendRunCatching {
+        coroutineScope {
+            val resource = async { getRecapResource(activityId).getOrThrow() }
+            val track = async { getActivityTrack(activityId).getOrThrow() }
+            RecapEditorData(resource = resource.await(), track = track.await())
+        }
+    }
 
     private fun ActivityRecapResponse.toActivityRecap() = ActivityRecap(
         activityId = activityId,
