@@ -10,9 +10,11 @@ import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
 import com.routee.android.core.data.auth.remote.dto.request.LogoutRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
+import com.routee.android.core.data.auth.remote.dto.request.WithdrawRequest
 import com.routee.android.core.data.auth.remote.dto.response.TokenResponse
 import com.routee.android.core.data.auth.remote.service.AuthService
 import com.routee.android.core.data.auth.remote.service.LogoutService
+import com.routee.android.core.data.auth.remote.service.WithdrawService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.model.BaseResponse
 import com.routee.android.core.network.session.AuthSessionManager
@@ -265,9 +267,11 @@ class AuthRepositoryImplTest {
         authService: AuthService,
         tokenStore: TokenLocalDataSource = tokenStore(),
         logoutService: LogoutService = FakeLogoutService(),
+        withdrawService: WithdrawService = FakeWithdrawService(),
     ) = AuthRepositoryImpl(
         authService = authService,
         logoutService = logoutService,
+        withdrawService = withdrawService,
         tokenLocalDataSource = tokenStore,
         authSessionManager = AuthSessionManager(tokenStore),
         apiResponseHandler = ApiResponseHandler(Json { ignoreUnknownKeys = true }),
@@ -306,6 +310,17 @@ class AuthRepositoryImplTest {
         override suspend fun logout(request: LogoutRequest) {
             lastRequest = request
             onLogout()
+        }
+    }
+
+    private class FakeWithdrawService(
+        private val onWithdraw: () -> Unit = {},
+    ) : WithdrawService {
+        var lastRequest: WithdrawRequest? = null
+
+        override suspend fun withdraw(request: WithdrawRequest) {
+            lastRequest = request
+            onWithdraw()
         }
     }
 

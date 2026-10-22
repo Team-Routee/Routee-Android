@@ -63,5 +63,7 @@ class LoginViewModelTest {
         ): Result<Unit> = error("register not expected")
 
         override suspend fun logout(): Result<Unit> = error("logout not expected")
+
+        override suspend fun withdraw(): Result<Unit> = error("withdraw not expected")
     }
 }

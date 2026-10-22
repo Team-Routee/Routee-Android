@@ -10,8 +10,10 @@ import com.routee.android.core.data.auth.remote.dto.request.AgreementsRequest
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
 import com.routee.android.core.data.auth.remote.dto.request.LogoutRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
+import com.routee.android.core.data.auth.remote.dto.request.WithdrawRequest
 import com.routee.android.core.data.auth.remote.service.AuthService
 import com.routee.android.core.data.auth.remote.service.LogoutService
+import com.routee.android.core.data.auth.remote.service.WithdrawService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.session.AuthSessionManager
@@ -21,6 +23,7 @@ import javax.inject.Inject
 internal class AuthRepositoryImpl @Inject constructor(
     private val authService: AuthService,
     private val logoutService: LogoutService,
+    private val withdrawService: WithdrawService,
     private val tokenLocalDataSource: TokenLocalDataSource,
     private val authSessionManager: AuthSessionManager,
     private val apiResponseHandler: ApiResponseHandler,
@@ -80,6 +83,22 @@ internal class AuthRepositoryImpl @Inject constructor(
         }
         // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
+    }
+
+    override suspend fun withdraw(): Result<Unit> {
+        val refreshToken = suspendRunCatching { tokenLocalDataSource.getRefreshToken() }
+            .getOrElse { return Result.failure(it) }
+            ?: return Result.failure(IllegalStateException("Refresh token is missing"))
+        return apiResponseHandler.safeUnitApiCall {
+            withdrawService.withdraw(WithdrawRequest(refreshToken = refreshToken))
+        }.mapApiException(::mapAuthException)
+            .fold(
+                onSuccess = {
+                    // TODO 기기 운동 기록 삭제
+                    suspendRunCatching { authSessionManager.clearSession() }
+                },
+                onFailure = { Result.failure(it) },
+            )
     }
 
     private suspend fun executeLogin(
