@@ -8,6 +8,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.core.data)
     implementation(libs.kotlinx.coroutines.core)
 

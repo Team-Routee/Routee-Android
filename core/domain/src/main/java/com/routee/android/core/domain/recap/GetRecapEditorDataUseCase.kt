@@ -1,5 +1,6 @@
 package com.routee.android.core.domain.recap
 
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.recap.repository.RecapRepository
 import javax.inject.Inject
 import kotlinx.coroutines.async
@@ -13,14 +14,11 @@ import kotlinx.coroutines.coroutineScope
 class GetRecapEditorDataUseCase @Inject constructor(
     private val recapRepository: RecapRepository,
 ) {
-    suspend operator fun invoke(activityId: Long): Result<RecapEditorData> = coroutineScope {
-        val resource = async { recapRepository.getRecapResource(activityId) }
-        val track = async { recapRepository.getActivityTrack(activityId) }
-        resource.await().fold(
-            onSuccess = { recapResource ->
-                track.await().map { RecapEditorData(resource = recapResource, track = it) }
-            },
-            onFailure = { Result.failure(it) },
-        )
+    suspend operator fun invoke(activityId: Long): Result<RecapEditorData> = suspendRunCatching {
+        coroutineScope {
+            val resource = async { recapRepository.getRecapResource(activityId).getOrThrow() }
+            val track = async { recapRepository.getActivityTrack(activityId).getOrThrow() }
+            RecapEditorData(resource = resource.await(), track = track.await())
+        }
     }
 }
