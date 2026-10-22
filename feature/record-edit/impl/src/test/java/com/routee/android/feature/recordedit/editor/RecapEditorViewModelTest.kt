@@ -2,7 +2,7 @@ package com.routee.android.feature.recordedit.editor
 
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
-import com.routee.android.feature.recordedit.complete.FakeRecapImageRepository
+import com.routee.android.feature.recordedit.complete.FakeRecapImageStore
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
@@ -25,7 +25,7 @@ class RecapEditorViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L), FakeRecapImageRepository())
+    private val viewModel = RecapEditorViewModel(RecapEditorNavKey(activityId = 1L), FakeRecapImageStore())
     private val state get() = viewModel.uiState.value
 
     /**

@@ -17,7 +17,7 @@ import timber.log.Timber
 @HiltViewModel(assistedFactory = RecapCompleteViewModel.Factory::class)
 internal class RecapCompleteViewModel @AssistedInject constructor(
     @Assisted private val key: RecapCompleteNavKey,
-    private val recapImageRepository: RecapImageRepository,
+    private val recapImageStore: RecapImageStore,
 ) : ViewModel() {
     private val _sideEffect = Channel<RecapCompleteSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
@@ -39,14 +39,14 @@ internal class RecapCompleteViewModel @AssistedInject constructor(
     }
 
     fun onShareClick() {
-        sendSideEffect(RecapCompleteSideEffect.ShareImage(recapImageRepository.shareUri(key.imagePath)))
+        sendSideEffect(RecapCompleteSideEffect.ShareImage(recapImageStore.shareUri(key.imagePath)))
     }
 
     private fun saveToGallery() {
         if (isSaving) return
         isSaving = true
         viewModelScope.launch {
-            recapImageRepository.saveToGallery(key.imagePath)
+            recapImageStore.saveToGallery(key.imagePath)
                 .onSuccess { _sideEffect.send(RecapCompleteSideEffect.ShowSaveSuccessToast) }
                 .onFailure { e ->
                     Timber.e(e)

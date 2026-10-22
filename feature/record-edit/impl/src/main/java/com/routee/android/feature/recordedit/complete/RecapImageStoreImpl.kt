@@ -29,9 +29,9 @@ private const val RECAP_DIRECTORY = "recap"
 private const val GALLERY_DIRECTORY = "Routee"
 private const val PNG_QUALITY = 100
 
-internal class RecapImageRepositoryImpl @Inject constructor(
+internal class RecapImageStoreImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-) : RecapImageRepository {
+) : RecapImageStore {
     override suspend fun saveWithWatermark(bitmap: Bitmap): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) { writeWithWatermark(bitmap) }
     }

@@ -21,7 +21,7 @@ class RecapCompleteViewModelTest {
      */
     @Test
     fun `갤러리 저장에 성공하면 저장 완료 토스트를 띄운다`() = runTest {
-        val viewModel = viewModel(FakeRecapImageRepository())
+        val viewModel = viewModel(FakeRecapImageStore())
 
         viewModel.onDownloadClick()
 
@@ -36,13 +36,13 @@ class RecapCompleteViewModelTest {
     @Test
     fun `갤러리 저장에 실패하면 저장 실패 토스트를 띄운다`() = runTest {
         val viewModel =
-            viewModel(FakeRecapImageRepository(saveToGalleryResult = Result.failure(IllegalStateException())))
+            viewModel(FakeRecapImageStore(saveToGalleryResult = Result.failure(IllegalStateException())))
 
         viewModel.onDownloadClick()
 
         assertEquals(RecapCompleteSideEffect.ShowSaveFailureToast, viewModel.sideEffect.first())
     }
 
-    private fun viewModel(repository: RecapImageRepository) =
-        RecapCompleteViewModel(RecapCompleteNavKey(FakeRecapImageRepository.IMAGE_PATH), repository)
+    private fun viewModel(repository: RecapImageStore) =
+        RecapCompleteViewModel(RecapCompleteNavKey(FakeRecapImageStore.IMAGE_PATH), repository)
 }

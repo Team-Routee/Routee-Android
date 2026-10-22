@@ -6,7 +6,7 @@ import android.net.Uri
 /**
  * 리캡 이미지 저장. 워터마크 합성, 앱 캐시 저장, 갤러리 저장, 공유 주소를 맡는다
  */
-internal interface RecapImageRepository {
+internal interface RecapImageStore {
     /**
      * 오른쪽 아래에 워터마크를 합성해 캐시에 저장한다. 이전 리캡 이미지는 지운다
      *
