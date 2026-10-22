@@ -60,6 +60,7 @@ internal fun UserProfile(
                     url = profileImageUrl,
                     contentDescription = null,
                     modifier = profileImageModifier,
+                    errorImage = painterResource(DesignSystemR.drawable.img_profile_default),
                 )
             }
 
