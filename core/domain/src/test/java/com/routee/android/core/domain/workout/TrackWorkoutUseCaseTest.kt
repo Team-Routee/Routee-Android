@@ -66,13 +66,34 @@ class TrackWorkoutUseCaseTest {
         assertEquals(1, locations.flow.subscriptionCount.value)
     }
 
-    private fun location() = DeviceLocation(
+    /**
+     * GIVEN: 기기에 좌표 저장이 계속 실패할 때
+     * WHEN: 위치가 두 번 들어오면
+     * THEN: 실패를 두 번 다 서비스에 알리고, 위치는 계속 받는다
+     */
+    @Test
+    fun `경로 좌표 저장이 실패해도 알리고 계속 기록한다`() = runTest {
+        tracking.addError = IllegalStateException()
+        val failures = mutableListOf<Throwable>()
+        backgroundScope.launch { trackWorkout(onTrackPointFailure = failures::add) }
+        runCurrent()
+
+        locations.flow.tryEmit(location(seconds = 1))
+        runCurrent()
+        locations.flow.tryEmit(location(seconds = 2))
+        runCurrent()
+
+        assertEquals(2, failures.size)
+        assertEquals(1, locations.flow.subscriptionCount.value)
+    }
+
+    private fun location(seconds: Long = 1) = DeviceLocation(
         latitude = 37.0,
         longitude = 127.0,
         altitude = 100.0,
         altitudeAccuracyMeters = 5f,
         accuracyMeters = 5f,
-        time = START.plusSeconds(1),
+        time = START.plusSeconds(seconds),
     )
 
     private class FakeLocationRepository : LocationRepository {
@@ -85,6 +106,7 @@ class TrackWorkoutUseCaseTest {
         private val _state = MutableStateFlow(WorkoutTrackingState(record = record()))
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isRestored = false
+        var addError: Throwable? = null
         val added = mutableListOf<NextTrackPoint>()
 
         override suspend fun start(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
@@ -100,6 +122,7 @@ class TrackWorkoutUseCaseTest {
         }
 
         override suspend fun addTrackPoint(next: NextTrackPoint): Result<Unit> {
+            addError?.let { return Result.failure(it) }
             added += next
             return Result.success(Unit)
         }

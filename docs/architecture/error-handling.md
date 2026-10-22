@@ -4,7 +4,9 @@
 | --- | --- | --- |
 | Retrofit service | Throws | No |
 | Repository | Wraps it in `Result`, maps server codes to domain errors | No |
+| UseCase | Returns `Result`. Failures it keeps going after are passed to a callback | No |
 | ViewModel | Turns it into UiState | Yes |
+| Service | Stops or keeps going (no UI state) | Yes |
 
 ## Repository
 
