@@ -31,6 +31,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -172,7 +173,7 @@ private fun RecordListItem(
         modifier = modifier
             .fillMaxWidth()
             .background(color = RouteeTheme.colors.white10, shape = RoundedCornerShape(RouteeTheme.radius.Radius12))
-            .noRippleClickable(onClick = onClick)
+            .noRippleClickable(role = Role.Button, onClick = onClick)
             .padding(RouteeTheme.spacing.Spacing12),
         horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing10),
         verticalAlignment = Alignment.CenterVertically,
@@ -197,7 +198,7 @@ private fun RecordListItem(
 @Composable
 private fun RecordThumbnail(url: String?) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
-    if (url == null) {
+    if (url.isNullOrBlank()) {
         // TODO: 기본 썸네일 에셋 받으면 교체
         Box(
             modifier = Modifier

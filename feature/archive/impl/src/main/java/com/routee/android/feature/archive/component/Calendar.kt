@@ -17,10 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.component.RouteeAsyncImage
+import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.archive.R
@@ -51,6 +53,7 @@ internal data class CalendarDay(
 internal fun Calendar(
     days: List<CalendarDay?>,
     modifier: Modifier = Modifier,
+    onDayClick: ((CalendarDay) -> Unit)? = null,
 ) {
     val weekCount = (days.size + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK
 
@@ -82,7 +85,7 @@ internal fun Calendar(
                         if (day == null) {
                             Box(modifier = Modifier.size(DayCellSize))
                         } else {
-                            CalendarDayCell(day = day)
+                            CalendarDayCell(day = day, onDayClick = onDayClick)
                         }
                     }
                 }
@@ -94,11 +97,12 @@ internal fun Calendar(
 @Composable
 private fun CalendarDayCell(
     day: CalendarDay,
+    onDayClick: ((CalendarDay) -> Unit)?,
 ) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
     val hasRecord = day.recordCount > 0
     val hasPhoto = !day.photoUrl.isNullOrBlank()
-    val dayContentDescription = if (hasPhoto) {
+    val dayContentDescription = if (hasPhoto || hasRecord) {
         stringResource(R.string.archive_calendar_photo_day_a11y, day.day, day.recordCount)
     } else {
         null
@@ -108,11 +112,17 @@ private fun CalendarDayCell(
     } else {
         Modifier
             .size(DayCellSize)
-            .clearAndSetSemantics { contentDescription = dayContentDescription }
+            .semantics(mergeDescendants = true) { contentDescription = dayContentDescription }
     }
 
     Box(
-        modifier = dayCellModifier,
+        modifier = dayCellModifier.then(
+            if (hasRecord && onDayClick != null) {
+                Modifier.noRippleClickable(role = Role.Button) { onDayClick(day) }
+            } else {
+                Modifier
+            },
+        ),
         contentAlignment = Alignment.Center,
     ) {
         when {
