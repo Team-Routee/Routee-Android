@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,28 +63,17 @@ internal fun RecapCompleteRoute(
     val saveFailureMessage = stringResource(R.string.record_edit_complete_save_failure_toast)
     val noPermissionMessage = stringResource(R.string.record_edit_complete_no_permission_toast)
     val imageUri = remember(viewModel.imagePath) { File(viewModel.imagePath).toUri() }
-    val storagePermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-        viewModel::onStoragePermissionResult,
-    )
+    val storagePermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) viewModel.onDownloadClick() else messageState.showToast(text = noPermissionMessage)
+    }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             RecapCompleteSideEffect.NavigateBack -> onNavigateBack()
-
             RecapCompleteSideEffect.NavigateToHome -> onNavigateToHome()
-
-            RecapCompleteSideEffect.RequestStoragePermission -> storagePermissionLauncher.launch(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            )
-
             is RecapCompleteSideEffect.ShareImage -> context.startActivity(sideEffect.imageUri.toShareIntent())
-
             RecapCompleteSideEffect.ShowSaveSuccessToast -> messageState.showToast(text = saveSuccessMessage)
-
             RecapCompleteSideEffect.ShowSaveFailureToast -> messageState.showToast(text = saveFailureMessage)
-
-            RecapCompleteSideEffect.ShowNoPermissionToast -> messageState.showToast(text = noPermissionMessage)
         }
     }
 
@@ -93,7 +83,13 @@ internal fun RecapCompleteRoute(
         imageUrl = imageUri.toString(),
         onBackClick = viewModel::onBackClick,
         onCompleteClick = viewModel::onCompleteClick,
-        onDownloadClick = viewModel::onDownloadClick,
+        onDownloadClick = {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                viewModel.onDownloadClick()
+            }
+        },
         onShareClick = viewModel::onShareClick,
     )
 }

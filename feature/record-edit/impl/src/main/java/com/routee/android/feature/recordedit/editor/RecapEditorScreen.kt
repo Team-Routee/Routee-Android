@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.ResultEffect
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
@@ -97,7 +98,7 @@ internal fun RecapEditorRoute(
 
             RecapEditorSideEffect.CaptureRecap -> {
                 repeat(CAPTURE_WAIT_FRAMES) { withFrameNanos {} }
-                runCatching { recapLayer.toImageBitmap().asAndroidBitmap() }
+                suspendRunCatching { recapLayer.toImageBitmap().asAndroidBitmap() }
                     .onSuccess(viewModel::onRecapCaptured)
                     .onFailure(viewModel::onRecapCaptureFailure)
             }

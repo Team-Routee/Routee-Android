@@ -3,10 +3,9 @@ package com.routee.android.feature.recordedit.complete
 import android.graphics.Bitmap
 import android.net.Uri
 
-internal class FakeRecapImageRepository(
-    override val needsStoragePermission: Boolean = false,
+internal class FakeRecapImageStore(
     private val saveToGalleryResult: Result<Unit> = Result.success(Unit),
-) : RecapImageRepository {
+) : RecapImageStore {
     override suspend fun saveWithWatermark(bitmap: Bitmap): Result<String> = Result.success(IMAGE_PATH)
 
     override suspend fun saveToGallery(imagePath: String): Result<Unit> = saveToGalleryResult

@@ -9,7 +9,7 @@ import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
-import com.routee.android.feature.recordedit.complete.FakeRecapImageRepository
+import com.routee.android.feature.recordedit.complete.FakeRecapImageStore
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorContent
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
@@ -261,7 +261,7 @@ class RecapEditorViewModelTest {
 
     private fun createViewModel() = RecapEditorViewModel(
         RecapEditorNavKey(activityId = 1L),
-        FakeRecapImageRepository(),
+        FakeRecapImageStore(),
         GetRecapEditorDataUseCase(recapRepository),
     )
 

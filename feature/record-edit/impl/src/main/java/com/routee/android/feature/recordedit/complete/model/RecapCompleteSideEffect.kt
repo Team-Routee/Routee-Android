@@ -7,13 +7,9 @@ internal sealed interface RecapCompleteSideEffect {
 
     data object NavigateToHome : RecapCompleteSideEffect
 
-    data object RequestStoragePermission : RecapCompleteSideEffect
-
     data class ShareImage(val imageUri: Uri) : RecapCompleteSideEffect
 
     data object ShowSaveSuccessToast : RecapCompleteSideEffect
 
     data object ShowSaveFailureToast : RecapCompleteSideEffect
-
-    data object ShowNoPermissionToast : RecapCompleteSideEffect
 }

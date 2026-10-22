@@ -7,7 +7,7 @@ import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
-import com.routee.android.feature.recordedit.complete.RecapImageRepository
+import com.routee.android.feature.recordedit.complete.RecapImageStore
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
 import com.routee.android.feature.recordedit.editor.model.RecapEditorSideEffect
 import com.routee.android.feature.recordedit.editor.model.RecapEditorUiState
@@ -33,7 +33,7 @@ import timber.log.Timber
 @HiltViewModel(assistedFactory = RecapEditorViewModel.Factory::class)
 internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
-    private val recapImageRepository: RecapImageRepository,
+    private val recapImageStore: RecapImageStore,
     private val getRecapEditorData: GetRecapEditorDataUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
@@ -195,7 +195,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
 
     fun onRecapCaptured(bitmap: Bitmap) {
         viewModelScope.launch {
-            recapImageRepository.saveWithWatermark(bitmap)
+            recapImageStore.saveWithWatermark(bitmap)
                 .onSuccess { imagePath ->
                     completedImagePath = imagePath
                     _uiState.update { it.copy(isCompleteAnimationVisible = true) }
