@@ -25,7 +25,7 @@ Hilt modules live in `core/data/.../di/` and `core/database/.../di/`.
 | --- | --- |
 | Entity ↔ model | `core/data/.../<domain>/local/` |
 | Schema | Commit `core/database/schemas/`. New version → `@AutoMigration`, no destructive migration |
-| Update parent row | `@Upsert`, not `REPLACE` |
+| Write | Insert only where a row is created, update with `@Update` (not `@Upsert` or `REPLACE`) |
 
 ## Service and DTO
 
