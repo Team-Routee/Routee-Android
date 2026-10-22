@@ -218,6 +218,7 @@ private fun RecordThumbnail(url: String?) {
             modifier = Modifier
                 .size(ThumbnailSize)
                 .clip(shape),
+            errorBackgroundColor = RouteeTheme.colors.grey900,
         )
     }
 }
