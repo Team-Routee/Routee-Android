@@ -1,5 +1,6 @@
 package com.routee.android.feature.timeline.main
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
@@ -42,11 +45,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
+import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
+import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
@@ -58,10 +64,13 @@ import com.routee.android.feature.timeline.component.MyRouteEditor
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineDraft
+import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
+import com.routee.android.feature.timeline.main.model.TimelineSaveResult
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 private val RecordDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 private val EditIconTouchSize = 44.dp
@@ -71,17 +80,28 @@ private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
 private const val MAX_TITLE_LENGTH = 16
 
+private enum class TimelineDialog { None, Exit, InvalidRoute, SaveFailed }
+
 @Composable
 internal fun TimelineRoute(
     viewModel: TimelineViewModel,
-    onBackClick: () -> Unit,
-    onCompleteClick: (TimelineDraft) -> Unit,
-    onRecordEditClick: (TimelineDraft) -> Unit,
+    onExit: () -> Unit,
+    onSaveSuccess: (TimelineSaveDestination) -> Unit,
+    onSaveRecord: suspend (TimelineDraft) -> TimelineSaveResult,
     onPhotoSaveClick: (TimelinePhoto) -> Unit,
     modifier: Modifier = Modifier,
+    routePointCount: Int? = null,
     routeMap: (@Composable () -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var dialog by rememberSaveable(viewModel.activityId) { mutableStateOf(TimelineDialog.None) }
+    var isSaving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    BackHandler {
+        if (!isSaving && dialog == TimelineDialog.None) dialog = TimelineDialog.Exit
+    }
+
     val recordDate = remember(viewModel.endedAtEpochMillis) {
         Instant.ofEpochMilli(viewModel.endedAtEpochMillis)
             .atZone(ZoneId.systemDefault())
@@ -93,16 +113,34 @@ internal fun TimelineRoute(
         viewModel.onTitleEditFinish()
         focusManager.clearFocus()
     }
+    fun saveAndNavigate(destination: TimelineSaveDestination) {
+        if (isSaving || dialog != TimelineDialog.None) return
+        if (routePointCount != null && routePointCount < 2) {
+            dialog = TimelineDialog.InvalidRoute
+            return
+        }
+        isSaving = true
+        scope.launch {
+            val result = suspendRunCatching { onSaveRecord(viewModel.draft(defaultTitle)) }
+                .getOrDefault(TimelineSaveResult.Failed)
+            isSaving = false
+            when (result) {
+                TimelineSaveResult.Success -> onSaveSuccess(destination)
+                TimelineSaveResult.InvalidRoute -> dialog = TimelineDialog.InvalidRoute
+                TimelineSaveResult.Failed -> dialog = TimelineDialog.SaveFailed
+            }
+        }
+    }
     TimelineScreen(
         uiState = uiState,
         photos = viewModel.photos,
         titleState = viewModel.titleState,
         defaultTitle = defaultTitle,
         isTitleEditing = uiState.isTitleEditing,
-        onBackClick = onBackClick,
+        onBackClick = { if (!isSaving) dialog = TimelineDialog.Exit },
         onCompleteClick = {
             finishTitleEdit()
-            onCompleteClick(viewModel.draft(defaultTitle))
+            saveAndNavigate(TimelineSaveDestination.Home)
         },
         onEditTitleClick = { viewModel.onEditTitleClick(defaultTitle) },
         onTitleEditFinish = ::finishTitleEdit,
@@ -110,7 +148,7 @@ internal fun TimelineRoute(
         onOutsideClick = { finishTitleEdit() },
         onRecordEditClick = {
             finishTitleEdit()
-            onRecordEditClick(viewModel.draft(defaultTitle))
+            saveAndNavigate(TimelineSaveDestination.RecordEdit)
         },
         onPhotoSaveClick = onPhotoSaveClick,
         modifier = modifier,
@@ -130,6 +168,33 @@ internal fun TimelineRoute(
             )
         },
     )
+
+    when (dialog) {
+        TimelineDialog.None -> Unit
+
+        TimelineDialog.Exit -> RouteeTwoButtonDialog(
+            title = stringResource(R.string.timeline_exit_title),
+            description = stringResource(R.string.timeline_exit_description),
+            leftButtonText = stringResource(R.string.timeline_cancel),
+            rightButtonText = stringResource(R.string.timeline_exit),
+            onRightButtonClick = onExit,
+            onDismissRequest = { dialog = TimelineDialog.None },
+        )
+
+        TimelineDialog.InvalidRoute, TimelineDialog.SaveFailed -> RouteeOneButtonDialog(
+            title = stringResource(R.string.timeline_save_failed_title),
+            description = stringResource(
+                if (dialog == TimelineDialog.InvalidRoute) {
+                    R.string.timeline_invalid_route_description
+                } else {
+                    R.string.timeline_save_failed_description
+                },
+            ),
+            buttonText = stringResource(R.string.timeline_confirm),
+            onButtonClick = onExit,
+            onDismissRequest = {},
+        )
+    }
 }
 
 @Composable

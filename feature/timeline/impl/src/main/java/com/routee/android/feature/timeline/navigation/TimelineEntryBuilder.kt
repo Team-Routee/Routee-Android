@@ -4,17 +4,25 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.util.viewModelEntry
+import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.main.TimelineRoute
 import com.routee.android.feature.timeline.main.TimelineViewModel
+import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
+import com.routee.android.feature.timeline.main.model.TimelineSaveResult
 
 fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
-    viewModelEntry<TimelineNavKey, TimelineViewModel, TimelineViewModel.Factory> { _, viewModel ->
+    viewModelEntry<TimelineNavKey, TimelineViewModel, TimelineViewModel.Factory> { key, viewModel ->
         TimelineRoute(
             viewModel = viewModel,
-            onBackClick = navigator::navigateBack,
-            onCompleteClick = {}, // TODO #75 완료 동작 연결
-            onRecordEditClick = {}, // TODO #75 기록 편집 이동 연결
+            onExit = navigator::navigateToHome,
+            onSaveSuccess = { destination ->
+                navigator.navigateToHome()
+                if (destination == TimelineSaveDestination.RecordEdit) {
+                    navigator.navigateTo(RecapEditorNavKey(key.activityId))
+                }
+            },
+            onSaveRecord = { TimelineSaveResult.Failed }, // TODO #78 서버 저장 연결
             onPhotoSaveClick = {}, // TODO #80 사진 갤러리 저장 연결
         )
     }

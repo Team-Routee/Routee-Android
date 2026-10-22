@@ -24,6 +24,7 @@ private const val MAX_ROUTE_POINT_COUNT = 20
 internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
 ) : ViewModel() {
+    val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
     val titleState = TextFieldState()
     val photos = key.photos
