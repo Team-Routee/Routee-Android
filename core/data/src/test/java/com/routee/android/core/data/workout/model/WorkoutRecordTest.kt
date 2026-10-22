@@ -51,11 +51,11 @@ class WorkoutRecordTest {
 
     /**
      * GIVEN: 최고 고도가 200m인 기록일 때
-     * WHEN: 고도 150m 경로 점을 더하면
+     * WHEN: 고도 150m 경로 좌표를 더하면
      * THEN: 최고 고도는 200m 그대로고 거리와 마지막 기록 시각은 갱신된다
      */
     @Test
-    fun `낮은 고도의 점을 더해도 최고 고도는 유지한다`() {
+    fun `낮은 고도의 좌표를 더해도 최고 고도는 유지한다`() {
         val point =
             TrackPoint(
                 pointIndex = 1,
