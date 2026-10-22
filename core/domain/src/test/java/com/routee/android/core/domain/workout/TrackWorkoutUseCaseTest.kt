@@ -2,15 +2,12 @@ package com.routee.android.core.domain.workout
 
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
-import com.routee.android.core.data.workout.model.NextTrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
-import java.time.Clock
 import java.time.Instant
-import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,15 +24,15 @@ import org.junit.Test
 class TrackWorkoutUseCaseTest {
     private val locations = FakeLocationRepository()
     private val tracking = FakeWorkoutTrackingRepository()
-    private val trackWorkout = TrackWorkoutUseCase(tracking, locations, Clock.fixed(START, ZoneOffset.UTC))
+    private val trackWorkout = TrackWorkoutUseCase(tracking, locations)
 
     /**
      * GIVEN: 기록 중일 때
      * WHEN: 위치 기록을 시작하고 위치가 오면
-     * THEN: 저장된 기록을 먼저 이어가고 위치로 만든 경로 좌표를 저장소에 더한다
+     * THEN: 저장된 기록을 먼저 이어가고 위치를 저장소에 넘긴다
      */
     @Test
-    fun `저장된 기록을 이어간 뒤 위치를 경로 좌표로 더한다`() = runTest {
+    fun `저장된 기록을 이어간 뒤 위치를 저장소에 넘긴다`() = runTest {
         backgroundScope.launch { trackWorkout() }
         runCurrent()
 
@@ -43,7 +40,7 @@ class TrackWorkoutUseCaseTest {
         runCurrent()
 
         assertTrue(tracking.isRestored)
-        assertEquals(listOf(1), tracking.added.map { it.point.pointIndex })
+        assertEquals(listOf(location()), tracking.added)
     }
 
     /**
@@ -107,7 +104,7 @@ class TrackWorkoutUseCaseTest {
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isRestored = false
         var addError: Throwable? = null
-        val added = mutableListOf<NextTrackPoint>()
+        val added = mutableListOf<DeviceLocation>()
 
         override suspend fun start(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
 
@@ -121,9 +118,9 @@ class TrackWorkoutUseCaseTest {
             return Result.success(Unit)
         }
 
-        override suspend fun addTrackPoint(next: NextTrackPoint): Result<Unit> {
+        override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> {
             addError?.let { return Result.failure(it) }
-            added += next
+            added += location
             return Result.success(Unit)
         }
 

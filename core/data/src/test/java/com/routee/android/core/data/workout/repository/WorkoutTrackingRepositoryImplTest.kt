@@ -1,7 +1,7 @@
 package com.routee.android.core.data.workout.repository
 
+import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.local.WorkoutMapImageLocalDataSource
-import com.routee.android.core.data.workout.model.NextTrackPoint
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
@@ -75,7 +75,7 @@ class WorkoutTrackingRepositoryImplTest {
         repository.start(record())
         repository.pause()
 
-        repository.addTrackPoint(NextTrackPoint(point(1), addedDistanceMeters = 10.0, elevationMeters = 100.0))
+        repository.addTrackPoint(location(latitude = 37.0, seconds = 1))
 
         assertTrue(repository.state.value.trackPoints.isEmpty())
         assertTrue(recordRepository.getTrackPoints(ACTIVITY_ID).getOrThrow().isEmpty())
@@ -96,6 +96,28 @@ class WorkoutTrackingRepositoryImplTest {
         val saved = recordRepository.getRecord().getOrThrow()
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, saved?.status)
         assertEquals(60_000L, saved?.durationMillis)
+    }
+
+    /**
+     * GIVEN: 경로 좌표를 하나 기록한 뒤 일시정지했다가 다시 시작했을 때
+     * WHEN: 다시 시작한 뒤 첫 위치가 오면
+     * THEN: 좌표는 더하지만 직전 좌표와의 거리는 넣지 않는다
+     */
+    @Test
+    fun `다시 시작한 뒤 첫 좌표는 거리에 넣지 않는다`() = runTest {
+        repository.start(record())
+        clock.now = START.plusSeconds(1)
+        repository.addTrackPoint(location(latitude = 37.0, seconds = 1))
+        clock.now = START.plusSeconds(2)
+        repository.pause()
+        clock.now = START.plusSeconds(3)
+        repository.resume()
+        clock.now = START.plusSeconds(4)
+
+        repository.addTrackPoint(location(latitude = 37.001, seconds = 4))
+
+        assertEquals(listOf(1, 2), repository.state.value.trackPoints.map { it.pointIndex })
+        assertEquals(0.0, requireNotNull(repository.state.value.record).distanceMeters, 0.0)
     }
 
     private fun record() = WorkoutRecord(
@@ -121,6 +143,18 @@ class WorkoutTrackingRepositoryImplTest {
         longitude = 127.0,
         elevation = 100.0,
         recordedAt = START.plusSeconds(index.toLong()),
+    )
+
+    private fun location(
+        latitude: Double,
+        seconds: Long,
+    ) = DeviceLocation(
+        latitude = latitude,
+        longitude = 127.0,
+        altitude = 100.0,
+        altitudeAccuracyMeters = 5f,
+        accuracyMeters = 5f,
+        time = START.plusSeconds(seconds),
     )
 
     private class TestClock(var now: Instant) : Clock() {

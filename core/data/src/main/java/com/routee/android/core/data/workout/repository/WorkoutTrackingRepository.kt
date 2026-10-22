@@ -1,6 +1,6 @@
 package com.routee.android.core.data.workout.repository
 
-import com.routee.android.core.data.workout.model.NextTrackPoint
+import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +16,8 @@ interface WorkoutTrackingRepository {
 
     suspend fun resume(): Result<Unit>
 
-    /** 기록 중일 때만 경로 좌표 추가 */
-    suspend fun addTrackPoint(next: NextTrackPoint): Result<Unit>
+    /** [location]으로 경로 좌표를 만들어 저장, 기록 중이 아니거나 쓸 수 없는 위치면 그냥 성공 */
+    suspend fun addTrackPoint(location: DeviceLocation): Result<Unit>
 
     /** 진행 중인 기록이 없으면 기기에 저장된 기록을 이어감, 꺼져 있던 시간은 뺌 */
     suspend fun restore(): Result<Unit>
