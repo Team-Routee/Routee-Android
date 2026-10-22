@@ -24,6 +24,7 @@ internal class WorkoutRecordingViewModel @Inject constructor() : ViewModel() {
     private val _sideEffect = Channel<WorkoutRecordingSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
+    // TODO 시작 API 성공 후 기기 기록 시작, 실패 시 홈으로
     fun onCountdownFinish() = updateMode(WorkoutMode.RECORDING)
 
     // TODO 기록 일시정지
@@ -32,7 +33,7 @@ internal class WorkoutRecordingViewModel @Inject constructor() : ViewModel() {
     // TODO 기록 재개
     fun onRestartClick() = updateMode(WorkoutMode.RECORDING)
 
-    // TODO 기록 종료
+    // TODO 기록 종료 (PENDING_UPLOAD 저장, 지도 캡처, 완료 API)
     fun onEndLongPress() = updateMode(WorkoutMode.FINISHING)
 
     fun onFinishAnimationEnd() {

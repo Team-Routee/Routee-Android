@@ -78,6 +78,7 @@ internal class AuthRepositoryImpl @Inject constructor(
         tokenLocalDataSource.getRefreshToken()?.let { refreshToken ->
             apiResponseHandler.safeUnitApiCall { logoutService.logout(LogoutRequest(refreshToken = refreshToken)) }
         }
+        // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
     }
 
