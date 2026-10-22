@@ -27,7 +27,9 @@ internal suspend fun Activity.requestGoogleIdToken(): Result<String> {
         }
         Result.success(GoogleIdTokenCredential.createFrom(credential.data).idToken)
     } catch (e: GetCredentialCancellationException) {
-        Result.failure(GoogleLoginException.Cancelled(e))
+        Result.failure(
+            if (isNetworkAvailable()) GoogleLoginException.Cancelled(e) else GoogleLoginException.NetworkUnavailable(e),
+        )
     } catch (e: NoCredentialException) {
         Result.failure(
             if (isNetworkAvailable()) GoogleLoginException.NoAccount(e) else GoogleLoginException.NetworkUnavailable(e),
