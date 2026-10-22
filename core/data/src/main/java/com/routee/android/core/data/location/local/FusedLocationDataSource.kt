@@ -2,7 +2,6 @@ package com.routee.android.core.data.location.local
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.location.Location
 import android.os.Looper
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -11,11 +10,13 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.routee.android.core.data.location.model.DeviceLocation
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 /** 구글 위치 서비스(FusedLocationProvider)로 받는 기기 위치 */
 internal class FusedLocationDataSource @Inject constructor(
@@ -28,22 +29,14 @@ internal class FusedLocationDataSource @Inject constructor(
     override fun locations(): Flow<DeviceLocation> = callbackFlow {
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.locations.forEach { trySend(it.toDeviceLocation()) }
+                result.locations.forEach { trySend(it) }
             }
         }
         client.requestLocationUpdates(LOCATION_REQUEST, callback, Looper.getMainLooper())
             .addOnFailureListener { close(it) }
         awaitClose { client.removeLocationUpdates(callback) }
-    }
-
-    /** 고도, 오차를 모르면 null */
-    private fun Location.toDeviceLocation() = DeviceLocation(
-        latitude = latitude,
-        longitude = longitude,
-        altitude = if (hasAltitude()) altitude else null,
-        accuracyMeters = if (hasAccuracy()) accuracy else null,
-        time = Instant.ofEpochMilli(time),
-    )
+    }.map { it.toDeviceLocation(context) }
+        .flowOn(Dispatchers.IO)
 
     private companion object {
         const val INTERVAL_MILLIS = 1_000L
