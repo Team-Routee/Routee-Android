@@ -3,9 +3,7 @@ package com.routee.android.feature.recordedit.main
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
-import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
-import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
@@ -32,7 +30,7 @@ class RecordEditMainViewModelTest {
     private val memberRepository = FakeMemberRepository()
 
     private fun createViewModel() =
-        RecordEditMainViewModel(recapRepository, memberRepository, GetRecapEditorDataUseCase(recapRepository))
+        RecordEditMainViewModel(recapRepository, memberRepository)
 
     @Test
     fun `가입 월을 불러오면 그달에서 이전 달 이동이 막힌다`() {
@@ -130,27 +128,7 @@ class RecordEditMainViewModelTest {
     }
 
     @Test
-    fun `카드를 누르면 편집 데이터를 불러온 뒤 편집 화면으로 이동한다`() = runTest {
-        val viewModel = createViewModel()
-
-        viewModel.onRecapClick(1)
-
-        assertEquals(RecordEditMainSideEffect.NavigateToEditor(1), viewModel.sideEffect.first())
-    }
-
-    @Test
-    fun `네트워크가 끊겨 편집 데이터를 못 불러오면 이동하지 않고 토스트를 띄운다`() = runTest {
-        recapRepository.editorError = RecapException.NetworkUnavailable(null)
-        val viewModel = createViewModel()
-
-        viewModel.onRecapClick(1)
-
-        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
-    }
-
-    @Test
-    fun `네트워크가 아닌 이유로 실패하면 편집 화면으로 이동해 에러 화면을 보여준다`() = runTest {
-        recapRepository.editorError = IllegalStateException()
+    fun `카드를 누르면 바로 편집 화면으로 이동한다`() = runTest {
         val viewModel = createViewModel()
 
         viewModel.onRecapClick(1)
