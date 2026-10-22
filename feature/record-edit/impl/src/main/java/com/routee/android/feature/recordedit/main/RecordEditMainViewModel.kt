@@ -66,7 +66,6 @@ internal class RecordEditMainViewModel @Inject constructor(
 
     fun onRecapClick(activityId: Long) {
         completeTitleEdit()
-        // TODO API 연동 시 편집 리소스를 먼저 불러오고, 실패하면 이동하지 않고 ShowNetworkErrorToast
         viewModelScope.launch { _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId)) }
     }
 

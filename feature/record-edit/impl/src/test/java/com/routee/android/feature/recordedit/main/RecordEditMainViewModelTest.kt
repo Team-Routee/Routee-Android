@@ -4,13 +4,16 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.recap.model.ActivityRecap
-import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
+import com.routee.android.feature.recordedit.main.model.RecordEditMainSideEffect
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -26,7 +29,8 @@ class RecordEditMainViewModelTest {
     private val recapRepository = FakeRecapRepository()
     private val memberRepository = FakeMemberRepository()
 
-    private fun createViewModel() = RecordEditMainViewModel(recapRepository, memberRepository)
+    private fun createViewModel() =
+        RecordEditMainViewModel(recapRepository, memberRepository)
 
     @Test
     fun `가입 월을 불러오면 그달에서 이전 달 이동이 막힌다`() {
@@ -124,6 +128,15 @@ class RecordEditMainViewModelTest {
     }
 
     @Test
+    fun `카드를 누르면 바로 편집 화면으로 이동한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.onRecapClick(1)
+
+        assertEquals(RecordEditMainSideEffect.NavigateToEditor(1), viewModel.sideEffect.first())
+    }
+
+    @Test
     fun `제목을 연달아 바꾸고 모두 실패하면 서버에 저장된 제목으로 되돌린다`() {
         recapRepository.titleError = IOException()
         recapRepository.titleResponseGate = CompletableDeferred()
@@ -174,29 +187,6 @@ class RecordEditMainViewModelTest {
         activityDate = date,
         timelineImageUrls = List(photoCount) { "https://example.com/$it.jpg" },
     )
-}
-
-private class FakeRecapRepository : RecapRepository {
-    var recaps: List<ActivityRecap> = emptyList()
-    var error: Throwable? = null
-    val requestedMonths = mutableListOf<YearMonth>()
-    var titleError: Throwable? = null
-    val updatedTitles = mutableListOf<Pair<Long, String>>()
-    var titleResponseGate: CompletableDeferred<Unit>? = null
-
-    override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> {
-        requestedMonths += month
-        return error?.let { Result.failure(it) } ?: Result.success(recaps)
-    }
-
-    override suspend fun updateRecapTitle(
-        activityId: Long,
-        title: String,
-    ): Result<Unit> {
-        updatedTitles += activityId to title
-        titleResponseGate?.await()
-        return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
-    }
 }
 
 private class FakeMemberRepository : MemberRepository {

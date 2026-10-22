@@ -1,7 +1,7 @@
 package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.common.util.suspendRunCatching
-import com.routee.android.core.data.workout.model.NextTrackPoint
+import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import java.time.Clock
@@ -31,10 +31,10 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
 
     override suspend fun resume(): Result<Unit> = updateRecord { it.resumed(clock.instant()) }
 
-    override suspend fun addTrackPoint(next: NextTrackPoint): Result<Unit> = mutex.withLock {
+    override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> = mutex.withLock {
+        val next = _state.value.nextTrackPoint(location, clock.instant()) ?: return@withLock Result.success(Unit)
         val updated = _state.value.withTrackPoint(next)
-        val record = updated.record
-        if (updated == _state.value || record == null) return@withLock Result.success(Unit)
+        val record = updated.record ?: return@withLock Result.success(Unit)
         recordRepository.saveTrackPoint(record, next.point).onSuccess { _state.value = updated }
     }
 

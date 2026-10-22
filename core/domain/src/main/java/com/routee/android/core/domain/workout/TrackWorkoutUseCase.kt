@@ -3,7 +3,6 @@ package com.routee.android.core.domain.workout
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
-import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.map
 class TrackWorkoutUseCase @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val locationRepository: LocationRepository,
-    private val clock: Clock,
 ) {
     /**
      * @param onTrackPointFailure  경로 좌표 저장 실패 시 호출, 기록은 계속
@@ -27,10 +25,6 @@ class TrackWorkoutUseCase @Inject constructor(
             .map { it.isRecording }
             .distinctUntilChanged()
             .flatMapLatest { isRecording -> if (isRecording) locationRepository.observeLocations() else emptyFlow() }
-            .collect { location ->
-                trackingRepository.state.value.nextTrackPoint(location, clock.instant())?.let {
-                    trackingRepository.addTrackPoint(it).onFailure(onTrackPointFailure)
-                }
-            }
+            .collect { location -> trackingRepository.addTrackPoint(location).onFailure(onTrackPointFailure) }
     }
 }
