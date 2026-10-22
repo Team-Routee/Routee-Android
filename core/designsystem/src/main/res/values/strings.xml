@@ -29,4 +29,5 @@
     <!-- 사진 저장 -->
     <string name="designsystem_photo_save_a11y">사진 저장</string>
     <string name="designsystem_photo_saved_a11y">사진 저장됨</string>
+    <string name="designsystem_photo_timeline_title">타임라인</string>
 </resources>
