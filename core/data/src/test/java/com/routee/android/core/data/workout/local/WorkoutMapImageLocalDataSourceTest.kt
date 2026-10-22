@@ -37,18 +37,17 @@ class WorkoutMapImageLocalDataSourceTest {
     }
 
     /**
-     * GIVEN: 두 기록의 캡처와 쓰다 남은 임시 파일이 있을 때
-     * WHEN: 한 기록을 지우면
-     * THEN: 그 기록의 캡처와 임시 파일만 지워진다
+     * GIVEN: 캡처와 쓰다 남은 임시 파일이 있을 때
+     * WHEN: 기록을 지우면
+     * THEN: 캡처와 임시 파일이 모두 지워진다
      */
     @Test
-    fun `기록을 지우면 그 기록의 캡처와 임시 파일만 지운다`() = runTest {
+    fun `기록을 지우면 캡처와 남은 임시 파일을 지운다`() = runTest {
         dataSource.save(activityId = 1, jpeg = byteArrayOf(1))
-        val other = dataSource.save(activityId = 12, jpeg = byteArrayOf(1))
         File(directory, "1-temp-123.tmp").writeBytes(byteArrayOf(1))
 
         dataSource.delete(activityId = 1)
 
-        assertEquals(listOf(File(other)), directory.listFiles()?.toList())
+        assertEquals(emptyList<File>(), directory.listFiles()?.toList())
     }
 }
