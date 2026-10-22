@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="timeline_complete">완료</string>
-    <string name="timeline_edit_title">기록 제목 수정</string>
     <string name="timeline_edit_record">기록 편집 바로가기</string>
     <string name="timeline_default_record_title">%1$s 기록</string>
     <!-- 사진 타임라인 -->
