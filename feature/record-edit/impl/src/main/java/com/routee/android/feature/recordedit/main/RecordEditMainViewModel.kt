@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 @HiltViewModel
@@ -41,6 +43,8 @@ internal class RecordEditMainViewModel @Inject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
 
     private var loadJob: Job? = null
+    private val titleSaveMutex = Mutex()
+    private val savedTitles = mutableMapOf<Long, String>()
 
     init {
         loadRecaps()
@@ -81,17 +85,38 @@ internal class RecordEditMainViewModel @Inject constructor(
     private fun completeTitleEdit() {
         val activityId = _uiState.value.editingActivityId ?: return
         val title = titleEditingState.text.toString()
-        if (title.isBlank()) {
-            _uiState.update { it.copy(editingActivityId = null) }
-            return
+        val currentTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
+        _uiState.update { it.copy(editingActivityId = null) }
+        if (title.isBlank() || currentTitle == null || title == currentTitle) return
+
+        savedTitles.getOrPut(activityId) { currentTitle }
+        updateTitle(activityId = activityId, title = title)
+        viewModelScope.launch {
+            titleSaveMutex.withLock {
+                recapRepository.updateRecapTitle(activityId = activityId, title = title)
+                    .onSuccess { savedTitles[activityId] = title }
+                    .onFailure { e ->
+                        Timber.e(e)
+                        restoreTitle(activityId = activityId, failedTitle = title)
+                    }
+            }
         }
-        _uiState.update { state ->
-            state.copy(
-                editingActivityId = null,
-                recaps = state.recaps.updateTitle(activityId = activityId, title = title),
-            )
-        }
-        // TODO API 연동 시 제목이 바뀌었으면 PATCH /api/v1/activity/{activityId}/title
+    }
+
+    private fun updateTitle(
+        activityId: Long,
+        title: String,
+    ) {
+        _uiState.update { it.copy(recaps = it.recaps.updateTitle(activityId = activityId, title = title)) }
+    }
+
+    private fun restoreTitle(
+        activityId: Long,
+        failedTitle: String,
+    ) {
+        val currentTitle = recapsOrEmpty().find { it.activityId == activityId }?.title
+        val savedTitle = savedTitles[activityId] ?: return
+        if (currentTitle == failedTitle) updateTitle(activityId = activityId, title = savedTitle)
     }
 
     private fun moveMonth(month: YearMonth) {

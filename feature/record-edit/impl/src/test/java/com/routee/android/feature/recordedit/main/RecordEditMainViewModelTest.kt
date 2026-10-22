@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.main
 
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.recap.model.ActivityRecap
@@ -9,11 +10,14 @@ import com.routee.android.feature.recordedit.MainDispatcherRule
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+
+private const val ORIGINAL_TITLE = "2026.07.14 기록"
 
 class RecordEditMainViewModelTest {
     @get:Rule
@@ -88,13 +92,85 @@ class RecordEditMainViewModelTest {
         assertEquals(YearMonth.now().minusMonths(1), recapRepository.requestedMonths.last())
     }
 
+    @Test
+    fun `제목을 바꾸고 편집을 끝내면 수정 요청을 보낸다`() {
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+
+        assertEquals(listOf(1L to "관악산"), recapRepository.updatedTitles)
+        assertEquals("관악산", titleOf(viewModel))
+    }
+
+    @Test
+    fun `제목이 그대로거나 공백뿐이면 수정 요청을 보내지 않는다`() {
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, ORIGINAL_TITLE)
+        editTitle(viewModel, "   ")
+
+        assertTrue(recapRepository.updatedTitles.isEmpty())
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `제목 수정에 실패하면 원래 제목으로 되돌린다`() {
+        recapRepository.titleError = IOException()
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `제목을 연달아 바꾸고 모두 실패하면 서버에 저장된 제목으로 되돌린다`() {
+        recapRepository.titleError = IOException()
+        recapRepository.titleResponseGate = CompletableDeferred()
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+        editTitle(viewModel, "북한산")
+        recapRepository.titleResponseGate?.complete(Unit)
+
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `먼저 바꾼 제목만 저장되고 다음 제목이 실패하면 먼저 저장된 제목으로 되돌린다`() {
+        val viewModel = createViewModelWithRecap()
+        editTitle(viewModel, "관악산")
+
+        recapRepository.titleError = IOException()
+        editTitle(viewModel, "북한산")
+
+        assertEquals("관악산", titleOf(viewModel))
+    }
+
+    private fun createViewModelWithRecap(): RecordEditMainViewModel {
+        recapRepository.recaps = listOf(recap(activityId = 1, date = LocalDate.of(2026, 7, 14), photoCount = 0))
+        return createViewModel()
+    }
+
+    private fun editTitle(
+        viewModel: RecordEditMainViewModel,
+        title: String,
+    ) {
+        viewModel.onEditTitleClick(1)
+        viewModel.titleEditingState.setTextAndPlaceCursorAtEnd(title)
+        viewModel.onEditTitleComplete(1)
+    }
+
+    private fun titleOf(viewModel: RecordEditMainViewModel): String =
+        (viewModel.uiState.value.recaps as UiState.Success).data.first { it.activityId == 1L }.title
+
     private fun recap(
         activityId: Long,
         date: LocalDate,
         photoCount: Int,
     ) = ActivityRecap(
         activityId = activityId,
-        title = "${date}의 기록",
+        title = ORIGINAL_TITLE,
         activityDate = date,
         timelineImageUrls = List(photoCount) { "https://example.com/$it.jpg" },
     )
@@ -104,10 +180,22 @@ private class FakeRecapRepository : RecapRepository {
     var recaps: List<ActivityRecap> = emptyList()
     var error: Throwable? = null
     val requestedMonths = mutableListOf<YearMonth>()
+    var titleError: Throwable? = null
+    val updatedTitles = mutableListOf<Pair<Long, String>>()
+    var titleResponseGate: CompletableDeferred<Unit>? = null
 
     override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> {
         requestedMonths += month
         return error?.let { Result.failure(it) } ?: Result.success(recaps)
+    }
+
+    override suspend fun updateRecapTitle(
+        activityId: Long,
+        title: String,
+    ): Result<Unit> {
+        updatedTitles += activityId to title
+        titleResponseGate?.await()
+        return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
     }
 }
 
