@@ -32,8 +32,6 @@ private const val PNG_QUALITY = 100
 internal class RecapImageRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : RecapImageRepository {
-    override val needsStoragePermission: Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
-
     override suspend fun saveWithWatermark(bitmap: Bitmap): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) { writeWithWatermark(bitmap) }
     }

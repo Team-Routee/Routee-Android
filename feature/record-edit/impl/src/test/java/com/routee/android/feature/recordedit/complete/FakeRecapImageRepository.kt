@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 
 internal class FakeRecapImageRepository(
-    override val needsStoragePermission: Boolean = false,
     private val saveToGalleryResult: Result<Unit> = Result.success(Unit),
 ) : RecapImageRepository {
     override suspend fun saveWithWatermark(bitmap: Bitmap): Result<String> = Result.success(IMAGE_PATH)

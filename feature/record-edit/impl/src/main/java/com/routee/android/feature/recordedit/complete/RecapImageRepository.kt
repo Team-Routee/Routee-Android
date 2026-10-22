@@ -8,11 +8,6 @@ import android.net.Uri
  */
 internal interface RecapImageRepository {
     /**
-     * Android 9 이하는 갤러리 저장에 저장소 쓰기 권한이 필요하다
-     */
-    val needsStoragePermission: Boolean
-
-    /**
      * 오른쪽 아래에 워터마크를 합성해 캐시에 저장한다. 이전 리캡 이미지는 지운다
      *
      * @return 저장한 파일 경로

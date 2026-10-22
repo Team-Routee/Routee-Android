@@ -35,15 +35,7 @@ internal class RecapCompleteViewModel @AssistedInject constructor(
     }
 
     fun onDownloadClick() {
-        if (recapImageRepository.needsStoragePermission) {
-            sendSideEffect(RecapCompleteSideEffect.RequestStoragePermission)
-        } else {
-            saveToGallery()
-        }
-    }
-
-    fun onStoragePermissionResult(isGranted: Boolean) {
-        if (isGranted) saveToGallery() else sendSideEffect(RecapCompleteSideEffect.ShowNoPermissionToast)
+        saveToGallery()
     }
 
     fun onShareClick() {
