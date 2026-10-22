@@ -10,6 +10,7 @@ import com.routee.android.feature.recordedit.MainDispatcherRule
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -122,6 +123,30 @@ class RecordEditMainViewModelTest {
         assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
     }
 
+    @Test
+    fun `제목을 연달아 바꾸고 모두 실패하면 서버에 저장된 제목으로 되돌린다`() {
+        recapRepository.titleError = IOException()
+        recapRepository.titleResponseGate = CompletableDeferred()
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+        editTitle(viewModel, "북한산")
+        recapRepository.titleResponseGate?.complete(Unit)
+
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `먼저 바꾼 제목만 저장되고 다음 제목이 실패하면 먼저 저장된 제목으로 되돌린다`() {
+        val viewModel = createViewModelWithRecap()
+        editTitle(viewModel, "관악산")
+
+        recapRepository.titleError = IOException()
+        editTitle(viewModel, "북한산")
+
+        assertEquals("관악산", titleOf(viewModel))
+    }
+
     private fun createViewModelWithRecap(): RecordEditMainViewModel {
         recapRepository.recaps = listOf(recap(activityId = 1, date = LocalDate.of(2026, 7, 14), photoCount = 0))
         return createViewModel()
@@ -157,6 +182,7 @@ private class FakeRecapRepository : RecapRepository {
     val requestedMonths = mutableListOf<YearMonth>()
     var titleError: Throwable? = null
     val updatedTitles = mutableListOf<Pair<Long, String>>()
+    var titleResponseGate: CompletableDeferred<Unit>? = null
 
     override suspend fun getMonthlyRecaps(month: YearMonth): Result<List<ActivityRecap>> {
         requestedMonths += month
@@ -168,6 +194,7 @@ private class FakeRecapRepository : RecapRepository {
         title: String,
     ): Result<Unit> {
         updatedTitles += activityId to title
+        titleResponseGate?.await()
         return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
     }
 }
