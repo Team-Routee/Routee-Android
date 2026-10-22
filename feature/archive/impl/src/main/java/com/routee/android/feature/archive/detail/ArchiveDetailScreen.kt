@@ -37,6 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.common.util.suspendRunCatching
+import com.routee.android.core.data.archive.model.ArchivePhoto
+import java.time.Instant
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
@@ -59,6 +61,7 @@ import com.routee.android.core.ui.loading.LocalRouteeLoadingState
 import com.routee.android.core.ui.loading.RouteeLoadingHost
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.loading.RouteeLoadingState
+import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.archive.R
 import com.routee.android.feature.archive.component.RoutePointItem
 import com.routee.android.feature.archive.detail.model.ArchiveDetailRecord
@@ -81,6 +84,7 @@ internal fun ArchiveDetailRoute(
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val messageState = LocalRouteeMessageState.current
+    val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
     var isSaving by remember { mutableStateOf(false) }
     val defaultTitle = stringResource(R.string.archive_detail_default_title, record?.date.orEmpty())
     val updateFailed = stringResource(R.string.archive_detail_update_failed)
@@ -130,6 +134,12 @@ internal fun ArchiveDetailRoute(
         onExpandedChange = { expanded = it },
         onBackClick = { finishTitleEdit(onBackClick) },
         titleState = titleState,
+        savedPhotoIndex = gallerySave.savedPhotoIndex,
+        onPhotoSaveClick = { index ->
+            record?.photos?.getOrNull(index)?.let { photo ->
+                gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
+            }
+        },
         onEditTitleClick = { if (!isSaving) viewModel.onTitleEditingChange(true) },
         onTitleEditFinish = { finishTitleEdit() },
         onDeleteClick = { finishTitleEdit { viewModel.onDeleteDialogChange(true) } },
@@ -179,6 +189,8 @@ private fun ArchiveDetailScreen(
     onEditTitleClick: () -> Unit = {},
     onTitleEditFinish: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
+    savedPhotoIndex: Int = -1,
+    onPhotoSaveClick: (Int) -> Unit = {},
 ) {
     when (val record = uiState.record) {
         UiState.Empty, is UiState.Failure -> RouteeErrorScreen(
@@ -213,6 +225,8 @@ private fun ArchiveDetailScreen(
                         expanded = expanded,
                         onExpandedChange = onExpandedChange,
                         titleState = titleState ?: rememberTextFieldState(record.data.title),
+                        savedPhotoIndex = savedPhotoIndex,
+                        onPhotoSaveClick = onPhotoSaveClick,
                         isTitleEditing = uiState.isTitleEditing,
                         onEditTitleClick = onEditTitleClick,
                         onTitleEditFinish = onTitleEditFinish,
@@ -235,6 +249,8 @@ private fun ArchiveDetailContent(
     isTitleEditing: Boolean,
     onEditTitleClick: () -> Unit,
     onTitleEditFinish: () -> Unit,
+    savedPhotoIndex: Int,
+    onPhotoSaveClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -260,7 +276,14 @@ private fun ArchiveDetailContent(
         }
         if (record.photos.isNotEmpty()) {
             Spacer(Modifier.height(52.dp))
-            RouteePhotoTimelineSection(photos = record.photos, date = record.date)
+            RouteePhotoTimelineSection(
+                photos = remember(record.photos) {
+                    record.photos.map { RouteeTimelinePhoto(it.imageUrl, it.location) }
+                },
+                date = record.date,
+                savedPhotoIndex = savedPhotoIndex,
+                onSaveClick = onPhotoSaveClick,
+            )
         }
         if (record.routeNames.isNotEmpty()) {
             Spacer(Modifier.height(if (record.photos.isEmpty()) 52.dp else 48.dp))
@@ -301,7 +324,10 @@ private fun ArchiveDetailScreenPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문"), RouteeTimelinePhoto(null, null)),
+                        photos = persistentListOf(
+                            ArchivePhoto(1L, "창의문", "", Instant.EPOCH),
+                            ArchivePhoto(2L, null, "", Instant.EPOCH),
+                        ),
                         routeNames = persistentListOf("창의문", "청운대", "말바위", "백숙 먹으러 가는 중"),
                     ),
                 ),
@@ -378,7 +404,7 @@ private fun ArchiveDetailScreenWithoutRoutesPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문")),
+                        photos = persistentListOf(ArchivePhoto(1L, "창의문", "", Instant.EPOCH)),
                     ),
                 ),
             ),

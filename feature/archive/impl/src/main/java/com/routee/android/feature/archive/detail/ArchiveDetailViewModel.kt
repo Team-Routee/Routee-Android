@@ -3,11 +3,13 @@ package com.routee.android.feature.archive.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
+import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.archive.api.ArchiveDetailNavKey
 import com.routee.android.feature.archive.detail.model.ArchiveDetailUiState
 import com.routee.android.feature.archive.detail.model.toArchiveDetailRecord
+import dagger.Lazy
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -23,6 +25,7 @@ import timber.log.Timber
 internal class ArchiveDetailViewModel @AssistedInject constructor(
     @Assisted private val key: ArchiveDetailNavKey,
     private val repository: ArchiveDetailRepository,
+    private val galleryImageStore: Lazy<GalleryImageStore>,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ArchiveDetailUiState())
     val uiState = _uiState.asStateFlow()
@@ -31,6 +34,9 @@ internal class ArchiveDetailViewModel @AssistedInject constructor(
     init {
         onRetryClick()
     }
+
+    suspend fun savePhoto(imageUrl: String, capturedAtEpochMillis: Long): Result<Unit> =
+        galleryImageStore.get().save(imageUrl, capturedAtEpochMillis).onFailure { Timber.e(it) }
 
     fun onTitleEditingChange(editing: Boolean) {
         _uiState.update { it.copy(isTitleEditing = editing) }

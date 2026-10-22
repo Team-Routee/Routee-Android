@@ -34,6 +34,7 @@ class ArchiveDetailViewModelTest {
         assertEquals(listOf(37.0, 38.0), record.track.map { it.latitude })
         assertEquals("thumbnail", record.markers.single().imageUrl)
         assertEquals(null, record.photos.single().location)
+        assertEquals(Instant.parse("2026-03-12T03:00:00Z"), record.photos.single().createdAt)
         assertEquals(listOf("창의문"), record.routeNames)
     }
 
@@ -48,7 +49,7 @@ class ArchiveDetailViewModelTest {
     @Test
     fun loadsNavigationActivityIdAndRecoversFromFailure() = runTest {
         val repository = FakeRepository()
-        val viewModel = ArchiveDetailViewModel(ArchiveDetailNavKey(42), repository)
+        val viewModel = ArchiveDetailViewModel(ArchiveDetailNavKey(42), repository, dagger.Lazy { error("Unused") })
         assertTrue(viewModel.uiState.value.record is UiState.Failure)
 
         repository.fail = false

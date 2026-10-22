@@ -1,7 +1,7 @@
 package com.routee.android.feature.archive.detail.model
 
 import androidx.compose.runtime.Immutable
-import com.routee.android.core.designsystem.component.RouteeTimelinePhoto
+import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.map.model.MapPhoto
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.core.ui.UiState
@@ -24,6 +24,6 @@ internal data class ArchiveDetailRecord(
     val maxElevation: String,
     val track: ImmutableList<MapPoint> = persistentListOf(),
     val markers: ImmutableList<MapPhoto> = persistentListOf(),
-    val photos: ImmutableList<RouteeTimelinePhoto> = persistentListOf(),
+    val photos: ImmutableList<ArchivePhoto> = persistentListOf(),
     val routeNames: ImmutableList<String> = persistentListOf(),
 )
