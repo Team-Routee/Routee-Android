@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -29,7 +31,6 @@ import com.routee.android.feature.archive.R
 
 private const val DAYS_IN_WEEK = 7
 private val DayCellSize = 36.dp
-private val DayColumnSpacing = 9.dp
 private val WeekdayLabelResources = intArrayOf(
     R.string.archive_calendar_weekday_monday,
     R.string.archive_calendar_weekday_tuesday,
@@ -58,11 +59,11 @@ internal fun Calendar(
     val weekCount = (days.size + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK
 
     Column(
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 11.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing20),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(DayColumnSpacing)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             WeekdayLabelResources.forEach { weekdayLabelResource ->
                 Box(
                     modifier = Modifier.size(width = DayCellSize, height = 16.dp),
@@ -77,9 +78,12 @@ internal fun Calendar(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16)) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16),
+        ) {
             repeat(weekCount) { week ->
-                Row(horizontalArrangement = Arrangement.spacedBy(DayColumnSpacing)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     repeat(DAYS_IN_WEEK) { weekday ->
                         val day = days.getOrNull(week * DAYS_IN_WEEK + weekday)
                         if (day == null) {

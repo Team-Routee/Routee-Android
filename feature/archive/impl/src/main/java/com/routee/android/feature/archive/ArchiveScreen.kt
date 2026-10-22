@@ -27,6 +27,9 @@ import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.feature.archive.component.ArchiveCalendarRecord
+import com.routee.android.feature.archive.component.ArchiveCalendarSection
+import com.routee.android.feature.archive.component.CalendarDay
 import com.routee.android.feature.archive.component.MountainActivityLevel
 import com.routee.android.feature.archive.component.MountainMap
 import com.routee.android.feature.archive.component.UserProfile
@@ -41,7 +44,11 @@ private data class ArchiveProfile(
 )
 
 @Composable
-internal fun ArchiveRoute() {
+internal fun ArchiveRoute(
+    onRecordClick: (Long) -> Unit,
+    calendarDays: List<CalendarDay> = emptyList(),
+    records: List<ArchiveCalendarRecord> = emptyList(),
+) {
     val currentMonth = remember { YearMonth.now() }
     var monthOffset by rememberSaveable { mutableIntStateOf(0) }
     val selectedMonth = currentMonth.plusMonths(monthOffset.toLong())
@@ -61,6 +68,9 @@ internal fun ArchiveRoute() {
         activityLevels = remember { List(33) { MountainActivityLevel.NONE } },
         onPreviousMonthClick = { monthOffset-- },
         onNextMonthClick = { monthOffset++ },
+        calendarDays = calendarDays,
+        records = records,
+        onRecordClick = onRecordClick,
     )
 }
 
@@ -73,6 +83,9 @@ private fun ArchiveScreen(
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
     modifier: Modifier = Modifier,
+    calendarDays: List<CalendarDay> = emptyList(),
+    records: List<ArchiveCalendarRecord> = emptyList(),
+    onRecordClick: (Long) -> Unit = {},
 ) {
     RouteeBgEllipse(modifier = modifier) {
         Column(
@@ -105,6 +118,14 @@ private fun ArchiveScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = RouteeTheme.spacing.Spacing16),
+            )
+            Spacer(Modifier.height(RouteeTheme.spacing.Spacing32))
+            ArchiveCalendarSection(
+                month = selectedMonth,
+                days = calendarDays,
+                records = records,
+                onRecordClick = onRecordClick,
+                modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
             )
             Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
         }
