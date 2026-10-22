@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 
 /** 운동 위치 기록, 취소될 때까지 기록 중일 때만 위치를 받아 경로에 쌓음. 위치 기록 서비스가 부름 */
 class TrackWorkoutUseCase @Inject constructor(
@@ -26,7 +27,7 @@ class TrackWorkoutUseCase @Inject constructor(
             .flatMapLatest { isRecording -> if (isRecording) locationRepository.observeLocations() else emptyFlow() }
             .collect { location ->
                 trackingRepository.state.value.nextTrackPoint(location, clock.instant())?.let {
-                    trackingRepository.addTrackPoint(it)
+                    trackingRepository.addTrackPoint(it).onFailure { e -> Timber.e(e) }
                 }
             }
     }

@@ -12,6 +12,7 @@ dependencies {
     implementation(projects.core.data)
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.timber)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
