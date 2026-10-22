@@ -36,15 +36,15 @@ class WorkoutDaoTest {
 
     /**
      * GIVEN: 경로 점이 있는 기록일 때
-     * WHEN: 상태를 바꿔 upsertWorkout 하면
+     * WHEN: 상태를 바꿔 updateWorkout 하면
      * THEN: 기록은 바뀌고 경로 점은 남는다
      */
     @Test
-    fun upsertWorkoutKeepsTrackPoints() = runTest {
-        dao.upsertWorkout(workout())
+    fun updateWorkoutKeepsTrackPoints() = runTest {
+        dao.insertWorkout(workout())
         dao.insertTrackPoint(point(0))
 
-        dao.upsertWorkout(workout().copy(status = "PENDING_UPLOAD"))
+        dao.updateWorkout(workout().copy(status = "PENDING_UPLOAD"))
 
         assertEquals("PENDING_UPLOAD", dao.getWorkout()?.status)
         assertEquals(1, dao.getTrackPoints(WORKOUT_ID).size)
@@ -57,7 +57,7 @@ class WorkoutDaoTest {
      */
     @Test
     fun insertTrackPointSavesPointAndWorkout() = runTest {
-        dao.upsertWorkout(workout())
+        dao.insertWorkout(workout())
 
         dao.insertTrackPoint(workout().copy(distance = 12.5), point(0))
 
@@ -72,7 +72,7 @@ class WorkoutDaoTest {
      */
     @Test
     fun replaceWorkoutRemovesPreviousWorkoutAndPoints() = runTest {
-        dao.upsertWorkout(workout(id = 1))
+        dao.insertWorkout(workout(id = 1))
         dao.insertTrackPoint(point(0, workoutId = 1))
 
         dao.replaceWorkout(workout(id = 2))
@@ -82,13 +82,29 @@ class WorkoutDaoTest {
     }
 
     /**
+     * GIVEN: 기록이 있을 때
+     * WHEN: 다른 id의 기록으로 updateWorkout 하면
+     * THEN: 수정한 행이 없고 새 행도 생기지 않는다
+     */
+    @Test
+    fun updateWorkoutWithOtherIdChangesNothing() = runTest {
+        dao.insertWorkout(workout(id = 1))
+
+        val updatedRows = dao.updateWorkout(workout(id = 2))
+
+        assertEquals(0, updatedRows)
+        assertEquals(1, workoutCount())
+        assertEquals(1L, dao.getWorkout()?.id)
+    }
+
+    /**
      * GIVEN: 경로 점이 있는 기록일 때
      * WHEN: 기록을 지우면
      * THEN: 경로 점도 같이 지워진다
      */
     @Test
     fun deleteWorkoutCascadesTrackPoints() = runTest {
-        dao.upsertWorkout(workout())
+        dao.insertWorkout(workout())
         dao.insertTrackPoint(point(0))
 
         dao.deleteWorkout(WORKOUT_ID)
@@ -96,6 +112,12 @@ class WorkoutDaoTest {
         assertNull(dao.getWorkout())
         assertTrue(dao.getTrackPoints(WORKOUT_ID).isEmpty())
     }
+
+    private fun workoutCount(): Int =
+        database.openHelper.readableDatabase.query("SELECT COUNT(*) FROM workout").use { cursor ->
+            cursor.moveToFirst()
+            cursor.getInt(0)
+        }
 
     private fun workout(id: Long = WORKOUT_ID) = WorkoutEntity(
         id = id,

@@ -10,8 +10,14 @@ internal class FakeWorkoutDao : WorkoutDao {
 
     override suspend fun getWorkout(): WorkoutEntity? = workout
 
-    override suspend fun upsertWorkout(workout: WorkoutEntity) {
+    override suspend fun insertWorkout(workout: WorkoutEntity) {
         this.workout = workout
+    }
+
+    override suspend fun updateWorkout(workout: WorkoutEntity): Int {
+        if (this.workout?.id != workout.id) return 0
+        this.workout = workout
+        return 1
     }
 
     override suspend fun insertTrackPoint(point: TrackPointEntity) {

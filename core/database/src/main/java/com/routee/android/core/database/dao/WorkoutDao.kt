@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
-import androidx.room.Upsert
+import androidx.room.Update
 import com.routee.android.core.database.entity.TrackPointEntity
 import com.routee.android.core.database.entity.WorkoutEntity
 
@@ -15,29 +15,33 @@ interface WorkoutDao {
     @Query("SELECT * FROM workout LIMIT 1")
     suspend fun getWorkout(): WorkoutEntity?
 
-    /** 기록 추가 또는 수정, 경로 점은 유지 */
-    @Upsert
-    suspend fun upsertWorkout(workout: WorkoutEntity)
+    /** 기록 추가 */
+    @Insert
+    suspend fun insertWorkout(workout: WorkoutEntity)
+
+    /** 같은 id의 기록 수정, 수정한 행 수 반환 */
+    @Update
+    suspend fun updateWorkout(workout: WorkoutEntity): Int
 
     /** 경로 점 추가 */
     @Insert
     suspend fun insertTrackPoint(point: TrackPointEntity)
 
-    /** 경로 점 추가와 기록 갱신(거리, 마지막 기록 시각)을 한 트랜잭션으로 */
+    /** 경로 점 추가와 기록 갱신(거리, 마지막 기록 시각)을 한 트랜잭션으로, 수정한 기록 행 수 반환 */
     @Transaction
     suspend fun insertTrackPoint(
         workout: WorkoutEntity,
         point: TrackPointEntity,
-    ) {
+    ): Int {
         insertTrackPoint(point)
-        upsertWorkout(workout)
+        return updateWorkout(workout)
     }
 
     /** 기존 기록과 경로 점을 모두 지우고 새 기록 저장 */
     @Transaction
     suspend fun replaceWorkout(workout: WorkoutEntity) {
         deleteWorkouts()
-        upsertWorkout(workout)
+        insertWorkout(workout)
     }
 
     /** 기록의 경로 점, `point_index` 순서 */
