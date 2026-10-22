@@ -13,6 +13,7 @@ import com.routee.android.feature.recordedit.main.model.RecordEditMainSideEffect
 import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -155,6 +156,30 @@ class RecordEditMainViewModelTest {
         viewModel.onRecapClick(1)
 
         assertEquals(RecordEditMainSideEffect.NavigateToEditor(1), viewModel.sideEffect.first())
+    }
+
+    @Test
+    fun `제목을 연달아 바꾸고 모두 실패하면 서버에 저장된 제목으로 되돌린다`() {
+        recapRepository.titleError = IOException()
+        recapRepository.titleResponseGate = CompletableDeferred()
+        val viewModel = createViewModelWithRecap()
+
+        editTitle(viewModel, "관악산")
+        editTitle(viewModel, "북한산")
+        recapRepository.titleResponseGate?.complete(Unit)
+
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
+    }
+
+    @Test
+    fun `먼저 바꾼 제목만 저장되고 다음 제목이 실패하면 먼저 저장된 제목으로 되돌린다`() {
+        val viewModel = createViewModelWithRecap()
+        editTitle(viewModel, "관악산")
+
+        recapRepository.titleError = IOException()
+        editTitle(viewModel, "북한산")
+
+        assertEquals("관악산", titleOf(viewModel))
     }
 
     private fun createViewModelWithRecap(): RecordEditMainViewModel {

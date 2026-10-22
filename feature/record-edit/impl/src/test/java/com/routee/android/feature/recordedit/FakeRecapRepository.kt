@@ -5,6 +5,7 @@ import com.routee.android.core.data.recap.model.ActivityTrack
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.repository.RecapRepository
 import java.time.YearMonth
+import kotlinx.coroutines.CompletableDeferred
 
 internal class FakeRecapRepository : RecapRepository {
     var recaps: List<ActivityRecap> = emptyList()
@@ -12,6 +13,7 @@ internal class FakeRecapRepository : RecapRepository {
     val requestedMonths = mutableListOf<YearMonth>()
     var titleError: Throwable? = null
     val updatedTitles = mutableListOf<Pair<Long, String>>()
+    var titleResponseGate: CompletableDeferred<Unit>? = null
     var resource = RecapResource(
         distanceMeters = 0,
         durationSeconds = 0,
@@ -32,6 +34,7 @@ internal class FakeRecapRepository : RecapRepository {
         title: String,
     ): Result<Unit> {
         updatedTitles += activityId to title
+        titleResponseGate?.await()
         return titleError?.let { Result.failure(it) } ?: Result.success(Unit)
     }
 
