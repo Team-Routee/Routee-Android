@@ -1,6 +1,9 @@
 package com.routee.android.feature.onboarding.login
 
 import android.app.Activity
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -26,9 +29,13 @@ internal suspend fun Activity.requestGoogleIdToken(): Result<String> {
     } catch (e: GetCredentialCancellationException) {
         Result.failure(GoogleLoginException.Cancelled(e))
     } catch (e: NoCredentialException) {
-        Result.failure(GoogleLoginException.NoAccount(e))
+        Result.failure(
+            if (isNetworkAvailable()) GoogleLoginException.NoAccount(e) else GoogleLoginException.NetworkUnavailable(e),
+        )
     } catch (e: GetCredentialException) {
-        Result.failure(GoogleLoginException.Failed(e))
+        Result.failure(
+            if (isNetworkAvailable()) GoogleLoginException.Failed(e) else GoogleLoginException.NetworkUnavailable(e),
+        )
     } catch (e: GoogleIdTokenParsingException) {
         Result.failure(GoogleLoginException.Failed(e))
     } catch (e: IllegalArgumentException) {
@@ -41,3 +48,9 @@ private fun googleIdRequest(): GetCredentialRequest = GetCredentialRequest.Build
         GetSignInWithGoogleOption.Builder(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID).build(),
     )
     .build()
+
+private fun Context.isNetworkAvailable(): Boolean {
+    val connectivityManager = getSystemService(ConnectivityManager::class.java) ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}

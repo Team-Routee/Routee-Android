@@ -6,5 +6,7 @@ internal sealed class GoogleLoginException(cause: Throwable? = null) : Exception
 
     class NoAccount(cause: Throwable) : GoogleLoginException(cause)
 
+    class NetworkUnavailable(cause: Throwable) : GoogleLoginException(cause)
+
     class Failed(cause: Throwable? = null) : GoogleLoginException(cause)
 }
