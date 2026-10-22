@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WorkoutNotification.Value" parent="">
+        <item name="android:textColor">@color/workout_notification_value</item>
+        <item name="android:textStyle">bold|italic</item>
+        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <style name="WorkoutNotification.Label" parent="">
+        <item name="android:textColor">@color/workout_notification_label</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:maxLines">1</item>
+    </style>
+</resources>

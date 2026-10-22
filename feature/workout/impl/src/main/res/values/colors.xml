@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 상시 알림 (RemoteViews는 Compose 토큰을 못 써서 같은 값을 둠) -->
+    <!-- static/black -->
+    <color name="workout_notification_title">#FF101113</color>
+    <!-- static/black -->
+    <color name="workout_notification_value">#FF101113</color>
+    <!-- grayscale/grey-500 -->
+    <color name="workout_notification_label">#FF464A56</color>
+</resources>

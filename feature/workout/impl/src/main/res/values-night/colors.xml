@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- static/white -->
+    <color name="workout_notification_title">#FFFFFFFF</color>
+    <!-- mint/mint-300 -->
+    <color name="workout_notification_value">#FF63F6FD</color>
+    <!-- grayscale/grey-200 -->
+    <color name="workout_notification_label">#FFAAACB1</color>
+</resources>
