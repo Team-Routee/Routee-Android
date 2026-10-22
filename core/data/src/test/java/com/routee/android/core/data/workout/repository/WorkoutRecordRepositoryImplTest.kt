@@ -31,11 +31,11 @@ class WorkoutRecordRepositoryImplTest {
 
     /**
      * GIVEN: 기록을 시작했을 때
-     * WHEN: 경로 점과 갱신된 기록을 저장하면
-     * THEN: 경로 점과 갱신된 기록을 그대로 읽을 수 있다
+     * WHEN: 경로 좌표와 갱신된 기록을 저장하면
+     * THEN: 경로 좌표와 갱신된 기록을 그대로 읽을 수 있다
      */
     @Test
-    fun `경로 점과 갱신된 기록을 함께 저장한다`() = runTest {
+    fun `경로 좌표와 갱신된 기록을 함께 저장한다`() = runTest {
         repository.startRecord(record())
         val updated = record().copy(distanceMeters = 12.5, lastRecordedAt = Instant.ofEpochMilli(5_000))
 
@@ -117,7 +117,7 @@ class WorkoutRecordRepositoryImplTest {
         status = WorkoutStatus.ACTIVITY_IN_PROGRESS,
         startedAt = Instant.ofEpochMilli(1_000),
         durationMillis = 0,
-        segmentStartedAt = Instant.ofEpochMilli(1_000),
+        resumedAt = Instant.ofEpochMilli(1_000),
         pausedAt = null,
         lastRecordedAt = Instant.ofEpochMilli(1_000),
         distanceMeters = 0.0,

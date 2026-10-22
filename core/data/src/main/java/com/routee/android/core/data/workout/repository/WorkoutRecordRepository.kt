@@ -12,7 +12,7 @@ interface WorkoutRecordRepository {
 
     suspend fun saveRecord(record: WorkoutRecord): Result<Unit>
 
-    /** 경로 점과 갱신된 기록(거리, 마지막 기록 시각)을 함께 저장 */
+    /** 경로 좌표와 갱신된 기록(거리, 마지막 기록 시각)을 함께 저장 */
     suspend fun saveTrackPoint(
         record: WorkoutRecord,
         point: TrackPoint,
@@ -26,7 +26,7 @@ interface WorkoutRecordRepository {
         jpeg: ByteArray,
     ): Result<WorkoutRecord>
 
-    /** 기록, 경로 점, 지도 캡처 삭제 */
+    /** 기록, 경로 좌표, 지도 캡처 삭제 */
     suspend fun deleteRecord(activityId: Long): Result<Unit>
 
     suspend fun clearRecords(): Result<Unit>

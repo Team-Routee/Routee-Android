@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "4d4c3e7a6085ecea86e5ac2fb1717a52",
+    "identityHash": "1e620d6607609b83bb7d4e6ecd7e6b14",
     "entities": [
       {
         "tableName": "workout",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `segment_started_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `resumed_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -45,8 +45,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "segmentStartedAt",
-            "columnName": "segment_started_at",
+            "fieldPath": "resumedAt",
+            "columnName": "resumed_at",
             "affinity": "INTEGER"
           },
           {
@@ -159,7 +159,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4d4c3e7a6085ecea86e5ac2fb1717a52')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1e620d6607609b83bb7d4e6ecd7e6b14')"
     ]
   }
 }

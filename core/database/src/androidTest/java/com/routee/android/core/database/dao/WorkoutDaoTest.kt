@@ -35,9 +35,9 @@ class WorkoutDaoTest {
     }
 
     /**
-     * GIVEN: 경로 점이 있는 기록일 때
+     * GIVEN: 경로 좌표가 있는 기록일 때
      * WHEN: 상태를 바꿔 updateWorkout 하면
-     * THEN: 기록은 바뀌고 경로 점은 남는다
+     * THEN: 기록은 바뀌고 경로 좌표는 남는다
      */
     @Test
     fun updateWorkoutKeepsTrackPoints() = runTest {
@@ -52,8 +52,8 @@ class WorkoutDaoTest {
 
     /**
      * GIVEN: 기록이 있을 때
-     * WHEN: 경로 점과 갱신된 기록을 함께 저장하면
-     * THEN: 경로 점과 거리가 모두 저장된다
+     * WHEN: 경로 좌표와 갱신된 기록을 함께 저장하면
+     * THEN: 경로 좌표와 거리가 모두 저장된다
      */
     @Test
     fun insertTrackPointSavesPointAndWorkout() = runTest {
@@ -66,9 +66,9 @@ class WorkoutDaoTest {
     }
 
     /**
-     * GIVEN: 이전 기록과 경로 점이 있을 때
+     * GIVEN: 이전 기록과 경로 좌표가 있을 때
      * WHEN: 새 기록으로 replaceWorkout 하면
-     * THEN: 새 기록만 남고 이전 경로 점은 지워진다
+     * THEN: 새 기록만 남고 이전 경로 좌표는 지워진다
      */
     @Test
     fun replaceWorkoutRemovesPreviousWorkoutAndPoints() = runTest {
@@ -98,9 +98,9 @@ class WorkoutDaoTest {
     }
 
     /**
-     * GIVEN: 경로 점이 있는 기록일 때
+     * GIVEN: 경로 좌표가 있는 기록일 때
      * WHEN: 기록을 지우면
-     * THEN: 경로 점도 같이 지워진다
+     * THEN: 경로 좌표도 같이 지워진다
      */
     @Test
     fun deleteWorkoutCascadesTrackPoints() = runTest {
@@ -126,7 +126,7 @@ class WorkoutDaoTest {
         status = "ACTIVITY_IN_PROGRESS",
         startedAt = Instant.ofEpochMilli(1_000),
         durationMillis = 0,
-        segmentStartedAt = Instant.ofEpochMilli(1_000),
+        resumedAt = Instant.ofEpochMilli(1_000),
         pausedAt = null,
         lastRecordedAt = Instant.ofEpochMilli(1_000),
         distance = 0.0,

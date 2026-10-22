@@ -14,6 +14,8 @@ dependencies {
     implementation(projects.core.network)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.core.location.altitude)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
