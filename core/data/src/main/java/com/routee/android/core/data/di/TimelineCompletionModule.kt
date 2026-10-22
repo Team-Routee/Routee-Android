@@ -9,6 +9,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 import retrofit2.Retrofit
 import retrofit2.create
 
@@ -16,10 +17,12 @@ import retrofit2.create
 @InstallIn(SingletonComponent::class)
 internal abstract class TimelineCompletionModule {
     @Binds
+    @Singleton
     abstract fun bindTimelineCompletionRepository(impl: TimelineCompletionRepositoryImpl): TimelineCompletionRepository
 
     companion object {
         @Provides
+        @Singleton
         fun provideTimelineCompletionService(@Auth retrofit: Retrofit): TimelineCompletionService = retrofit.create()
     }
 }

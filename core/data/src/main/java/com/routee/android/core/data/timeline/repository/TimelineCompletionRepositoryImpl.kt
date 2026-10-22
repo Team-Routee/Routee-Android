@@ -10,14 +10,17 @@ import com.routee.android.core.network.util.ApiResponseHandler
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal class TimelineCompletionRepositoryImpl @Inject constructor(
     private val service: TimelineCompletionService,
     private val apiResponseHandler: ApiResponseHandler,
 ) : TimelineCompletionRepository {
+    private val mutex = Mutex()
     private val completedActivityIds = mutableSetOf<Long>()
 
-    override suspend fun complete(input: TimelineCompletion, mapImageObjectKey: String): Result<Unit> {
+    override suspend fun complete(input: TimelineCompletion, mapImageObjectKey: String): Result<Unit> = mutex.withLock {
         val title = input.title.trim()
         val names = input.routeNames.map(String::trim).filter(String::isNotEmpty)
         if (title.isEmpty() || title.length > 16 || input.distanceMeters < 0 || input.durationSeconds <= 0 ||
@@ -45,12 +48,15 @@ internal class TimelineCompletionRepositoryImpl @Inject constructor(
                 ?.let { return Result.failure(it) }
             completedActivityIds += input.activityId
         }
-        if (names.isEmpty()) return Result.success(Unit)
+        if (names.isEmpty()) {
+            completedActivityIds -= input.activityId
+            return Result.success(Unit)
+        }
         return apiResponseHandler.safeUnitApiCall {
             service.createRoutes(
                 input.activityId,
                 RoutesCreateRequest(names.mapIndexed { index, name -> RouteRequest(name, index + 1) }),
             )
-        }
+        }.onSuccess { completedActivityIds -= input.activityId }
     }
 }
