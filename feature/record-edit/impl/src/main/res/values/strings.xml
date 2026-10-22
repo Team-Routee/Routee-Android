@@ -21,6 +21,14 @@
     <string name="record_edit_editor_sticker_delete_a11y">스티커 삭제</string>
     <string name="record_edit_editor_no_route_toast">불러올 루트가 없습니다.</string>
 
+    <!-- 기록 편집 완료 -->
+    <string name="record_edit_complete_image_a11y">리캡 이미지</string>
+    <string name="record_edit_complete_download_a11y">리캡 이미지 저장</string>
+    <string name="record_edit_complete_share_a11y">리캡 이미지 공유</string>
+    <string name="record_edit_complete_save_success_toast">갤러리에 저장되었습니다.</string>
+    <string name="record_edit_complete_save_failure_toast">갤러리 저장에 실패했습니다.</string>
+    <string name="record_edit_complete_no_permission_toast">사진 접근 권한이 없습니다.</string>
+
     <!-- 기록 편집 하단 탭 -->
     <string name="record_edit_editor_tab_background">배경 변경</string>
     <string name="record_edit_editor_tab_brightness">밝기</string>

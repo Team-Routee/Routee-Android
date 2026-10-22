@@ -5,9 +5,12 @@ import androidx.navigation3.runtime.NavKey
 import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.util.viewModelEntry
 import com.routee.android.feature.recordedit.api.RecapBackgroundCropNavKey
+import com.routee.android.feature.recordedit.api.RecapCompleteNavKey
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.api.RecordEditMainNavKey
 import com.routee.android.feature.recordedit.background.RecapBackgroundCropRoute
+import com.routee.android.feature.recordedit.complete.RecapCompleteRoute
+import com.routee.android.feature.recordedit.complete.RecapCompleteViewModel
 import com.routee.android.feature.recordedit.editor.RecapEditorRoute
 import com.routee.android.feature.recordedit.editor.RecapEditorViewModel
 import com.routee.android.feature.recordedit.main.RecordEditMainRoute
@@ -25,6 +28,14 @@ fun EntryProviderScope<NavKey>.recordEditEntries(navigator: RouteeNavigator) {
             onNavigateBack = navigator::navigateBack,
             onNavigateToHome = navigator::navigateToHome,
             onNavigateToBackgroundCrop = { imageUri -> navigator.navigateTo(RecapBackgroundCropNavKey(imageUri)) },
+            onNavigateToComplete = { imagePath -> navigator.navigateTo(RecapCompleteNavKey(imagePath)) },
+        )
+    }
+    viewModelEntry<RecapCompleteNavKey, RecapCompleteViewModel, RecapCompleteViewModel.Factory> { _, viewModel ->
+        RecapCompleteRoute(
+            viewModel = viewModel,
+            onNavigateBack = navigator::navigateBack,
+            onNavigateToHome = navigator::navigateToHome,
         )
     }
     entry<RecapBackgroundCropNavKey> { key ->
