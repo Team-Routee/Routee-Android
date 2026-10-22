@@ -44,6 +44,10 @@ class ArchiveRepositoryImplTest {
     }
 
     private class FakeService(private val error: Exception? = null) : ArchiveService {
+        override suspend fun getStatistics(activityId: Long) = error("Unused")
+        override suspend fun getTimeline(activityId: Long) = error("Unused")
+        override suspend fun getRoutes(activityId: Long) = error("Unused")
+
         var requestedMonth: YearMonth? = null
 
         override suspend fun getMonthlySummary(year: Int, month: Int): BaseResponse<MonthlyActivitySummaryResponse> {
