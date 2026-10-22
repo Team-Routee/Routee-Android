@@ -5,7 +5,6 @@ import com.routee.android.core.data.recap.model.ActivityTrack
 import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.model.RecapRoute
 import com.routee.android.core.data.recap.model.TrackPoint
-import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
@@ -277,7 +276,7 @@ class RecapEditorViewModelTest {
     private fun createViewModel() = RecapEditorViewModel(
         RecapEditorNavKey(activityId = 1L),
         FakeRecapImageStore(),
-        GetRecapEditorDataUseCase(recapRepository),
+        recapRepository,
     )
 
     private fun trackPoint(

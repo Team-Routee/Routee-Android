@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.recap.exception.RecapException
-import com.routee.android.core.domain.recap.GetRecapEditorDataUseCase
+import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
@@ -35,7 +35,7 @@ import timber.log.Timber
 internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
     private val recapImageStore: RecapImageStore,
-    private val getRecapEditorData: GetRecapEditorDataUseCase,
+    private val recapRepository: RecapRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
     val uiState = _uiState.asStateFlow()
@@ -224,7 +224,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     private fun loadContent() {
         _uiState.update { it.copy(content = UiState.Loading) }
         viewModelScope.launch {
-            getRecapEditorData(key.activityId)
+            recapRepository.getRecapEditorData(key.activityId)
                 .onSuccess { data ->
                     _uiState.update { it.copy(content = UiState.Success(data.toRecapEditorContent())) }
                 }

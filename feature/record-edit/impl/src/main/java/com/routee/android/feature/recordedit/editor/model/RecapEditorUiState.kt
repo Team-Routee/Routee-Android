@@ -1,7 +1,7 @@
 package com.routee.android.feature.recordedit.editor.model
 
 import androidx.compose.runtime.Immutable
-import com.routee.android.core.domain.recap.RecapEditorData
+import com.routee.android.core.data.recap.model.RecapEditorData
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.recordedit.model.RecapColor
 import com.routee.android.feature.recordedit.model.RecapEditTab
