@@ -6,7 +6,7 @@ import androidx.room.ForeignKey
 import java.time.Instant
 
 /**
- * 운동 경로 점 테이블 (`track_point`), 기록이 지워지면 같이 삭제
+ * 운동 경로 좌표 테이블 (`track_point`), 기록이 지워지면 같이 삭제
  *
  * @param workoutId   기록 `id`
  * @param pointIndex  경로 순서, 사진 위치 연결에 사용
