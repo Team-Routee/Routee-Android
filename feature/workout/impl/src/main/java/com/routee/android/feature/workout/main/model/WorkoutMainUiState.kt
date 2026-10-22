@@ -4,6 +4,13 @@ import androidx.compose.runtime.Immutable
 
 @Immutable
 internal data class WorkoutMainUiState(
-    val isLocationPermissionGranted: Boolean = true,
+    val locationPermission: LocationPermission = LocationPermission.GRANTED,
+    val isLocationPermissionDialogVisible: Boolean = false,
     val address: String = "",
 )
+
+internal enum class LocationPermission {
+    GRANTED,
+    APPROXIMATE,
+    DENIED,
+}
