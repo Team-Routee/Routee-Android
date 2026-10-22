@@ -58,6 +58,7 @@ imageCropper = "4.7.0"
 
 # Map
 naverMap = "3.24.0"
+playServicesLocation = "21.4.0"
 
 # Test
 junit = "4.13.2"
@@ -127,6 +128,7 @@ android-image-cropper = { group = "com.vanniktech", name = "android-image-croppe
 
 # Map
 naver-map-sdk = { group = "com.naver.maps", name = "map-sdk", version.ref = "naverMap" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.core.network)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.play.services.location)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
