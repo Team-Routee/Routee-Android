@@ -21,6 +21,7 @@ import kotlinx.collections.immutable.persistentListOf
  * @param selectedSticker           테두리를 표시할 스티커. 스티커 탭에서는 서브탭 선택과 같다
  * @param isEditStopDialogVisible   편집 중단 모달 노출 여부
  * @param isResetDialogVisible      초기화 모달 노출 여부
+ * @param isCompleteAnimationVisible 완료 체크 애니메이션 노출 여부
  */
 @Immutable
 internal data class RecapEditorUiState(
@@ -34,6 +35,7 @@ internal data class RecapEditorUiState(
     val selectedSticker: StickerType? = null,
     val isEditStopDialogVisible: Boolean = false,
     val isResetDialogVisible: Boolean = false,
+    val isCompleteAnimationVisible: Boolean = false,
 ) {
     val overlayOpacity: Float get() = RecapBrightness.overlayOpacity(brightness, baseOpacity)
 
