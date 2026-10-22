@@ -28,6 +28,7 @@ internal class AuthRepositoryImpl @Inject constructor(
     private val authSessionManager: AuthSessionManager,
     private val apiResponseHandler: ApiResponseHandler,
 ) : AuthRepository {
+    private var isWithdrawnOnServer = false
 
     override suspend fun login(
         idToken: String,
@@ -86,19 +87,22 @@ internal class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun withdraw(): Result<Unit> {
+        if (!isWithdrawnOnServer) {
+            requestWithdraw().onFailure { return Result.failure(it) }
+            isWithdrawnOnServer = true
+        }
+        // TODO 기기 운동 기록 삭제
+        return suspendRunCatching { authSessionManager.clearSession() }
+            .onSuccess { isWithdrawnOnServer = false }
+    }
+
+    private suspend fun requestWithdraw(): Result<Unit> {
         val refreshToken = suspendRunCatching { tokenLocalDataSource.getRefreshToken() }
             .getOrElse { return Result.failure(it) }
             ?: return Result.failure(IllegalStateException("Refresh token is missing"))
         return apiResponseHandler.safeUnitApiCall {
             withdrawService.withdraw(WithdrawRequest(refreshToken = refreshToken))
         }.mapApiException(::mapAuthException)
-            .fold(
-                onSuccess = {
-                    // TODO 기기 운동 기록 삭제
-                    suspendRunCatching { authSessionManager.clearSession() }
-                },
-                onFailure = { Result.failure(it) },
-            )
     }
 
     private suspend fun executeLogin(
