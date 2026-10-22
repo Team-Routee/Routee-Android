@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -31,6 +32,7 @@ internal fun ArchiveCalendarSection(
     records: List<ArchiveCalendarRecord>,
     onRecordClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    onDateClick: ((LocalDate) -> Unit)? = null,
 ) {
     val cells = remember(month, days) { calendarDaysForMonth(month, days) }
     val recordsByDay = remember(month, records) { recordsForMonth(month, records) }
@@ -40,6 +42,10 @@ internal fun ArchiveCalendarSection(
         days = cells,
         modifier = modifier,
         onDayClick = { day ->
+            if (onDateClick != null) {
+                onDateClick(month.atDay(day.day))
+                return@Calendar
+            }
             val selectedRecords = recordsByDay[day.day].orEmpty()
             when (selectedRecords.size) {
                 0 -> Unit
