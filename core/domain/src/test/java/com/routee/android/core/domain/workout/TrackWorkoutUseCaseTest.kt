@@ -70,6 +70,7 @@ class TrackWorkoutUseCaseTest {
         latitude = 37.0,
         longitude = 127.0,
         altitude = 100.0,
+        altitudeAccuracyMeters = 5f,
         accuracyMeters = 5f,
         time = START.plusSeconds(1),
     )

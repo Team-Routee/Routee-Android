@@ -65,11 +65,33 @@ class WorkoutRecordTest {
                 recordedAt = START.plusSeconds(5),
             )
 
-        val updated = record().copy(maxElevationMeters = 200.0).withTrackPoint(point, addedDistanceMeters = 12.5)
+        val updated = record().copy(maxElevationMeters = 200.0)
+            .withTrackPoint(point, addedDistanceMeters = 12.5, elevationMeters = 150.0)
 
         assertEquals(200.0, requireNotNull(updated.maxElevationMeters), 0.0)
         assertEquals(12.5, updated.distanceMeters, 0.0)
         assertEquals(START.plusSeconds(5), updated.lastRecordedAt)
+    }
+
+    /**
+     * GIVEN: 최고 고도가 200m인 기록일 때
+     * WHEN: 쓸 수 있는 고도가 없는 좌표를 더하면
+     * THEN: 최고 고도는 그대로다
+     */
+    @Test
+    fun `고도를 쓸 수 없는 좌표는 최고 고도에 넣지 않는다`() {
+        val point = TrackPoint(
+            pointIndex = 1,
+            latitude = 37.0,
+            longitude = 127.0,
+            elevation = 900.0,
+            recordedAt = START.plusSeconds(5),
+        )
+
+        val updated = record().copy(maxElevationMeters = 200.0)
+            .withTrackPoint(point, addedDistanceMeters = 0.0, elevationMeters = null)
+
+        assertEquals(200.0, requireNotNull(updated.maxElevationMeters), 0.0)
     }
 
     private fun record() = WorkoutRecord(

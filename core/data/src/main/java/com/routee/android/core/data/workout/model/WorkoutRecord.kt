@@ -61,13 +61,14 @@ data class WorkoutRecord(
         return copy(durationMillis = durationMillisAt(lastRecordedAt), resumedAt = now)
     }
 
-    /** 경로 좌표를 더한 기록, 거리와 최고 고도, 마지막 기록 시각 갱신 */
+    /** 경로 좌표를 더한 기록, 거리와 최고 고도([elevationMeters]가 null이면 그대로), 마지막 기록 시각 갱신 */
     fun withTrackPoint(
         point: TrackPoint,
         addedDistanceMeters: Double,
+        elevationMeters: Double?,
     ): WorkoutRecord = copy(
         distanceMeters = distanceMeters + addedDistanceMeters,
-        maxElevationMeters = maxOf(maxElevationMeters ?: point.elevation, point.elevation),
+        maxElevationMeters = elevationMeters?.let { maxOf(maxElevationMeters ?: it, it) } ?: maxElevationMeters,
         lastRecordedAt = point.recordedAt,
     )
 }

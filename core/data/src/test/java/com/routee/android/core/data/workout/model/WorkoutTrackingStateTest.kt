@@ -37,6 +37,32 @@ class WorkoutTrackingStateTest {
     }
 
     /**
+     * GIVEN: 기록 중 상태일 때
+     * WHEN: 기기 시각보다 10초 넘게 앞선 위치가 오면
+     * THEN: 경로 좌표를 만들지 않는다
+     */
+    @Test
+    fun `미래 시각 위치는 버린다`() {
+        assertNull(state().nextTrackPoint(location(seconds = 11), NOW))
+    }
+
+    /**
+     * GIVEN: 기록 중 상태일 때
+     * WHEN: 고도 오차가 30m를 넘거나 모르는 위치가 오면
+     * THEN: 경로 좌표는 만들지만 최고 고도에는 쓰지 않는다
+     */
+    @Test
+    fun `고도 오차가 크거나 모르면 최고 고도에 쓰지 않는다`() {
+        val inaccurate = requireNotNull(state().nextTrackPoint(location(seconds = 1, altitudeAccuracy = 31f), NOW))
+        val unknown = requireNotNull(state().nextTrackPoint(location(seconds = 1, altitudeAccuracy = null), NOW))
+        val accurate = requireNotNull(state().nextTrackPoint(location(seconds = 1), NOW))
+
+        assertNull(inaccurate.elevationMeters)
+        assertNull(unknown.elevationMeters)
+        assertEquals(100.0, requireNotNull(accurate.elevationMeters), 0.0)
+    }
+
+    /**
      * GIVEN: 5초에 기록한 경로 좌표가 있을 때
      * WHEN: 4초 위치가 오면
      * THEN: 경로 좌표를 만들지 않는다
@@ -103,10 +129,12 @@ class WorkoutTrackingStateTest {
         latitude: Double = 37.0,
         seconds: Long,
         accuracy: Float = 5f,
+        altitudeAccuracy: Float? = 5f,
     ) = DeviceLocation(
         latitude = latitude,
         longitude = 127.0,
         altitude = 100.0,
+        altitudeAccuracyMeters = altitudeAccuracy,
         accuracyMeters = accuracy,
         time = NOW.plusSeconds(seconds),
     )

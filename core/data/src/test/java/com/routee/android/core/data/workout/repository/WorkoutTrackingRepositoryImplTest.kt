@@ -75,7 +75,7 @@ class WorkoutTrackingRepositoryImplTest {
         repository.start(record())
         repository.pause()
 
-        repository.addTrackPoint(NextTrackPoint(point(1), addedDistanceMeters = 10.0))
+        repository.addTrackPoint(NextTrackPoint(point(1), addedDistanceMeters = 10.0, elevationMeters = 100.0))
 
         assertTrue(repository.state.value.trackPoints.isEmpty())
         assertTrue(recordRepository.getTrackPoints(ACTIVITY_ID).getOrThrow().isEmpty())

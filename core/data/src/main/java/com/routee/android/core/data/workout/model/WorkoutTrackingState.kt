@@ -50,7 +50,7 @@ data class WorkoutTrackingState(
         } else {
             last.distanceTo(point)
         }
-        return NextTrackPoint(point, addedDistance)
+        return NextTrackPoint(point, addedDistance, location.usableAltitude())
     }
 
     /** 경로 좌표를 더한 상태, 기록 중일 때만 */
@@ -58,7 +58,7 @@ data class WorkoutTrackingState(
         val record = record ?: return this
         if (record.status != WorkoutStatus.ACTIVITY_IN_PROGRESS) return this
         return WorkoutTrackingState(
-            record = record.withTrackPoint(next.point, next.addedDistanceMeters),
+            record = record.withTrackPoint(next.point, next.addedDistanceMeters, next.elevationMeters),
             trackPoints = trackPoints + next.point,
         )
     }
@@ -68,15 +68,25 @@ data class WorkoutTrackingState(
  * 다음 경로 좌표
  *
  * @param addedDistanceMeters  직전 좌표와의 거리, 첫 좌표나 다시 시작한 뒤 첫 좌표는 0
+ * @param elevationMeters      최고 고도에 쓸 고도, 고도 오차가 크거나 모르면 null
  */
 data class NextTrackPoint(
     val point: TrackPoint,
     val addedDistanceMeters: Double,
+    val elevationMeters: Double?,
 )
 
+/** 수평 오차 30m 이하, 앞뒤 10초 이내 */
 private fun DeviceLocation.isUsableAt(now: Instant): Boolean {
     val accuracy = accuracyMeters ?: return false
-    return accuracy <= MAX_ACCURACY_METERS && Duration.between(time, now) <= MAX_LOCATION_AGE
+    return accuracy <= MAX_ACCURACY_METERS && Duration.between(time, now).abs() <= MAX_LOCATION_AGE
+}
+
+/** 고도 오차 30m 이하일 때 고도 */
+private fun DeviceLocation.usableAltitude(): Double? {
+    val altitudeAccuracy = altitudeAccuracyMeters ?: return null
+    if (altitudeAccuracy <= 0f || altitudeAccuracy > MAX_ACCURACY_METERS) return null
+    return altitude
 }
 
 /** [other]까지 거리 (m), 하버사인 공식 */
