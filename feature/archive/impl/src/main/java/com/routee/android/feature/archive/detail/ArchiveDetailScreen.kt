@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
@@ -34,6 +35,8 @@ import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.map.RouteePhotoRouteMap
+import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.ui.UiState
 import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
@@ -43,24 +46,26 @@ import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.loading.RouteeLoadingState
 import com.routee.android.feature.archive.R
 import com.routee.android.feature.archive.component.RoutePointItem
-import com.routee.android.feature.archive.detail.component.ArchiveDetailMap
 import com.routee.android.feature.archive.detail.model.ArchiveDetailRecord
 import com.routee.android.feature.archive.detail.model.ArchiveDetailUiState
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 internal fun ArchiveDetailRoute(
-    activityId: Long,
+    viewModel: ArchiveDetailViewModel,
     onBackClick: () -> Unit,
-    uiState: ArchiveDetailUiState = ArchiveDetailUiState(),
+    onHomeClick: () -> Unit,
 ) {
-    var expanded by rememberSaveable(activityId) { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     ArchiveDetailScreen(
         uiState = uiState,
         expanded = expanded,
         onExpandedChange = { expanded = it },
         onBackClick = onBackClick,
+        onHomeClick = onHomeClick,
+        onRetryClick = viewModel::onRetryClick,
     )
 }
 
@@ -71,11 +76,20 @@ private fun ArchiveDetailScreen(
     onExpandedChange: (Boolean) -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onHomeClick: () -> Unit = onBackClick,
+    onRetryClick: () -> Unit = {},
 ) {
     when (val record = uiState.record) {
         UiState.Empty, is UiState.Failure -> RouteeErrorScreen(
-            type = if (record == UiState.Empty) RouteeErrorType.NotFound else RouteeErrorType.Unknown,
-            onHomeClick = onBackClick,
+            type = if (record == UiState.Empty ||
+                (record is UiState.Failure && record.throwable is ApiException.NotFound)
+            ) {
+                RouteeErrorType.NotFound
+            } else {
+                RouteeErrorType.Unknown
+            },
+            onHomeClick = onHomeClick,
+            onRetryClick = onRetryClick,
             modifier = modifier.fillMaxSize().navigationBarsPadding(),
         )
 
@@ -124,7 +138,7 @@ private fun ArchiveDetailContent(
                 maxElevation = record.maxElevation,
                 modifier = Modifier.fillMaxWidth(),
             )
-            ArchiveDetailMap(track = record.track, markers = record.markers)
+            RouteePhotoRouteMap(route = record.track, photos = record.markers)
         }
         if (record.photos.isNotEmpty()) {
             Spacer(Modifier.height(52.dp))
