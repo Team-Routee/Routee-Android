@@ -105,17 +105,20 @@ internal class RecordEditMainViewModel @Inject constructor(
         val month = _uiState.value.selectedMonth
         _uiState.update { it.copy(recaps = UiState.Loading) }
         loadJob = viewModelScope.launch {
-            val joinedMonth = async { getJoinedMonth() }
-            val recaps = recapRepository.getMonthlyRecaps(month)
-            joinedMonth.await()
-                .onSuccess { joined -> _uiState.update { it.copy(joinedMonth = joined) } }
-                .fold(onSuccess = { recaps }, onFailure = { Result.failure(it) })
-                .onSuccess { result -> _uiState.update { it.copy(recaps = result.toRecapsUiState()) } }
-                .onFailure { e ->
-                    Timber.e(e)
-                    _uiState.update { it.copy(recaps = UiState.Failure(e)) }
-                }
+            val joinedMonthResult = async { getJoinedMonth() }
+            val recapsResult = recapRepository.getMonthlyRecaps(month)
+
+            val joinedMonth = joinedMonthResult.await().getOrElse { return@launch onLoadRecapsFailure(it) }
+            _uiState.update { it.copy(joinedMonth = joinedMonth) }
+
+            val recaps = recapsResult.getOrElse { return@launch onLoadRecapsFailure(it) }
+            _uiState.update { it.copy(recaps = recaps.toRecapsUiState()) }
         }
+    }
+
+    private fun onLoadRecapsFailure(throwable: Throwable) {
+        Timber.e(throwable)
+        _uiState.update { it.copy(recaps = UiState.Failure(throwable)) }
     }
 
     private suspend fun getJoinedMonth(): Result<YearMonth> {
