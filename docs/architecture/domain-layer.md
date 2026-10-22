@@ -11,6 +11,7 @@
 | Used by | ViewModels, Android `Service` (foreground service) |
 | Threading | Main-safe. Heavy work (mapping long lists) inside `withContext(Dispatchers.Default)` |
 | Location | `core/domain/.../<domain>/`, test in `core/domain/src/test/` |
+| Rules | Pure functions on the model (`WorkoutRecord.paused(now)`, `WorkoutTrackingState.nextTrackPoint(...)`). UseCases and Repositories only connect and save (functional core, imperative shell) |
 
 ```kotlin
 // 레포지토리 2개 조합 (예시)
@@ -41,3 +42,4 @@ class ProfileEditViewModel @Inject constructor(
 | UseCase that only calls one Repository method | Call the Repository from the ViewModel |
 | `object NicknamePolicy`, `Util` / `Helper` class | `class` UseCase named by its action |
 | Return UI types (`RouteeTextFieldValidation`) | Return domain values, map in the ViewModel |
+| Rule logic in a UseCase or Repository body | A function on the model, called from there |
