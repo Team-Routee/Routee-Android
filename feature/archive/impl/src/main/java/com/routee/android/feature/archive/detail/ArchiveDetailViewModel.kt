@@ -32,6 +32,14 @@ internal class ArchiveDetailViewModel @AssistedInject constructor(
         onRetryClick()
     }
 
+    fun onTitleEditingChange(editing: Boolean) {
+        _uiState.update { it.copy(isTitleEditing = editing) }
+    }
+
+    fun onDeleteDialogChange(visible: Boolean) {
+        _uiState.update { it.copy(isDeleteDialogVisible = visible) }
+    }
+
     fun onRetryClick() {
         loadJob?.cancel()
         _uiState.update { it.copy(record = UiState.Loading) }

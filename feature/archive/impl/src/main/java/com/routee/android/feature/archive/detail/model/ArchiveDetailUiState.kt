@@ -11,6 +11,8 @@ import kotlinx.collections.immutable.persistentListOf
 @Immutable
 internal data class ArchiveDetailUiState(
     val record: UiState<ArchiveDetailRecord> = UiState.Loading,
+    val isTitleEditing: Boolean = false,
+    val isDeleteDialogVisible: Boolean = false,
 )
 
 @Immutable
