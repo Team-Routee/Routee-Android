@@ -38,6 +38,7 @@ import com.routee.android.core.designsystem.component.RouteeCheckbox
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -63,10 +64,22 @@ internal fun WithdrawRoute(
     val uriHandler = LocalUriHandler.current
     val messageState = LocalRouteeMessageState.current
     val linkErrorText = stringResource(R.string.setting_main_link_error)
+    val networkErrorText = stringResource(R.string.setting_network_error_toast)
+    val unknownErrorText = stringResource(R.string.setting_unknown_error_toast)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             WithdrawSideEffect.NavigateToLogin -> onWithdrawn()
+
+            WithdrawSideEffect.ShowNetworkErrorToast -> messageState.showToast(
+                text = networkErrorText,
+                duration = RouteeMessageDuration.SHORT,
+            )
+
+            WithdrawSideEffect.ShowUnknownErrorToast -> messageState.showToast(
+                text = unknownErrorText,
+                duration = RouteeMessageDuration.LONG,
+            )
         }
     }
 
