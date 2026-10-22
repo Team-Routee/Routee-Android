@@ -24,6 +24,7 @@ import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageHeader
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -54,12 +55,18 @@ internal fun SettingRoute(
     val uriHandler = LocalUriHandler.current
     val messageState = LocalRouteeMessageState.current
     val linkErrorText = stringResource(R.string.setting_main_link_error)
+    val unknownErrorText = stringResource(R.string.setting_unknown_error_toast)
     val context = LocalContext.current
     val appVersion = remember(context) { context.appVersionName }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             SettingSideEffect.NavigateToLogin -> onLogout()
+
+            SettingSideEffect.ShowUnknownErrorToast -> messageState.showToast(
+                text = unknownErrorText,
+                duration = RouteeMessageDuration.LONG,
+            )
         }
     }
 
