@@ -4,12 +4,21 @@ import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.feature.onboarding.MainDispatcherRule
 import com.routee.android.feature.onboarding.api.LoginNavKey
+import com.routee.android.feature.onboarding.login.model.LoginSideEffect
+import java.io.IOException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 
 class LoginViewModelTest {
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     /**
      * GIVEN: 토큰 재발급까지 실패해 로그인으로 왔을 때
@@ -47,6 +56,49 @@ class LoginViewModelTest {
         val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
 
         assertFalse(viewModel.uiState.value.isSessionExpiredDialogVisible)
+    }
+
+    /**
+     * GIVEN: 기기가 오프라인이라 구글 로그인 단계에서 실패했을 때
+     * WHEN: 결과를 받으면
+     * THEN: 네트워크 연결 확인 토스트를 띄운다
+     */
+    @Test
+    fun `오프라인이라 구글 로그인에 실패하면 네트워크 토스트를 띄운다`() = runTest {
+        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+
+        viewModel.onIdTokenResult(Result.failure(GoogleLoginException.NetworkUnavailable(IOException())))
+
+        assertEquals(LoginSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+    }
+
+    /**
+     * GIVEN: 구글 로그인 단계에서 네트워크가 아닌 이유로 실패했을 때
+     * WHEN: 결과를 받으면
+     * THEN: 일시적인 오류 토스트를 띄운다
+     */
+    @Test
+    fun `구글 로그인이 그 밖의 이유로 실패하면 일시적인 오류 토스트를 띄운다`() = runTest {
+        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+
+        viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Failed()))
+
+        assertEquals(LoginSideEffect.ShowUnknownErrorToast, viewModel.sideEffect.first())
+    }
+
+    /**
+     * GIVEN: 사용자가 구글 로그인 창을 닫았을 때
+     * WHEN: 결과를 받으면
+     * THEN: 아무 안내도 띄우지 않는다
+     */
+    @Test
+    fun `사용자가 구글 로그인을 닫으면 토스트를 띄우지 않는다`() = runTest {
+        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+
+        viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Cancelled(IOException())))
+        viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Failed()))
+
+        assertEquals(LoginSideEffect.ShowUnknownErrorToast, viewModel.sideEffect.first())
     }
 
     private class FakeAuthRepository : AuthRepository {
