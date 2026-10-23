@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
@@ -42,6 +43,7 @@ import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.workout.R
+import com.routee.android.feature.workout.api.WorkoutStart
 import com.routee.android.feature.workout.component.main.LocationChip
 import com.routee.android.feature.workout.component.main.MyLocationButton
 import com.routee.android.feature.workout.component.main.WorkoutTopGradient
@@ -51,15 +53,18 @@ import com.routee.android.feature.workout.main.model.WorkoutMainUiState
 
 @Composable
 internal fun WorkoutMainRoute(
-    onRecordClick: () -> Unit,
+    onNavigateToRecording: (WorkoutStart?) -> Unit,
     viewModel: WorkoutMainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val messageState = LocalRouteeMessageState.current
+    val startErrorText = stringResource(R.string.workout_main_start_error_toast)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
-            WorkoutMainSideEffect.NavigateToRecording -> onRecordClick()
+            is WorkoutMainSideEffect.NavigateToRecording -> onNavigateToRecording(sideEffect.start)
+            WorkoutMainSideEffect.StartFailed -> messageState.showToast(text = startErrorText)
         }
     }
 
@@ -72,7 +77,7 @@ internal fun WorkoutMainRoute(
         if (permission != LocationPermission.GRANTED) {
             viewModel.showLocationPermissionDialog()
         } else if (isRecordRequested) {
-            onRecordClick()
+            viewModel.onRecordStart()
         }
         isRecordRequested = false
     }
@@ -92,7 +97,7 @@ internal fun WorkoutMainRoute(
         },
         onRecordClick = {
             if (isLocationGranted) {
-                onRecordClick()
+                viewModel.onRecordStart()
             } else {
                 isRecordRequested = true
                 locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
@@ -195,6 +200,7 @@ private fun WorkoutMainScreen(
             RouteeCtaPrimaryButton(
                 text = stringResource(R.string.workout_main_record),
                 onClick = onRecordClick,
+                enabled = !uiState.isStarting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .routeeMessageAnchor()

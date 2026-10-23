@@ -5,16 +5,16 @@ import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.FakeLocationRepository
-import com.routee.android.feature.workout.FakeWorkoutRemoteRepository
 import com.routee.android.feature.workout.FakeWorkoutTrackingRepository
 import com.routee.android.feature.workout.MainDispatcherRule
 import com.routee.android.feature.workout.START
 import com.routee.android.feature.workout.TestClock
+import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
+import com.routee.android.feature.workout.api.WorkoutStart
 import com.routee.android.feature.workout.record
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.trackPoint
-import java.io.IOException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -31,38 +31,34 @@ class WorkoutRecordingViewModelTest {
     private val clock = TestClock()
 
     /**
-     * GIVEN: 시작 API가 성공할 때
+     * GIVEN: 운동 메인에서 시작 API가 성공해 들어왔을 때
      * WHEN: 카운트다운이 끝나면
-     * THEN: 서버가 준 id로 기기 기록을 시작하고 기록 중으로 바뀌며 위치 기록 서비스를 켠다
+     * THEN: 받은 id와 누른 시각으로 기기 기록을 시작하고 기록 중으로 바뀌며 위치 기록 서비스를 켠다
      */
     @Test
     fun `카운트다운이 끝나면 기록을 시작하고 서비스를 켠다`() = runTest {
         val tracking = FakeWorkoutTrackingRepository()
-        val viewModel = viewModel(tracking)
+        val viewModel = viewModel(tracking, WorkoutRecordingNavKey(START_INFO))
 
         viewModel.onCountdownFinish()
 
-        assertEquals(1L, tracking.startedRecord?.activityId)
+        assertEquals(7L, tracking.startedRecord?.activityId)
+        assertEquals(START, tracking.startedRecord?.startedAt)
         assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
         assertEquals(WorkoutRecordingSideEffect.StartTrackingService, viewModel.sideEffect.first())
         viewModel.close()
     }
 
     /**
-     * GIVEN: 시작 API가 실패할 때
-     * WHEN: 카운트다운이 끝나면
-     * THEN: 기기 기록을 시작하지 않고 시작 실패를 알린다
+     * GIVEN: 시작 정보도 진행 중인 기록도 없을 때
+     * WHEN: 화면에 들어오면
+     * THEN: 운동 메인으로 돌아간다
      */
     @Test
-    fun `시작 API가 실패하면 기록을 시작하지 않는다`() = runTest {
-        val tracking = FakeWorkoutTrackingRepository()
-        val viewModel = viewModel(tracking, FakeWorkoutRemoteRepository(createError = IOException()))
+    fun `시작할 기록이 없으면 운동 메인으로 돌아간다`() = runTest {
+        val viewModel = viewModel(FakeWorkoutTrackingRepository())
 
-        viewModel.onCountdownFinish()
-
-        assertNull(tracking.startedRecord)
-        assertEquals(WorkoutMode.COUNTDOWN, viewModel.uiState.value.mode)
-        assertEquals(WorkoutRecordingSideEffect.StartFailed, viewModel.sideEffect.first())
+        assertEquals(WorkoutRecordingSideEffect.NavigateBack, viewModel.sideEffect.first())
         viewModel.close()
     }
 
@@ -88,7 +84,7 @@ class WorkoutRecordingViewModelTest {
     @Test
     fun `기기에 저장된 기록이 있으면 먼저 불러와 이어간다`() = runTest {
         val tracking = FakeWorkoutTrackingRepository(savedRecord = record())
-        val viewModel = viewModel(tracking)
+        val viewModel = viewModel(tracking, WorkoutRecordingNavKey(START_INFO))
 
         viewModel.onCountdownFinish()
 
@@ -140,6 +136,11 @@ class WorkoutRecordingViewModelTest {
 
     private fun viewModel(
         tracking: FakeWorkoutTrackingRepository,
-        remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
-    ) = WorkoutRecordingViewModel(tracking, remote, FakeLocationRepository(), clock)
+        key: WorkoutRecordingNavKey = WorkoutRecordingNavKey(),
+    ) = WorkoutRecordingViewModel(key, tracking, FakeLocationRepository(), clock)
+
+    private companion object {
+        val START_INFO =
+            WorkoutStart(activityId = 7, title = "2026.10.23 기록", startedAtEpochMillis = START.toEpochMilli())
+    }
 }

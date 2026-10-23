@@ -8,22 +8,24 @@ import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
-import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.core.navigation.util.NavKeyViewModelFactory
+import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMode
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
-import javax.inject.Inject
+import java.time.Instant
 import kotlin.math.roundToInt
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,10 +40,10 @@ import timber.log.Timber
 
 private const val DURATION_TICK_MILLIS = 1_000L
 
-@HiltViewModel
-internal class WorkoutRecordingViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = WorkoutRecordingViewModel.Factory::class)
+internal class WorkoutRecordingViewModel @AssistedInject constructor(
+    @Assisted private val key: WorkoutRecordingNavKey,
     private val trackingRepository: WorkoutTrackingRepository,
-    private val remoteRepository: WorkoutRemoteRepository,
     locationRepository: LocationRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -54,9 +56,8 @@ internal class WorkoutRecordingViewModel @Inject constructor(
 
     val myLocation: Flow<Location> = locationRepository.observeLocations().map { it.toLocation() }
 
-    private val startedAt = clock.instant()
-    private var startedWorkout: Deferred<Result<StartedWorkout>>? = null
     private var preparing: Job? = null
+    private var isStartRequested = false
 
     init {
         prepareRecording()
@@ -64,24 +65,25 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         updateDurationEverySecond()
     }
 
-    /** 카운트다운이 끝나면 시작 API 결과를 기다려 기록 시작, 실패하면 홈으로 */
+    /** 카운트다운이 끝나면 기기 기록 시작, 실패하면 운동 메인으로 */
     fun onCountdownFinish() {
+        if (isStartRequested) return
+        isStartRequested = true
         viewModelScope.launch {
             preparing?.join()
-            val pending = startedWorkout ?: return@launch
-            startedWorkout = null
-            pending.await()
-                .mapCatching { workout ->
-                    trackingRepository.start(workout, WorkoutType.HIKING, startedAt).getOrThrow()
-                }
-                .onSuccess {
-                    _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
-                    _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
-                }
-                .onFailure {
-                    Timber.e(it, "운동 기록 시작 실패")
-                    _sideEffect.send(WorkoutRecordingSideEffect.StartFailed)
-                }
+            val start = key.start ?: return@launch
+            if (trackingRepository.state.value.record?.isTracking == true) return@launch
+            trackingRepository.start(
+                workout = StartedWorkout(activityId = start.activityId, title = start.title),
+                type = WorkoutType.HIKING,
+                startedAt = Instant.ofEpochMilli(start.startedAtEpochMillis),
+            ).onSuccess {
+                _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
+                _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
+            }.onFailure {
+                Timber.e(it, "운동 기록 시작 실패")
+                _sideEffect.send(WorkoutRecordingSideEffect.NavigateBack)
+            }
         }
     }
 
@@ -106,17 +108,16 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         preparing = viewModelScope.launch {
             trackingRepository.restore().onFailure { Timber.e(it, "운동 기록 복원 실패") }
             val record = trackingRepository.state.value.record
-            if (record?.isTracking == true) continueRecording(record) else createWorkout()
+            when {
+                record?.isTracking == true -> continueRecording(record)
+                key.start == null -> _sideEffect.send(WorkoutRecordingSideEffect.NavigateBack)
+            }
         }
     }
 
     private fun continueRecording(record: WorkoutRecord) {
         _uiState.update { it.copy(mode = record.status.toMode() ?: it.mode) }
         _sideEffect.trySend(WorkoutRecordingSideEffect.StartTrackingService)
-    }
-
-    private fun createWorkout() {
-        startedWorkout = viewModelScope.async { remoteRepository.createWorkout(WorkoutType.HIKING, startedAt) }
     }
 
     private fun observeTracking() {
@@ -149,4 +150,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         val record = trackingRepository.state.value.record ?: return
         _uiState.update { it.copy(durationSec = record.durationSecondsAt(clock.instant())) }
     }
+
+    @AssistedFactory
+    interface Factory : NavKeyViewModelFactory<WorkoutRecordingNavKey, WorkoutRecordingViewModel>
 }

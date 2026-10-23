@@ -7,6 +7,7 @@ internal data class WorkoutMainUiState(
     val locationPermission: LocationPermission = LocationPermission.GRANTED,
     val isLocationPermissionDialogVisible: Boolean = false,
     val address: String = "",
+    val isStarting: Boolean = false,
 )
 
 internal enum class LocationPermission {
