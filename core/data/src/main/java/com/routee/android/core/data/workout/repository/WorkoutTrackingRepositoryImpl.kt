@@ -59,6 +59,18 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun finish(): Result<Unit> = mutex.withLock {
+        val record = _state.value.record ?: return@withLock Result.failure(IllegalStateException(NO_RECORD))
+        val finished = record.finished(clock.instant())
+        if (finished == record) return@withLock Result.success(Unit)
+        recordRepository.saveRecord(finished).onSuccess { _state.value = _state.value.copy(record = finished) }
+    }
+
+    override suspend fun clear(): Result<Unit> = mutex.withLock {
+        val record = _state.value.record ?: return@withLock Result.success(Unit)
+        recordRepository.deleteRecord(record.activityId).onSuccess { _state.value = WorkoutTrackingState() }
+    }
+
     private suspend fun updateStatus(transform: (WorkoutRecord) -> WorkoutRecord): Result<Unit> {
         val changed = mutex.withLock {
             val record = _state.value.record ?: return Result.failure(IllegalStateException(NO_RECORD))

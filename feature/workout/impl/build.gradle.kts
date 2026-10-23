@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(projects.feature.workout.api)
+    implementation(projects.feature.timeline.api)
     implementation(projects.core.domain)
     implementation(projects.core.map)
 

@@ -3,8 +3,10 @@ package com.routee.android.core.data.workout.model
 import com.routee.android.core.data.location.model.DeviceLocation
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WorkoutTrackingStateTest {
@@ -104,6 +106,54 @@ class WorkoutTrackingStateTest {
 
         assertNull(paused.nextTrackPoint(location(seconds = 2), NOW))
         assertSame(paused, paused.withTrackPoint(next))
+    }
+
+    /**
+     * GIVEN: 경로 좌표 2개, 운동 시간 1분인 종료 기록일 때
+     * WHEN: 저장할 수 있는지 보면
+     * THEN: 저장할 수 있다
+     */
+    @Test
+    fun `좌표 2개 이상이고 1초 이상이면 저장할 수 있다`() {
+        assertTrue(finished(points = 2, durationMillis = 60_000).isSavable)
+    }
+
+    /**
+     * GIVEN: 경로 좌표가 1개뿐이거나 운동 시간이 1초 미만인 종료 기록일 때
+     * WHEN: 저장할 수 있는지 보면
+     * THEN: 저장할 수 없다
+     */
+    @Test
+    fun `좌표가 부족하거나 1초 미만이면 저장할 수 없다`() {
+        assertFalse(finished(points = 1, durationMillis = 60_000).isSavable)
+        assertFalse(finished(points = 2, durationMillis = 800).isSavable)
+    }
+
+    /**
+     * GIVEN: 아직 기록 중일 때
+     * WHEN: 종료 기록을 꺼내면
+     * THEN: 없다
+     */
+    @Test
+    fun `기록 중이면 종료 기록이 없다`() {
+        assertNull(state().finishedRecord)
+        assertFalse(state().isSavable)
+    }
+
+    private fun finished(
+        points: Int,
+        durationMillis: Long,
+    ): WorkoutTrackingState {
+        val record = state().record!!.copy(
+            status = WorkoutStatus.PENDING_UPLOAD,
+            durationMillis = durationMillis,
+            resumedAt = null,
+            endedAt = NOW,
+        )
+        val trackPoints = (1..points).map { index ->
+            TrackPoint(pointIndex = index, latitude = 37.0, longitude = 127.0, elevation = 100.0, recordedAt = NOW)
+        }
+        return WorkoutTrackingState(record = record, trackPoints = trackPoints)
     }
 
     private fun state() = WorkoutTrackingState(

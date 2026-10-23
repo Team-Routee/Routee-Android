@@ -7,5 +7,7 @@ internal sealed interface WorkoutRecordingSideEffect {
 
     data object ShowRestoreFailed : WorkoutRecordingSideEffect
 
-    data object NavigateToTimeline : WorkoutRecordingSideEffect
+    data class NavigateToTimeline(val summary: WorkoutSummary) : WorkoutRecordingSideEffect
+
+    data object NavigateToHome : WorkoutRecordingSideEffect
 }

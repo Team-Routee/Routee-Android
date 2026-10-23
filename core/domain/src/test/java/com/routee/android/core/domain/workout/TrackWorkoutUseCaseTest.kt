@@ -171,6 +171,10 @@ class TrackWorkoutUseCaseTest {
             return Result.success(Unit)
         }
 
+        override suspend fun finish(): Result<Unit> = Result.success(Unit)
+
+        override suspend fun clear(): Result<Unit> = Result.success(Unit)
+
         private fun record() = WorkoutRecord(
             activityId = 1,
             title = "2026.10.22 기록",

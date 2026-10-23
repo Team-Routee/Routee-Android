@@ -1,6 +1,8 @@
 package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.data.workout.model.StartedWorkout
+import com.routee.android.core.data.workout.model.TrackPoint
+import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutType
 import java.time.Instant
@@ -22,4 +24,10 @@ internal class FakeWorkoutRemoteRepository(
         updatedStatuses += activityId to status
         return updateStatusError?.let { Result.failure(it) } ?: Result.success(Unit)
     }
+
+    override suspend fun completeWorkout(
+        record: WorkoutRecord,
+        trackPoints: List<TrackPoint>,
+        mapImageObjectKey: String,
+    ): Result<Unit> = Result.success(Unit)
 }

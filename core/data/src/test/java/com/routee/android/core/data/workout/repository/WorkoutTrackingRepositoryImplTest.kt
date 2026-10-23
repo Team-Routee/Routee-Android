@@ -214,6 +214,38 @@ class WorkoutTrackingRepositoryImplTest {
         assertEquals(0.0, requireNotNull(repository.state.value.record).distanceMeters, 0.0)
     }
 
+    /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 종료하면
+     * THEN: 기기에 업로드 대기로 저장되고 더 이상 기록 중이 아니다
+     */
+    @Test
+    fun `종료하면 기기에 업로드 대기로 저장한다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        clock.now = START.plusSeconds(30)
+
+        repository.finish()
+
+        assertEquals(WorkoutStatus.PENDING_UPLOAD, recordRepository.getRecord().getOrThrow()?.status)
+        assertEquals(false, repository.state.value.record?.isTracking)
+    }
+
+    /**
+     * GIVEN: 종료한 기록이 있을 때
+     * WHEN: 지우면
+     * THEN: 기기 기록과 상태가 비워진다
+     */
+    @Test
+    fun `기록을 지우면 기기 기록과 상태를 비운다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        repository.finish()
+
+        repository.clear()
+
+        assertNull(recordRepository.getRecord().getOrThrow())
+        assertNull(repository.state.value.record)
+    }
+
     private fun record() = WorkoutRecord(
         activityId = ACTIVITY_ID,
         title = "2026.10.22 기록",

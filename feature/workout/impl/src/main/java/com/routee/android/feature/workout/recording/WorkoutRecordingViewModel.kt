@@ -10,17 +10,23 @@ import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
+import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
+import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
+import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
+import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMode
+import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Clock
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -42,6 +48,7 @@ private const val DURATION_TICK_MILLIS = 1_000L
 internal class WorkoutRecordingViewModel @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val remoteRepository: WorkoutRemoteRepository,
+    private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
     locationRepository: LocationRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -57,6 +64,8 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val startedAt = clock.instant()
     private var startedWorkout: Deferred<Result<StartedWorkout>>? = null
     private var preparing: Job? = null
+    private var summary: WorkoutSummary? = null
+    private val saveResult = CompletableDeferred<WorkoutSaveResult>()
 
     init {
         prepareRecording()
@@ -91,13 +100,55 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { trackingRepository.resume().onFailure { Timber.e(it, "다시 시작 실패") } }
     }
 
-    // TODO 기록 종료 (PENDING_UPLOAD 저장, 지도 캡처, 완료 API)
+    /** 종료, 마무리 애니메이션과 함께 기록을 업로드 대기로 바꾸고 지도 캡처 요청 */
     fun onEndLongPress() {
+        if (_uiState.value.mode == WorkoutMode.FINISHING) return
         _uiState.update { it.copy(mode = WorkoutMode.FINISHING) }
+        viewModelScope.launch { finishWorkout() }
     }
 
+    /** 지도 캡처를 받아 저장, 캡처 실패면 null. 화면이 다시 만들어져 또 오면 무시 */
+    fun onMapCaptured(jpeg: ByteArray?) {
+        if (_uiState.value.captureRoute == null) return
+        _uiState.update { it.copy(captureRoute = null) }
+        viewModelScope.launch { saveResult.complete(saveFinishedWorkout(jpeg)) }
+    }
+
+    /** 마무리 애니메이션이 끝나면 저장 결과를 기다려 타임라인 이동, 실패면 기록 등록 실패 모달 */
     fun onFinishAnimationEnd() {
-        viewModelScope.launch { _sideEffect.send(WorkoutRecordingSideEffect.NavigateToTimeline) }
+        viewModelScope.launch {
+            val result = saveResult.await()
+            val summary = summary
+            when {
+                result == WorkoutSaveResult.Saved && summary != null ->
+                    _sideEffect.send(WorkoutRecordingSideEffect.NavigateToTimeline(summary))
+
+                result == WorkoutSaveResult.InvalidRoute ->
+                    _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.INVALID_ROUTE) }
+
+                else -> {
+                    Timber.w("운동 저장 실패, 기기 기록은 업로드 대기로 남음")
+                    _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.NETWORK) }
+                }
+            }
+        }
+    }
+
+    fun onSaveFailureDialogConfirm() {
+        _uiState.update { it.copy(saveFailure = null) }
+        viewModelScope.launch { _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome) }
+    }
+
+    private suspend fun finishWorkout() {
+        trackingRepository.finish().onFailure {
+            Timber.e(it, "운동 종료 실패")
+            saveResult.complete(WorkoutSaveResult.Failed)
+            return
+        }
+        val state = trackingRepository.state.value
+        summary = state.record?.toSummary()
+        val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList()
+        _uiState.update { it.copy(captureRoute = route) }
     }
 
     private fun prepareRecording() {

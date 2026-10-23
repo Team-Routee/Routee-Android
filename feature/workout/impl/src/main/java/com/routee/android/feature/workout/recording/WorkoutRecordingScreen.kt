@@ -1,5 +1,6 @@
 package com.routee.android.feature.workout.recording
 
+import android.graphics.Bitmap
 import android.location.Location
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
@@ -29,16 +30,20 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
+import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.map.RouteeMapState
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.map.model.MapPoint
 import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
@@ -48,17 +53,30 @@ import com.routee.android.feature.workout.component.recording.WorkoutRecordingCo
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
+import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
+import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.tracking.WorkoutTrackingService
+import java.io.ByteArrayOutputStream
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
 
 private const val COUNTDOWN_FADE_OUT_MILLIS = 300
 private const val FINISH_ANIMATION_SPEED = 1.5f
+private const val MAP_CAPTURE_TIMEOUT_MILLIS = 10_000L
+private const val MAP_CAPTURE_JPEG_QUALITY = 80
+private val MAP_CAPTURE_PADDING = 48.dp
 
 @Composable
 internal fun WorkoutRecordingRoute(
     onStartFail: () -> Unit,
-    onFinish: () -> Unit,
+    onNavigateToTimeline: (WorkoutSummary) -> Unit,
+    onNavigateToHome: () -> Unit,
     viewModel: WorkoutRecordingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,6 +85,7 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
+    val mapState = rememberRouteeMapState()
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -79,14 +98,21 @@ internal fun WorkoutRecordingRoute(
 
             WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
 
-            WorkoutRecordingSideEffect.NavigateToTimeline -> onFinish()
+            is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
+
+            WorkoutRecordingSideEffect.NavigateToHome -> onNavigateToHome()
         }
     }
 
     RecordingBackHandler(mode = uiState.mode)
 
+    uiState.captureRoute?.let { route ->
+        LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureJpeg(route)) }
+    }
+
     WorkoutRecordingScreen(
         uiState = uiState,
+        mapState = mapState,
         myLocation = viewModel.myLocation,
         onStopClick = viewModel::onStopClick,
         // TODO 카메라 권한 확인 후 촬영
@@ -97,11 +123,51 @@ internal fun WorkoutRecordingRoute(
         onEndLongPress = viewModel::onEndLongPress,
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
+
+    uiState.saveFailure?.let { failure ->
+        RouteeOneButtonDialog(
+            title = stringResource(R.string.workout_recording_save_failure_title),
+            description = stringResource(
+                when (failure) {
+                    WorkoutSaveFailure.NETWORK -> R.string.workout_recording_save_failure_network_description
+
+                    WorkoutSaveFailure.INVALID_ROUTE ->
+                        R.string.workout_recording_save_failure_invalid_route_description
+                },
+            ),
+            buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
+            onButtonClick = viewModel::onSaveFailureDialogConfirm,
+            onDismissRequest = viewModel::onSaveFailureDialogConfirm,
+        )
+    }
+}
+
+// 경로 전체를 담은 지도 캡처 JPEG, 실패하면 null
+private suspend fun RouteeMapState.captureJpeg(route: List<MapPoint>): ByteArray? = try {
+    withTimeoutOrNull(MAP_CAPTURE_TIMEOUT_MILLIS) {
+        val bitmap = captureRoute(route, padding = MAP_CAPTURE_PADDING)
+        try {
+            withContext(Dispatchers.Default) {
+                ByteArrayOutputStream().use { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, MAP_CAPTURE_JPEG_QUALITY, output))
+                    output.toByteArray()
+                }
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    Timber.e(e, "지도 캡처 실패")
+    null
 }
 
 @Composable
 private fun WorkoutRecordingScreen(
     uiState: WorkoutRecordingUiState,
+    mapState: RouteeMapState,
     myLocation: Flow<Location>?,
     onStopClick: () -> Unit,
     onCameraClick: () -> Unit,
@@ -112,7 +178,6 @@ private fun WorkoutRecordingScreen(
     onFinishAnimationEnd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val mapState = rememberRouteeMapState()
     val scope = rememberCoroutineScope()
     LaunchedEffect(mapState) { mapState.followMyLocation() }
 
@@ -120,9 +185,8 @@ private fun WorkoutRecordingScreen(
     RouteeNaverMap(
         modifier = modifier.fillMaxSize(),
         state = mapState,
-        myLocation = myLocation,
-        myLocationIcon = DesignSystemR.drawable.ic_my_location_md,
-        route = uiState.route,
+        myLocation = if (uiState.isMapOverlayVisible) myLocation else null,
+        route = if (uiState.isMapOverlayVisible) uiState.route else persistentListOf(),
     ) {
         AnimatedContent(
             targetState = uiState.mode,
@@ -218,6 +282,7 @@ private fun RecordingBackHandler(mode: WorkoutMode) {
 private fun WorkoutRecordingScreenPreview() {
     RouteePreviewTheme {
         WorkoutRecordingScreen(
+            mapState = rememberRouteeMapState(),
             uiState = WorkoutRecordingUiState(
                 distanceMeters = 15_530,
                 durationSec = 12_000,

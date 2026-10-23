@@ -34,4 +34,10 @@ interface WorkoutTrackingRepository {
 
     /** 진행 중인 기록이 없으면 기기에 저장된 기록을 이어감, 꺼져 있던 시간은 뺌 */
     suspend fun restore(): Result<Unit>
+
+    /** 종료, 기기 기록을 업로드 대기로 바꿈. 이후 위치 기록 서비스가 멈춤 */
+    suspend fun finish(): Result<Unit>
+
+    /** 저장을 마쳤거나 저장할 수 없는 기록 삭제, 상태 비움 */
+    suspend fun clear(): Result<Unit>
 }

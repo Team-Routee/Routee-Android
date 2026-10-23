@@ -24,6 +24,12 @@ internal fun WorkoutStatus.toMode(): WorkoutMode? = when (this) {
     WorkoutStatus.PENDING_UPLOAD -> null
 }
 
+// 기록 등록 실패 모달 종류
+internal enum class WorkoutSaveFailure {
+    NETWORK,
+    INVALID_ROUTE,
+}
+
 @Immutable
 internal data class WorkoutRecordingUiState(
     val mode: WorkoutMode = WorkoutMode.COUNTDOWN,
@@ -32,6 +38,12 @@ internal data class WorkoutRecordingUiState(
     val maxElevationMeters: Int = 0,
     val route: ImmutableList<MapPoint> = persistentListOf(),
     val photoCount: Int = 0,
+    val saveFailure: WorkoutSaveFailure? = null,
+    // 종료 지도 캡처 요청, 캡처를 받으면 null. 화면이 다시 만들어져도 남아서 다시 캡처
+    val captureRoute: ImmutableList<MapPoint>? = null,
 ) {
     val isCameraEnabled: Boolean get() = photoCount < MAX_PHOTO_COUNT
+
+    // 종료 캡처에는 경로선, 내 위치를 넣지 않음
+    val isMapOverlayVisible: Boolean get() = mode != WorkoutMode.FINISHING
 }
