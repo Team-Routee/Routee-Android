@@ -14,6 +14,6 @@ fun EntryProviderScope<NavKey>.workoutEntries(navigator: RouteeNavigator) {
     }
     entry<WorkoutRecordingNavKey> {
         // TODO 운동 타임라인으로 이동
-        WorkoutRecordingRoute(onFinish = navigator::navigateToHome)
+        WorkoutRecordingRoute(onStartFail = navigator::navigateBack, onFinish = navigator::navigateToHome)
     }
 }
