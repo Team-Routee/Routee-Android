@@ -90,7 +90,7 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    /** 시스템 권한 팝업 결과. 기록에서 요청해 허용하면 기록 화면으로, 탭해서 요청했는데 거부하면 안내 모달 */
+    /** 시스템 권한 팝업 결과. 기록에서 요청해 허용하면 기록 화면으로, 탭해서 요청했는데 거부하거나 대략적인 위치면 안내 모달 */
     fun onLocationPermissionResult(permission: LocationPermission) {
         val request = permissionRequest
         permissionRequest = PermissionRequest.NONE
@@ -101,6 +101,9 @@ internal class WorkoutMainViewModel @Inject constructor(
             request == PermissionRequest.RECORD || request == PermissionRequest.MY_LOCATION -> {
                 showLocationPermissionDialog()
             }
+
+            // 첫 진입이라도 대략적인 위치면 바로 안내
+            permission == LocationPermission.APPROXIMATE -> showLocationPermissionDialog()
         }
     }
 

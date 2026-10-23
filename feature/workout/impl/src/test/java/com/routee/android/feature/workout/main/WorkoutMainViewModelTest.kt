@@ -161,6 +161,22 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
+     * WHEN: 대략적인 위치만 허용하면
+     * THEN: 정확한 위치 안내 모달을 바로 띄운다
+     */
+    @Test
+    fun `첫 진입 요청에서 대략적인 위치만 허용하면 안내 모달을 띄운다`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
+        viewModel.sideEffect.first()
+
+        viewModel.onLocationPermissionResult(LocationPermission.APPROXIMATE)
+
+        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+    }
+
+    /**
      * GIVEN: 권한이 있을 때
      * WHEN: 운동 기록을 누르면
      * THEN: 팝업 없이 기록 화면으로 보낸다
