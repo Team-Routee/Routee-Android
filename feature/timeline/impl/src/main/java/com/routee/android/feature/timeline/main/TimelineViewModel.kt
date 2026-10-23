@@ -1,18 +1,12 @@
 package com.routee.android.feature.timeline.main
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import com.routee.android.core.data.photo.GalleryImageStore
-import com.routee.android.core.data.timeline.model.TimelineCompletion
-import com.routee.android.core.data.timeline.model.TimelinePhotoStatus
-import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
-import com.routee.android.core.data.timeline.model.TimelineTrackPoint
-import com.routee.android.core.data.timeline.repository.TimelineCompletionRepository
-import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
-import com.routee.android.core.data.timeline.repository.TimelinePhotoRepository
+import com.routee.android.core.data.recap.repository.RecapRepository
+import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.component.RoutePoint
@@ -23,7 +17,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,9 +29,8 @@ private const val MAX_ROUTE_POINT_COUNT = 20
 internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
     private val galleryImageStore: GalleryImageStore,
-    private val mapImageRepository: TimelineMapImageRepository,
-    private val completionRepository: TimelineCompletionRepository,
-    private val photoRepository: TimelinePhotoRepository,
+    private val workoutRemoteRepository: WorkoutRemoteRepository,
+    private val recapRepository: RecapRepository,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -60,7 +52,6 @@ internal class TimelineViewModel @AssistedInject constructor(
     val uiState = _uiState.asStateFlow()
 
     private var nextPointId = (points.maxOfOrNull(RoutePoint::id) ?: -1L) + 1L
-    private var uploadedMapKey: String? = null
 
     suspend fun savePhoto(imageUrl: String, capturedAtEpochMillis: Long): Result<Unit> =
         galleryImageStore.save(imageUrl, capturedAtEpochMillis).onFailure { Timber.e(it) }
@@ -89,58 +80,21 @@ internal class TimelineViewModel @AssistedInject constructor(
     }
 
     fun draft(defaultTitle: String) = TimelineDraft(
-        title = titleState.text.toString().trim().ifEmpty { defaultTitle },
+        title = titleState.text.toString().trim().takeIf { it.isNotEmpty() && it != defaultTitle },
         routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
     )
 
-    suspend fun save(draft: TimelineDraft, bitmap: Bitmap): TimelineSaveResult {
-        if (key.routePoints.size < 2) return TimelineSaveResult.InvalidRoute
-        if (key.photos.size != key.photoUploads.size || key.durationSeconds <= 0 || key.distanceMeters < 0) {
-            return TimelineSaveResult.Failed
+    suspend fun save(draft: TimelineDraft): TimelineSaveResult {
+        if (draft.routePoints.isNotEmpty()) {
+            workoutRemoteRepository.updateRoutes(activityId, draft.routePoints)
+                .onFailure { Timber.e(it, "루트 저장 실패") }
+                .getOrElse { return TimelineSaveResult.Failed }
         }
-
-        val photoResults = photoRepository.uploadPhotos(
-            key.activityId,
-            key.photoUploads.map { photo ->
-                TimelinePhotoUpload(
-                    clientId = photo.clientId,
-                    file = File(photo.filePath),
-                    capturedAtEpochMillis = photo.capturedAtEpochMillis,
-                    title = photo.title.orEmpty(),
-                    trackPointIndex = photo.trackPointIndex,
-                    longitude = photo.longitude,
-                    latitude = photo.latitude,
-                    elevation = photo.elevation,
-                    pointIndex = photo.pointIndex,
-                    status = if (photo.creationInProgress) {
-                        TimelinePhotoStatus.CREATION_IN_PROGRESS
-                    } else {
-                        TimelinePhotoStatus.SUCCESSFUL_CREATED
-                    },
-                )
-            },
-        )
-        if (photoResults.any { it.result.isFailure }) return TimelineSaveResult.Failed
-
-        val mapKey = uploadedMapKey ?: mapImageRepository.uploadMapImage(key.activityId, bitmap)
-            .getOrElse { return TimelineSaveResult.Failed }
-            .also { uploadedMapKey = it }
-        val completion = TimelineCompletion(
-            activityId = key.activityId,
-            title = draft.title,
-            distanceMeters = key.distanceMeters,
-            durationSeconds = key.durationSeconds,
-            maxElevationMeters = key.maxElevationMeters,
-            endedAtEpochMillis = key.endedAtEpochMillis,
-            track = key.routePoints.map { point ->
-                TimelineTrackPoint(point.latitude, point.longitude, point.elevation, point.pointIndex)
-            },
-            routeNames = draft.routePoints,
-        )
-        if (completionRepository.complete(completion, mapKey).isFailure) return TimelineSaveResult.Failed
-
-        photoRepository.clearUploadState(key.activityId)
-        uploadedMapKey = null
+        draft.title?.let { title ->
+            recapRepository.updateRecapTitle(activityId, title)
+                .onFailure { Timber.e(it, "제목 수정 실패") }
+                .getOrElse { return TimelineSaveResult.Failed }
+        }
         return TimelineSaveResult.Success
     }
 
