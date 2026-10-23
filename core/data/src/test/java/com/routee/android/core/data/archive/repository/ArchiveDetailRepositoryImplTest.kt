@@ -22,6 +22,26 @@ import org.junit.Test
 
 class ArchiveDetailRepositoryImplTest {
     @Test
+    fun deleteUsesActivityIdAndCommonNetworkFailure() = runTest {
+        val service = FakeService()
+        assertTrue(repository(service).deleteActivity(42).isSuccess)
+        service.deleteError = IOException()
+        assertTrue(repository(service).deleteActivity(42).exceptionOrNull() is ApiException.NetworkConnection)
+        assertEquals(listOf(42L, 42L), service.deletedIds)
+    }
+
+    @Test
+    fun titleUpdateUsesExistingRecapRequest() = runTest {
+        var updated: Pair<Long, String>? = null
+        val repository = repository(FakeService()) { activityId, title ->
+            updated = activityId to title
+            Result.success(Unit)
+        }
+        assertTrue(repository.updateTitle(42, "새 제목").isSuccess)
+        assertEquals(42L to "새 제목", updated)
+    }
+
+    @Test
     fun detailKeepsServerUnitsAndSortsPhotosAndRoutes() = runTest {
         val service = FakeService()
         val result = repository(service).getDetail(42).getOrThrow()
@@ -54,14 +74,17 @@ class ArchiveDetailRepositoryImplTest {
         repository(service).getDetail(42)
     }
 
-    private fun repository(service: ArchiveService) = ArchiveDetailRepositoryImpl(
+    private fun repository(
+        service: ArchiveService,
+        updateTitle: (Long, String) -> Result<Unit> = { _, _ -> Result.success(Unit) },
+    ) = ArchiveDetailRepositoryImpl(
         service,
         object : RecapRepository {
             override suspend fun getActivityTrack(
                 activityId: Long,
             ) = Result.success(ActivityTrack(emptyList(), emptyList()))
             override suspend fun getMonthlyRecaps(month: java.time.YearMonth) = error("Unused")
-            override suspend fun updateRecapTitle(activityId: Long, title: String) = error("Unused")
+            override suspend fun updateRecapTitle(activityId: Long, title: String) = updateTitle(activityId, title)
             override suspend fun getRecapResource(activityId: Long) = error("Unused")
             override suspend fun getRecapEditorData(activityId: Long) = error("Unused")
         },
@@ -69,6 +92,13 @@ class ArchiveDetailRepositoryImplTest {
     )
 
     private class FakeService : ArchiveService {
+        val deletedIds = mutableListOf<Long>()
+        var deleteError: Exception? = null
+        override suspend fun deleteActivity(activityId: Long) {
+            deletedIds += activityId
+            deleteError?.let { throw it }
+        }
+
         override suspend fun getDailyRecords(date: String) = error("Unused")
 
         val activityIds = mutableListOf<Long>()
