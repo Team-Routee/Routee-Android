@@ -28,7 +28,6 @@ internal class AuthRepositoryImpl @Inject constructor(
     private val authSessionManager: AuthSessionManager,
     private val apiResponseHandler: ApiResponseHandler,
 ) : AuthRepository {
-    private var isWithdrawnOnServer = false
 
     override suspend fun login(
         idToken: String,
@@ -79,7 +78,7 @@ internal class AuthRepositoryImpl @Inject constructor(
     ).mapApiException(::mapAuthException)
 
     override suspend fun logout(): Result<Unit> {
-        tokenLocalDataSource.getRefreshToken()?.let { refreshToken ->
+        suspendRunCatching { tokenLocalDataSource.getRefreshToken() }.getOrNull()?.let { refreshToken ->
             apiResponseHandler.safeUnitApiCall { logoutService.logout(LogoutRequest(refreshToken = refreshToken)) }
         }
         // TODO 기기 운동 기록 삭제
@@ -87,13 +86,9 @@ internal class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun withdraw(): Result<Unit> {
-        if (!isWithdrawnOnServer) {
-            requestWithdraw().onFailure { return Result.failure(it) }
-            isWithdrawnOnServer = true
-        }
+        requestWithdraw().onFailure { return Result.failure(it) }
         // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
-            .onSuccess { isWithdrawnOnServer = false }
     }
 
     private suspend fun requestWithdraw(): Result<Unit> {
