@@ -131,6 +131,8 @@ class TrackWorkoutUseCaseTest {
         val flow = MutableSharedFlow<DeviceLocation>(extraBufferCapacity = 16)
 
         override fun observeLocations(): Flow<DeviceLocation> = flow
+
+        override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(null)
     }
 
     private class FakeWorkoutTrackingRepository : WorkoutTrackingRepository {

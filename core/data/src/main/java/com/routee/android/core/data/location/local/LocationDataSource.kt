@@ -5,4 +5,6 @@ import kotlinx.coroutines.flow.Flow
 
 internal interface LocationDataSource {
     fun locations(): Flow<DeviceLocation>
+
+    suspend fun lastLocation(): DeviceLocation?
 }

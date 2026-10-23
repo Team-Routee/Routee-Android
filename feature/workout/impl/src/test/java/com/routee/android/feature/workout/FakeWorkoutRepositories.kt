@@ -144,6 +144,8 @@ internal class FakeMapImageRepository : TimelineMapImageRepository {
 
 internal class FakeLocationRepository : LocationRepository {
     override fun observeLocations(): Flow<DeviceLocation> = emptyFlow()
+
+    override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(null)
 }
 
 internal class TestClock(var now: Instant = START) : Clock() {
