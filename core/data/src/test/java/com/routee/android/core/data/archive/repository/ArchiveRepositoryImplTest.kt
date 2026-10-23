@@ -1,5 +1,6 @@
 package com.routee.android.core.data.archive.repository
 
+import com.routee.android.core.data.archive.remote.dto.response.DailyRecordsResponse
 import com.routee.android.core.data.archive.remote.dto.response.MonthlyActivitySummaryResponse
 import com.routee.android.core.data.archive.remote.service.ArchiveService
 import com.routee.android.core.network.exception.ApiException
@@ -16,6 +17,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ArchiveRepositoryImplTest {
+    @Test
+    fun dailyRecordsUseIsoDateAndKeepServerOrderAndMissingThumbnail() = runTest {
+        val service = FakeService()
+        val records = ArchiveRepositoryImpl(service, ApiResponseHandler(Json))
+            .getDailyRecords(LocalDate.of(2026, 3, 12)).getOrThrow()
+
+        assertEquals("2026-03-12", service.requestedDate)
+        assertEquals(listOf(9L, 2L), records.map { it.activityId })
+        assertEquals(null, records.first().thumbnailUrl)
+        assertEquals("photo", records.last().thumbnailUrl)
+    }
+
     @Test
     fun summaryUsesServerResultAndKeepsMinuteUnitsAndCoverImage() = runTest {
         val service = FakeService()
@@ -44,6 +57,18 @@ class ArchiveRepositoryImplTest {
     }
 
     private class FakeService(private val error: Exception? = null) : ArchiveService {
+        override suspend fun deleteActivity(activityId: Long) = error("Unused")
+
+        var requestedDate: String? = null
+        override suspend fun getDailyRecords(date: String): BaseResponse<DailyRecordsResponse> {
+            requestedDate = date
+            val response = Json.decodeFromString<DailyRecordsResponse>(
+                """{"date":"2026-03-12","activities":[{"activityId":9,"title":"저녁","thumbnailUrl":null},
+                    {"activityId":2,"title":"아침","thumbnailUrl":"photo"}]}""",
+            )
+            return BaseResponse(200, "OK", "", response)
+        }
+
         override suspend fun getStatistics(activityId: Long) = error("Unused")
         override suspend fun getTimeline(activityId: Long) = error("Unused")
         override suspend fun getRoutes(activityId: Long) = error("Unused")
