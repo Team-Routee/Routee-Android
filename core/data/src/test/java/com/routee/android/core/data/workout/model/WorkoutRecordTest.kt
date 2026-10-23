@@ -105,6 +105,45 @@ class WorkoutRecordTest {
     }
 
     /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 종료하면
+     * THEN: 업로드 대기로 바뀌고 종료 시각까지 운동 시간을 확정한다
+     */
+    @Test
+    fun `기록 중에 종료하면 종료 시각까지 시간을 확정한다`() {
+        val finished = record().finished(START.plusSeconds(90))
+
+        assertEquals(WorkoutStatus.PENDING_UPLOAD, finished.status)
+        assertEquals(START.plusSeconds(90), finished.endedAt)
+        assertEquals(90_000L, finished.durationMillisAt(START.plusSeconds(500)))
+    }
+
+    /**
+     * GIVEN: 일시정지 중일 때
+     * WHEN: 한참 뒤에 종료하면
+     * THEN: 정지한 동안은 운동 시간에 넣지 않는다
+     */
+    @Test
+    fun `일시정지 중에 종료하면 정지한 시간은 넣지 않는다`() {
+        val finished = record().paused(START.plusSeconds(60)).finished(START.plusSeconds(600))
+
+        assertEquals(WorkoutStatus.PENDING_UPLOAD, finished.status)
+        assertEquals(60_000L, finished.durationMillis)
+    }
+
+    /**
+     * GIVEN: 이미 업로드 대기인 기록일 때
+     * WHEN: 다시 종료하면
+     * THEN: 그대로 둔다
+     */
+    @Test
+    fun `이미 종료한 기록은 그대로 둔다`() {
+        val finished = record().finished(START.plusSeconds(90))
+
+        assertEquals(finished, finished.finished(START.plusSeconds(300)))
+    }
+
+    /**
      * GIVEN: 시작 API가 id와 제목을 줬을 때
      * WHEN: 탭 시각과 카운트다운이 끝난 시각으로 기록을 만들면
      * THEN: 기록 중 상태로 시작 시각은 탭 시각, 운동 시간은 카운트다운 끝부터 센다

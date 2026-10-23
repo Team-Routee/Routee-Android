@@ -29,6 +29,7 @@ internal class FakeWorkoutTrackingRepository(
     private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
     override val state: StateFlow<WorkoutTrackingState> = _state
     var isRestored = false
+    var isCleared = false
     var startedRecord: WorkoutRecord? = null
 
     fun setState(state: WorkoutTrackingState) {
@@ -64,6 +65,17 @@ internal class FakeWorkoutTrackingRepository(
         if (_state.value.record == null && savedRecord?.isTracking == true) {
             _state.value = WorkoutTrackingState(record = savedRecord)
         }
+        return Result.success(Unit)
+    }
+
+    override suspend fun finish(): Result<Unit> {
+        _state.value = _state.value.copy(record = _state.value.record?.finished(START))
+        return Result.success(Unit)
+    }
+
+    override suspend fun clear(): Result<Unit> {
+        isCleared = true
+        _state.value = WorkoutTrackingState()
         return Result.success(Unit)
     }
 }

@@ -12,6 +12,8 @@ import kotlin.math.sqrt
 private const val MAX_ACCURACY_METERS = 30f
 private val MAX_LOCATION_AGE: Duration = Duration.ofSeconds(10)
 private const val EARTH_RADIUS_METERS = 6_371_008.8
+private const val MIN_SAVABLE_TRACK_POINTS = 2
+private const val MIN_SAVABLE_DURATION_SECONDS = 1
 
 /**
  * 진행 중인 운동 기록
@@ -26,6 +28,19 @@ data class WorkoutTrackingState(
     /** 기록 중 (일시정지, 종료 후가 아님) */
     val isRecording: Boolean
         get() = record?.status == WorkoutStatus.ACTIVITY_IN_PROGRESS
+
+    /** 종료해서 업로드를 기다리는 기록, 종료 시각이 없으면 null */
+    val finishedRecord: WorkoutRecord?
+        get() = record?.takeIf { it.status == WorkoutStatus.PENDING_UPLOAD && it.endedAt != null }
+
+    /** 서버에 저장할 수 있는 종료 기록, 경로 좌표 2개 이상이고 운동 시간 1초 이상 */
+    val isSavable: Boolean
+        get() {
+            val record = finishedRecord ?: return false
+            val endedAt = record.endedAt ?: return false
+            return trackPoints.size >= MIN_SAVABLE_TRACK_POINTS &&
+                record.durationSecondsAt(endedAt) >= MIN_SAVABLE_DURATION_SECONDS
+        }
 
     /** [location]으로 만들 다음 경로 좌표, 기록 중이 아니거나 부정확하고 오래된 위치면 null */
     fun nextTrackPoint(

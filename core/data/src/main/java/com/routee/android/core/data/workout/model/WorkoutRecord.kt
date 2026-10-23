@@ -60,6 +60,17 @@ data class WorkoutRecord(
         return copy(status = WorkoutStatus.ACTIVITY_IN_PROGRESS, resumedAt = now, pausedAt = null)
     }
 
+    /** 종료, 업로드 대기로 바꾸고 운동 시간 확정. 기록 중, 일시정지일 때만 */
+    fun finished(now: Instant): WorkoutRecord {
+        if (!isTracking) return this
+        return copy(
+            status = WorkoutStatus.PENDING_UPLOAD,
+            durationMillis = durationMillisAt(now),
+            resumedAt = null,
+            endedAt = now,
+        )
+    }
+
     /** 앱이 다시 켜져서 이어갈 때, 꺼져 있던 시간은 뺌 (durationMillis += lastRecordedAt - resumedAt, resumedAt = now) */
     fun restarted(now: Instant): WorkoutRecord {
         if (status != WorkoutStatus.ACTIVITY_IN_PROGRESS) return this
