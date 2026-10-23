@@ -69,6 +69,8 @@ class ArchiveDetailRepositoryImplTest {
     )
 
     private class FakeService : ArchiveService {
+        override suspend fun getDailyRecords(date: String) = error("Unused")
+
         val activityIds = mutableListOf<Long>()
         var failStatistics = false
         var cancelStatistics = false
