@@ -16,6 +16,7 @@ import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
+import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMode
@@ -113,7 +114,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { saveResult.complete(saveFinishedWorkout(jpeg)) }
     }
 
-    /** 마무리 애니메이션이 끝나면 저장 결과를 기다려 타임라인, 실패 안내로 이동 */
+    /** 마무리 애니메이션이 끝나면 저장 결과를 기다려 타임라인 이동, 실패면 기록 등록 실패 모달 */
     fun onFinishAnimationEnd() {
         viewModelScope.launch {
             val result = saveResult.await()
@@ -123,18 +124,18 @@ internal class WorkoutRecordingViewModel @Inject constructor(
                     _sideEffect.send(WorkoutRecordingSideEffect.NavigateToTimeline(summary))
 
                 result == WorkoutSaveResult.InvalidRoute ->
-                    _uiState.update { it.copy(isInvalidRouteDialogVisible = true) }
+                    _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.INVALID_ROUTE) }
 
                 else -> {
                     Timber.w("운동 저장 실패, 기기 기록은 업로드 대기로 남음")
-                    _sideEffect.send(WorkoutRecordingSideEffect.SaveFailed)
+                    _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.NETWORK) }
                 }
             }
         }
     }
 
-    fun onInvalidRouteDialogConfirm() {
-        _uiState.update { it.copy(isInvalidRouteDialogVisible = false) }
+    fun onSaveFailureDialogConfirm() {
+        _uiState.update { it.copy(saveFailure = null) }
         viewModelScope.launch { _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome) }
     }
 

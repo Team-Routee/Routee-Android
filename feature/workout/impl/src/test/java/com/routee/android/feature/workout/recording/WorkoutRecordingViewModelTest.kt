@@ -16,6 +16,7 @@ import com.routee.android.feature.workout.TestClock
 import com.routee.android.feature.workout.record
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
+import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.trackPoint
 import java.io.IOException
@@ -253,9 +254,9 @@ class WorkoutRecordingViewModelTest {
         viewModel.onMapCaptured(byteArrayOf(1))
 
         viewModel.onFinishAnimationEnd()
-        assertTrue(viewModel.uiState.value.isInvalidRouteDialogVisible)
+        assertEquals(WorkoutSaveFailure.INVALID_ROUTE, viewModel.uiState.value.saveFailure)
 
-        viewModel.onInvalidRouteDialogConfirm()
+        viewModel.onSaveFailureDialogConfirm()
         assertEquals(
             WorkoutRecordingSideEffect.NavigateToHome,
             withTimeout(EFFECT_TIMEOUT_MILLIS) {
@@ -271,10 +272,10 @@ class WorkoutRecordingViewModelTest {
     /**
      * GIVEN: 지도 캡처에 실패했을 때
      * WHEN: 마무리 애니메이션이 끝나면
-     * THEN: 저장 실패를 알리고 기기 기록은 남긴다
+     * THEN: 기록 등록 실패 모달을 띄우고 기기 기록은 남긴다
      */
     @Test
-    fun `캡처에 실패하면 저장 실패를 알린다`() = runTest {
+    fun `캡처에 실패하면 기록 등록 실패 모달을 띄운다`() = runTest {
         val tracking = pausedWithPoints(2)
         val viewModel = viewModel(tracking)
         viewModel.onEndLongPress()
@@ -282,15 +283,7 @@ class WorkoutRecordingViewModelTest {
 
         viewModel.onFinishAnimationEnd()
 
-        assertEquals(
-            WorkoutRecordingSideEffect.SaveFailed,
-            withTimeout(EFFECT_TIMEOUT_MILLIS) {
-                viewModel.sideEffect.dropWhile {
-                    it !=
-                        WorkoutRecordingSideEffect.SaveFailed
-                }.first()
-            },
-        )
+        assertEquals(WorkoutSaveFailure.NETWORK, viewModel.uiState.value.saveFailure)
         assertFalse(tracking.isCleared)
         viewModel.close()
     }

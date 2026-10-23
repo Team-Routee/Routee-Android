@@ -53,6 +53,7 @@ import com.routee.android.feature.workout.component.recording.WorkoutRecordingCo
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
+import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.tracking.WorkoutTrackingService
 import java.io.ByteArrayOutputStream
@@ -84,7 +85,6 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
-    val saveErrorText = stringResource(R.string.workout_recording_save_error_toast)
     val mapState = rememberRouteeMapState()
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
@@ -99,11 +99,6 @@ internal fun WorkoutRecordingRoute(
             WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
 
             is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
-
-            WorkoutRecordingSideEffect.SaveFailed -> {
-                messageState.showToast(text = saveErrorText)
-                onNavigateToHome()
-            }
 
             WorkoutRecordingSideEffect.NavigateToHome -> onNavigateToHome()
         }
@@ -129,13 +124,20 @@ internal fun WorkoutRecordingRoute(
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
 
-    if (uiState.isInvalidRouteDialogVisible) {
+    uiState.saveFailure?.let { failure ->
         RouteeOneButtonDialog(
-            title = stringResource(R.string.workout_recording_invalid_route_title),
-            description = stringResource(R.string.workout_recording_invalid_route_description),
-            buttonText = stringResource(R.string.workout_recording_invalid_route_confirm),
-            onButtonClick = viewModel::onInvalidRouteDialogConfirm,
-            onDismissRequest = viewModel::onInvalidRouteDialogConfirm,
+            title = stringResource(R.string.workout_recording_save_failure_title),
+            description = stringResource(
+                when (failure) {
+                    WorkoutSaveFailure.NETWORK -> R.string.workout_recording_save_failure_network_description
+
+                    WorkoutSaveFailure.INVALID_ROUTE ->
+                        R.string.workout_recording_save_failure_invalid_route_description
+                },
+            ),
+            buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
+            onButtonClick = viewModel::onSaveFailureDialogConfirm,
+            onDismissRequest = viewModel::onSaveFailureDialogConfirm,
         )
     }
 }
