@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -45,7 +46,9 @@ internal class WorkoutMainViewModel @Inject constructor(
     private val _sideEffect = Channel<WorkoutMainSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast().map { it.toLocation() }
+    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast()
+        .map { it.toLocation() }
+        .catch { Timber.e(it, "내 위치 수신 실패") }
 
     // 위치 권한을 요청한 곳. 권한 팝업 중 프로세스가 종료돼도 결과를 처리하게 저장
     private var permissionRequest: PermissionRequest
@@ -158,6 +161,7 @@ internal class WorkoutMainViewModel @Inject constructor(
     private fun observeAddress() {
         if (addressJob?.isActive == true) return
         addressJob = observeCurrentAddress(onAddressFailure = { Timber.w(it, "주소 조회 실패") })
+            .catch { Timber.e(it, "내 위치 수신 실패") }
             .onEach { address -> _uiState.update { it.copy(address = address) } }
             .launchIn(viewModelScope)
     }

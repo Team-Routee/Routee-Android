@@ -13,7 +13,9 @@ import com.routee.android.feature.workout.START
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.record
+import java.io.IOException
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -191,6 +193,20 @@ class WorkoutMainViewModelTest {
         viewModel.onRecordClick()
 
         assertEquals(WorkoutMainSideEffect.NavigateToRecording, viewModel.sideEffect.first())
+    }
+
+    /**
+     * GIVEN: 위치 업데이트 요청이 실패할 때
+     * WHEN: 권한 허용을 확인해 주소를 구독하면
+     * THEN: 앱이 멈추지 않고 주소는 비어 있다
+     */
+    @Test
+    fun `위치 수신이 실패해도 주소 구독이 앱을 멈추지 않는다`() = runTest {
+        val viewModel = viewModel(location = FakeLocationRepository(flow { throw IOException() }))
+
+        viewModel.onLocationPermissionChecked(LocationPermission.GRANTED)
+
+        assertNull(viewModel.uiState.value.address)
     }
 
     private fun deniedViewModel(): WorkoutMainViewModel {

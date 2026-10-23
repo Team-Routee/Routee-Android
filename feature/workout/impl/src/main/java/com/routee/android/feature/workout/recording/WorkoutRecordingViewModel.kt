@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -61,7 +62,9 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val _sideEffect = Channel<WorkoutRecordingSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast().map { it.toLocation() }
+    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast()
+        .map { it.toLocation() }
+        .catch { Timber.e(it, "내 위치 수신 실패") }
 
     private val startedAt = clock.instant()
     private var startedWorkout: Deferred<Result<StartedWorkout>>? = null
