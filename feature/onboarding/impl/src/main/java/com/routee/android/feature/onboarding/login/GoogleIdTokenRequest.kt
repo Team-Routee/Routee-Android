@@ -54,5 +54,6 @@ private fun googleIdRequest(): GetCredentialRequest = GetCredentialRequest.Build
 private fun Context.isNetworkAvailable(): Boolean {
     val connectivityManager = getSystemService(ConnectivityManager::class.java) ?: return false
     val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork) ?: return false
-    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }
