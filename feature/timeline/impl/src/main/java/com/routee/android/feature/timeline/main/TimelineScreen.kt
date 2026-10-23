@@ -51,8 +51,8 @@ import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
-import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
@@ -81,8 +81,6 @@ private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
 private const val MAX_TITLE_LENGTH = 16
 
-private enum class TimelineDialog { None, Exit, SaveFailed }
-
 @Composable
 internal fun TimelineRoute(
     viewModel: TimelineViewModel,
@@ -93,12 +91,14 @@ internal fun TimelineRoute(
     routeMap: (@Composable () -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var dialog by rememberSaveable(viewModel.activityId) { mutableStateOf(TimelineDialog.None) }
+    var showExitDialog by rememberSaveable(viewModel.activityId) { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val messageState = LocalRouteeMessageState.current
+    val saveErrorText = stringResource(R.string.timeline_save_error_toast)
 
     BackHandler {
-        if (!isSaving && dialog == TimelineDialog.None) dialog = TimelineDialog.Exit
+        if (!isSaving) showExitDialog = true
     }
 
     val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
@@ -114,7 +114,7 @@ internal fun TimelineRoute(
         focusManager.clearFocus()
     }
     fun saveAndNavigate(destination: TimelineSaveDestination) {
-        if (isSaving || dialog != TimelineDialog.None) return
+        if (isSaving || showExitDialog) return
         isSaving = true
         scope.launch {
             val result = suspendRunCatching { onSaveRecord(viewModel.draft(defaultTitle)) }
@@ -122,7 +122,7 @@ internal fun TimelineRoute(
             isSaving = false
             when (result) {
                 TimelineSaveResult.Success -> onSaveSuccess(destination)
-                TimelineSaveResult.Failed -> dialog = TimelineDialog.SaveFailed
+                TimelineSaveResult.Failed -> messageState.showToast(text = saveErrorText)
             }
         }
     }
@@ -132,7 +132,7 @@ internal fun TimelineRoute(
         titleState = viewModel.titleState,
         defaultTitle = defaultTitle,
         isTitleEditing = uiState.isTitleEditing,
-        onBackClick = { if (!isSaving) dialog = TimelineDialog.Exit },
+        onBackClick = { if (!isSaving) showExitDialog = true },
         onCompleteClick = {
             finishTitleEdit()
             saveAndNavigate(TimelineSaveDestination.Home)
@@ -167,24 +167,15 @@ internal fun TimelineRoute(
         },
     )
 
-    when (dialog) {
-        TimelineDialog.None -> Unit
-
-        TimelineDialog.Exit -> RouteeTwoButtonDialog(
+    if (showExitDialog) {
+        RouteeTwoButtonDialog(
             title = stringResource(R.string.timeline_exit_title),
             description = stringResource(R.string.timeline_exit_description),
             leftButtonText = stringResource(R.string.timeline_cancel),
             rightButtonText = stringResource(R.string.timeline_exit),
+            // TODO #145 머지 후 기록 삭제 API 호출 뒤 홈 (지금은 삭제 없이 홈)
             onRightButtonClick = onExit,
-            onDismissRequest = { dialog = TimelineDialog.None },
-        )
-
-        TimelineDialog.SaveFailed -> RouteeOneButtonDialog(
-            title = stringResource(R.string.timeline_save_failed_title),
-            description = stringResource(R.string.timeline_save_failed_description),
-            buttonText = stringResource(R.string.timeline_confirm),
-            onButtonClick = onExit,
-            onDismissRequest = {},
+            onDismissRequest = { showExitDialog = false },
         )
     }
 }
