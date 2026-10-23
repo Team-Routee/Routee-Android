@@ -1,8 +1,10 @@
 package com.routee.android.feature.workout
 
 import android.graphics.Bitmap
+import com.routee.android.core.data.geocoding.repository.ReverseGeocodingRepository
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
+import com.routee.android.core.data.permission.repository.PermissionRepository
 import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
@@ -142,8 +144,27 @@ internal class FakeMapImageRepository : TimelineMapImageRepository {
     ): Result<String> = Result.success("map-key")
 }
 
-internal class FakeLocationRepository : LocationRepository {
-    override fun observeLocations(): Flow<DeviceLocation> = emptyFlow()
+internal class FakeLocationRepository(
+    private val locations: Flow<DeviceLocation> = emptyFlow(),
+    private val lastLocation: DeviceLocation? = null,
+) : LocationRepository {
+    override fun observeLocations(): Flow<DeviceLocation> = locations
+
+    override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(lastLocation)
+}
+
+internal class FakePermissionRepository(var isLocationRequested: Boolean = false) : PermissionRepository {
+    override suspend fun getLocationPermissionRequested(): Result<Boolean> = Result.success(isLocationRequested)
+
+    override suspend fun saveLocationPermissionRequested(): Result<Unit> {
+        isLocationRequested = true
+        return Result.success(Unit)
+    }
+}
+
+internal class FakeReverseGeocodingRepository(private val address: String = "영등포구 의사당대로 1") :
+    ReverseGeocodingRepository {
+    override suspend fun getAddress(latitude: Double, longitude: Double): Result<String> = Result.success(address)
 }
 
 internal class TestClock(var now: Instant = START) : Clock() {

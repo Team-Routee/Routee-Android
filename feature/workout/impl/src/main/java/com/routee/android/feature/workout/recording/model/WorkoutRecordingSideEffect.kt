@@ -1,5 +1,7 @@
 package com.routee.android.feature.workout.recording.model
 
+import com.routee.android.core.map.model.MapPoint
+
 internal sealed interface WorkoutRecordingSideEffect {
     data object StartTrackingService : WorkoutRecordingSideEffect
 
@@ -10,4 +12,6 @@ internal sealed interface WorkoutRecordingSideEffect {
     data class NavigateToTimeline(val summary: WorkoutSummary) : WorkoutRecordingSideEffect
 
     data object NavigateToHome : WorkoutRecordingSideEffect
+
+    data class MoveToLastLocation(val point: MapPoint) : WorkoutRecordingSideEffect
 }

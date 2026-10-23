@@ -17,3 +17,7 @@ data class DeviceLocation(
     val accuracyMeters: Float?,
     val time: Instant,
 )
+
+/** [other]까지 거리 (m) */
+fun DeviceLocation.distanceTo(other: DeviceLocation): Double =
+    distanceMeters(latitude, longitude, other.latitude, other.longitude)

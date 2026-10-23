@@ -13,12 +13,14 @@ import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.feature.workout.model.observeLocationsFromLast
+import com.routee.android.feature.workout.model.toLocation
+import com.routee.android.feature.workout.model.toMapPoint
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
-import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMode
 import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -49,7 +52,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
-    locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
     private val clock: Clock,
 ) : ViewModel() {
     // TODO 사진 개수 연결
@@ -59,7 +62,9 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val _sideEffect = Channel<WorkoutRecordingSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    val myLocation: Flow<Location> = locationRepository.observeLocations().map { it.toLocation() }
+    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast()
+        .map { it.toLocation() }
+        .catch { Timber.e(it, "내 위치 수신 실패") }
 
     private val startedAt = clock.instant()
     private var startedWorkout: Deferred<Result<StartedWorkout>>? = null
@@ -68,6 +73,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val saveResult = CompletableDeferred<WorkoutSaveResult>()
 
     init {
+        moveToLastLocation()
         prepareRecording()
         observeTracking()
         updateDurationEverySecond()
@@ -149,6 +155,16 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         summary = state.record?.toSummary()
         val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList()
         _uiState.update { it.copy(captureRoute = route) }
+    }
+
+    // 첫 위치를 받기 전 기본 위치가 보이지 않게 마지막 위치에서 시작
+    private fun moveToLastLocation() {
+        viewModelScope.launch {
+            val lastLocation = locationRepository.getLastLocation()
+                .onFailure { Timber.e(it, "마지막 위치 조회 실패") }
+                .getOrNull() ?: return@launch
+            _sideEffect.send(WorkoutRecordingSideEffect.MoveToLastLocation(lastLocation.toMapPoint()))
+        }
     }
 
     private fun prepareRecording() {

@@ -1,17 +1,12 @@
 package com.routee.android.core.data.workout.model
 
 import com.routee.android.core.data.location.model.DeviceLocation
+import com.routee.android.core.data.location.model.distanceMeters
 import java.time.Duration
 import java.time.Instant
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 private const val MAX_ACCURACY_METERS = 30f
 private val MAX_LOCATION_AGE: Duration = Duration.ofSeconds(10)
-private const val EARTH_RADIUS_METERS = 6_371_008.8
 private const val MIN_SAVABLE_TRACK_POINTS = 2
 private const val MIN_SAVABLE_DURATION_SECONDS = 1
 
@@ -105,11 +100,5 @@ private fun DeviceLocation.usableAltitude(): Double? {
 }
 
 /** [other]까지 거리 (m), 하버사인 공식 */
-private fun TrackPoint.distanceTo(other: TrackPoint): Double {
-    val lat1 = Math.toRadians(latitude)
-    val lat2 = Math.toRadians(other.latitude)
-    val dLat = lat2 - lat1
-    val dLng = Math.toRadians(other.longitude - longitude)
-    val a = sin(dLat / 2).pow(2) + cos(lat1) * cos(lat2) * sin(dLng / 2).pow(2)
-    return 2 * EARTH_RADIUS_METERS * asin(sqrt(a))
-}
+private fun TrackPoint.distanceTo(other: TrackPoint): Double =
+    distanceMeters(latitude, longitude, other.latitude, other.longitude)

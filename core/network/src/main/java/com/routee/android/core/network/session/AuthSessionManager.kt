@@ -27,6 +27,11 @@ class AuthSessionManager @Inject constructor(
     val sessionExpired: Flow<Unit> = _sessionExpired.receiveAsFlow()
 
     /**
+     * 저장된 로그인 세션이 있는지. 앱 시작 화면(로그인, 홈)을 정할 때 사용
+     */
+    suspend fun hasSession(): Boolean = mutex.withLock { tokenProvider.getAccessToken() != null }
+
+    /**
      * 저장된 토큰 삭제. 로그아웃처럼 사용자가 직접 세션을 끝낼 때 쓰며 [sessionExpired]는 보내지 않는다
      */
     suspend fun clearSession() {
