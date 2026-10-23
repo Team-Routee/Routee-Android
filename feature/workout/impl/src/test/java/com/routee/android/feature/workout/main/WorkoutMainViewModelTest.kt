@@ -115,10 +115,10 @@ class WorkoutMainViewModelTest {
     /**
      * GIVEN: 이미 물어봤고 권한이 없을 때
      * WHEN: 운동 기록을 눌러 허용하면
-     * THEN: 시스템 팝업을 요청하고, 허용 뒤 내 위치로 옮기고 기록 화면으로 보낸다
+     * THEN: 시스템 팝업을 요청하고, 허용 뒤 내 위치로 옮기고 이어서 알림 권한을 요청한다
      */
     @Test
-    fun `운동 기록에서 권한을 허용하면 기록 화면으로 간다`() = runTest {
+    fun `운동 기록에서 위치 권한을 허용하면 이어서 알림 권한을 요청한다`() = runTest {
         val viewModel = deniedViewModel()
 
         viewModel.onRecordClick()
@@ -126,7 +126,10 @@ class WorkoutMainViewModelTest {
         viewModel.onLocationPermissionResult(LocationPermission.GRANTED)
 
         assertEquals(
-            listOf(WorkoutMainSideEffect.FollowMyLocation(from = null), WorkoutMainSideEffect.NavigateToRecording),
+            listOf(
+                WorkoutMainSideEffect.FollowMyLocation(from = null),
+                WorkoutMainSideEffect.RequestNotificationPermission,
+            ),
             viewModel.sideEffect.take(2).toList(),
         )
     }
@@ -179,20 +182,20 @@ class WorkoutMainViewModelTest {
     }
 
     /**
-     * GIVEN: 권한이 있을 때
+     * GIVEN: 위치 권한이 있을 때
      * WHEN: 운동 기록을 누르면
-     * THEN: 팝업 없이 기록 화면으로 보낸다
+     * THEN: 알림 권한을 요청하고, 결과가 오면 (거부 포함) 안내 없이 기록 화면으로 보낸다
      */
     @Test
-    fun `권한이 있으면 운동 기록을 누를 때 바로 기록 화면으로 간다`() = runTest {
-        permissions.isLocationRequested = true
-        val viewModel = viewModel()
-        viewModel.onLocationPermissionChecked(LocationPermission.GRANTED)
-        viewModel.sideEffect.first()
+    fun `운동 기록을 누르면 알림 권한 다음에 기록 화면으로 간다`() = runTest {
+        val viewModel = grantedViewModel()
 
         viewModel.onRecordClick()
+        assertEquals(WorkoutMainSideEffect.RequestNotificationPermission, viewModel.sideEffect.first())
+        viewModel.onNotificationPermissionResult()
 
         assertEquals(WorkoutMainSideEffect.NavigateToRecording, viewModel.sideEffect.first())
+        assertFalse(viewModel.uiState.value.isLocationPermissionDialogVisible)
     }
 
     /**
@@ -207,6 +210,14 @@ class WorkoutMainViewModelTest {
         viewModel.onLocationPermissionChecked(LocationPermission.GRANTED)
 
         assertNull(viewModel.uiState.value.address)
+    }
+
+    private suspend fun grantedViewModel(): WorkoutMainViewModel {
+        permissions.isLocationRequested = true
+        return viewModel().apply {
+            onLocationPermissionChecked(LocationPermission.GRANTED)
+            sideEffect.first()
+        }
     }
 
     private fun deniedViewModel(): WorkoutMainViewModel {
