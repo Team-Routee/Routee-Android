@@ -8,6 +8,7 @@ import com.routee.android.core.data.workout.remote.dto.request.ActivityTrackPoin
 import com.routee.android.core.data.workout.remote.dto.request.CompleteActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.CreateActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.UpdateActivityStatusRequest
+import com.routee.android.core.data.workout.remote.dto.request.UpdateRoutesRequest
 import com.routee.android.core.data.workout.remote.dto.response.CreateActivityResponse
 import com.routee.android.core.data.workout.remote.service.WorkoutService
 import com.routee.android.core.network.model.BaseResponse
@@ -163,6 +164,7 @@ class WorkoutRemoteRepositoryImplTest {
         var statusRequest: Pair<Long, UpdateActivityStatusRequest>? = null
         var completeRequest: Pair<Long, CompleteActivityRequest>? = null
         var completeError: Throwable? = null
+        var routesRequest: Pair<Long, UpdateRoutesRequest>? = null
 
         override suspend fun createWorkout(request: CreateActivityRequest): BaseResponse<CreateActivityResponse> {
             createRequest = request
@@ -187,6 +189,13 @@ class WorkoutRemoteRepositoryImplTest {
         ) {
             completeRequest = activityId to request
             completeError?.let { throw it }
+        }
+
+        override suspend fun updateRoutes(
+            activityId: Long,
+            request: UpdateRoutesRequest,
+        ) {
+            routesRequest = activityId to request
         }
     }
 }

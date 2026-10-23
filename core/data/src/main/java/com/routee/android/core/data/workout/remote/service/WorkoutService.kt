@@ -3,6 +3,7 @@ package com.routee.android.core.data.workout.remote.service
 import com.routee.android.core.data.workout.remote.dto.request.CompleteActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.CreateActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.UpdateActivityStatusRequest
+import com.routee.android.core.data.workout.remote.dto.request.UpdateRoutesRequest
 import com.routee.android.core.data.workout.remote.dto.response.CreateActivityResponse
 import com.routee.android.core.network.model.BaseResponse
 import retrofit2.http.Body
@@ -27,5 +28,11 @@ internal interface WorkoutService {
     suspend fun completeWorkout(
         @Path("activityId") activityId: Long,
         @Body request: CompleteActivityRequest,
+    )
+
+    @PUT("api/v1/activity/{activityId}/route")
+    suspend fun updateRoutes(
+        @Path("activityId") activityId: Long,
+        @Body request: UpdateRoutesRequest,
     )
 }
