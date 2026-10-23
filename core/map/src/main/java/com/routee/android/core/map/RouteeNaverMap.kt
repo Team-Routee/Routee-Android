@@ -3,7 +3,6 @@ package com.routee.android.core.map
 import android.location.Location
 import android.os.Bundle
 import android.view.Gravity
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope

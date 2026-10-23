@@ -1,7 +1,6 @@
 package com.routee.android.core.map
 
 import android.location.Location
-import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
