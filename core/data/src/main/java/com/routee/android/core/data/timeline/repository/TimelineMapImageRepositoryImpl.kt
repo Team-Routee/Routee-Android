@@ -39,6 +39,9 @@ internal class TimelineMapImageRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun uploadMapImage(activityId: Long, imageFile: File): Result<String> =
+        uploadFile(activityId, imageFile)
+
     private suspend fun uploadFile(activityId: Long, imageFile: File): Result<String> {
         val url = apiResponseHandler.safeApiCall {
             service.createMapImageUrl(activityId, ImageUrlRequest(imageFile.name))
