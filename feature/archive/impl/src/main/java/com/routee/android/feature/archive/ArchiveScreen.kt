@@ -1,5 +1,6 @@
 package com.routee.android.feature.archive
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,123 +12,129 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routee.android.core.data.archive.model.DailyActivitySummary
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeMonthControl
 import com.routee.android.core.designsystem.component.RouteeMonthControlSize
 import com.routee.android.core.designsystem.component.RouteePageHeader
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
-import com.routee.android.feature.archive.component.ArchiveCalendarRecord
+import com.routee.android.core.ui.CollectSideEffect
+import com.routee.android.core.ui.UiState
+import com.routee.android.core.ui.error.RouteeErrorScreen
+import com.routee.android.core.ui.error.RouteeErrorType
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.archive.component.ArchiveCalendarSection
-import com.routee.android.feature.archive.component.CalendarDay
-import com.routee.android.feature.archive.component.MountainActivityLevel
 import com.routee.android.feature.archive.component.MountainMap
 import com.routee.android.feature.archive.component.UserProfile
+import com.routee.android.feature.archive.model.ArchiveProfile
+import com.routee.android.feature.archive.model.ArchiveSideEffect
+import com.routee.android.feature.archive.model.ArchiveUiState
+import com.routee.android.feature.archive.model.archiveContent
 import java.time.YearMonth
-
-private data class ArchiveProfile(
-    val nickname: String,
-    val daysTogether: Int,
-    val workoutCount: Int,
-    val joinedMonth: YearMonth,
-    val imageUrl: String? = null,
-)
 
 @Composable
 internal fun ArchiveRoute(
     onRecordClick: (Long) -> Unit,
-    calendarDays: List<CalendarDay> = emptyList(),
-    records: List<ArchiveCalendarRecord> = emptyList(),
+    onHomeClick: () -> Unit,
+    viewModel: ArchiveViewModel = hiltViewModel(),
 ) {
-    val currentMonth = remember { YearMonth.now() }
-    var monthOffset by rememberSaveable { mutableIntStateOf(0) }
-    val selectedMonth = currentMonth.plusMonths(monthOffset.toLong())
-    val profile = remember(currentMonth) {
-        ArchiveProfile(
-            nickname = "관악산 날다람쥐",
-            daysTogether = 8,
-            workoutCount = 25,
-            joinedMonth = currentMonth.minusMonths(2),
-        )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val messages = LocalRouteeMessageState.current
+    val networkMessage = stringResource(R.string.archive_network_unavailable)
+    viewModel.sideEffect.CollectSideEffect { effect ->
+        when (effect) {
+            ArchiveSideEffect.NetworkUnavailable -> messages.showToast(networkMessage, RouteeMessageDuration.LONG)
+        }
     }
-
     ArchiveScreen(
-        profile = profile,
-        selectedMonth = selectedMonth,
-        currentMonth = currentMonth,
-        activityLevels = remember { List(33) { MountainActivityLevel.NONE } },
-        onPreviousMonthClick = { monthOffset-- },
-        onNextMonthClick = { monthOffset++ },
-        calendarDays = calendarDays,
-        records = records,
+        uiState = uiState,
+        onPreviousMonthClick = viewModel::onPreviousMonthClick,
+        onNextMonthClick = viewModel::onNextMonthClick,
+        onRetryClick = viewModel::onRetryClick,
+        onOfflineClick = viewModel::onRetryClick,
         onRecordClick = onRecordClick,
+        onHomeClick = onHomeClick,
     )
 }
 
 @Composable
 private fun ArchiveScreen(
-    profile: ArchiveProfile,
-    selectedMonth: YearMonth,
-    currentMonth: YearMonth,
-    activityLevels: List<MountainActivityLevel>,
+    uiState: ArchiveUiState,
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
+    onRetryClick: () -> Unit,
+    onOfflineClick: () -> Unit,
+    onRecordClick: (Long) -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
-    calendarDays: List<CalendarDay> = emptyList(),
-    records: List<ArchiveCalendarRecord> = emptyList(),
-    onRecordClick: (Long) -> Unit = {},
 ) {
-    RouteeBgEllipse(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            RouteePageHeader(title = stringResource(R.string.archive_title))
-            UserProfile(
-                nickname = profile.nickname,
-                daysTogether = profile.daysTogether,
-                workoutCount = profile.workoutCount,
-                profileImageUrl = profile.imageUrl,
-                modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
-            )
-            Spacer(Modifier.height(22.dp))
-            RouteeMonthControl(
-                yearMonth = selectedMonth,
-                onPreviousClick = onPreviousMonthClick,
-                onNextClick = onNextMonthClick,
-                isPreviousEnabled = selectedMonth > profile.joinedMonth,
-                isNextEnabled = selectedMonth < currentMonth,
-                size = RouteeMonthControlSize.SM,
-            )
-            Spacer(Modifier.height(RouteeTheme.spacing.Spacing6))
-            MountainMap(
-                activityLevels = activityLevels,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = RouteeTheme.spacing.Spacing16),
-            )
-            Spacer(Modifier.height(RouteeTheme.spacing.Spacing32))
-            ArchiveCalendarSection(
-                month = selectedMonth,
-                days = calendarDays,
-                records = records,
-                onRecordClick = onRecordClick,
-                modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
-            )
-            Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
+    when (val content = uiState.content) {
+        is UiState.Failure, UiState.Empty -> RouteeErrorScreen(
+            type = if (content == UiState.Empty) RouteeErrorType.NotFound else RouteeErrorType.Unknown,
+            onHomeClick = onHomeClick,
+            onRetryClick = onRetryClick,
+            modifier = modifier.fillMaxSize(),
+        )
+
+        UiState.Loading -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize()) { RouteeLoadingOverlay() }
+        }
+
+        is UiState.Success -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
+            val data = content.data
+            Column(
+                modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                RouteePageHeader(title = stringResource(R.string.archive_title))
+                UserProfile(
+                    nickname = data.profile.nickname,
+                    daysTogether = data.profile.daysTogether,
+                    workoutCount = data.profile.workoutCount,
+                    profileImageUrl = data.profile.imageUrl,
+                    modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
+                )
+                Spacer(Modifier.height(22.dp))
+                RouteeMonthControl(
+                    yearMonth = uiState.selectedMonth,
+                    onPreviousClick = onPreviousMonthClick,
+                    onNextClick = onNextMonthClick,
+                    isPreviousEnabled = uiState.isPreviousMonthEnabled,
+                    isNextEnabled = uiState.isNextMonthEnabled,
+                    size = RouteeMonthControlSize.SM,
+                )
+                Spacer(Modifier.height(RouteeTheme.spacing.Spacing6))
+                MountainMap(
+                    activityLevels = data.activityLevels,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = RouteeTheme.spacing.Spacing16),
+                )
+                Spacer(Modifier.height(RouteeTheme.spacing.Spacing32))
+                ArchiveCalendarSection(
+                    month = data.month,
+                    days = data.calendarDays,
+                    records = emptyList(),
+                    onRecordClick = onRecordClick,
+                    onDateClick = if (uiState.isOffline) {
+                        { onOfflineClick() }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
+                )
+                Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
+            }
+            if (uiState.isRefreshing) RouteeLoadingOverlay()
         }
     }
 }
@@ -137,12 +144,29 @@ private fun ArchiveScreen(
 private fun ArchiveScreenPreview() {
     RouteePreviewTheme {
         ArchiveScreen(
-            profile = ArchiveProfile("관악산 날다람쥐", 8, 25, YearMonth.of(2026, 1)),
-            selectedMonth = YearMonth.of(2026, 3),
-            currentMonth = YearMonth.of(2026, 3),
-            activityLevels = List(33) { index -> MountainActivityLevel.entries[index % 5] },
+            uiState = archivePreviewState(),
             onPreviousMonthClick = {},
             onNextMonthClick = {},
+            onRetryClick = {},
+            onOfflineClick = {},
+            onRecordClick = {},
+            onHomeClick = {},
+        )
+    }
+}
+
+@PreviewDeviceSizes
+@Composable
+private fun ArchiveScreenOfflinePreview() {
+    RouteePreviewTheme {
+        ArchiveScreen(
+            uiState = archivePreviewState().copy(isOffline = true),
+            onPreviousMonthClick = {},
+            onNextMonthClick = {},
+            onRetryClick = {},
+            onOfflineClick = {},
+            onRecordClick = {},
+            onHomeClick = {},
         )
     }
 }
@@ -152,12 +176,37 @@ private fun ArchiveScreenPreview() {
 private fun ArchiveScreenEmptyPreview() {
     RouteePreviewTheme {
         ArchiveScreen(
-            profile = ArchiveProfile("관악산 날다람쥐", 8, 0, YearMonth.of(2026, 3)),
-            selectedMonth = YearMonth.of(2026, 3),
-            currentMonth = YearMonth.of(2026, 3),
-            activityLevels = List(33) { MountainActivityLevel.NONE },
+            uiState = archivePreviewState(hasRecords = false),
             onPreviousMonthClick = {},
             onNextMonthClick = {},
+            onRetryClick = {},
+            onOfflineClick = {},
+            onRecordClick = {},
+            onHomeClick = {},
         )
     }
+}
+
+private fun archivePreviewState(hasRecords: Boolean = true): ArchiveUiState {
+    val month = YearMonth.of(2026, 3)
+    return ArchiveUiState(
+        currentMonth = month,
+        selectedMonth = month,
+        content = UiState.Success(
+            archiveContent(
+                profile = ArchiveProfile("관악산 날다람쥐", 8, if (hasRecords) 25 else 0, month, null),
+                month = month,
+                summaries = if (hasRecords) {
+                    listOf(
+                        DailyActivitySummary(month.atDay(2), 30, 1, null),
+                        DailyActivitySummary(month.atDay(8), 90, 1, null),
+                        DailyActivitySummary(month.atDay(15), 130, 1, null),
+                        DailyActivitySummary(month.atDay(22), 190, 12, null),
+                    )
+                } else {
+                    emptyList()
+                },
+            ),
+        ),
+    )
 }

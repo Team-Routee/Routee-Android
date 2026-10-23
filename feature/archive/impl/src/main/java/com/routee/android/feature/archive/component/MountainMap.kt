@@ -28,7 +28,7 @@ import com.routee.android.feature.archive.R
 
 private const val MOUNTAIN_MAP_ROW_COUNT = 3
 private const val MOUNTAIN_MAP_COLUMN_COUNT = 11
-private const val MOUNTAIN_MAP_CELL_COUNT = MOUNTAIN_MAP_ROW_COUNT * MOUNTAIN_MAP_COLUMN_COUNT
+internal const val MOUNTAIN_MAP_CELL_COUNT = MOUNTAIN_MAP_ROW_COUNT * MOUNTAIN_MAP_COLUMN_COUNT
 
 internal enum class MountainActivityLevel {
     NONE,
