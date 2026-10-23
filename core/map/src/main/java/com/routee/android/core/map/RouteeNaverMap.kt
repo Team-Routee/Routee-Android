@@ -50,7 +50,6 @@ import kotlinx.coroutines.flow.Flow
  *
  * @param state          카메라 상태 ([rememberRouteeMapState])
  * @param myLocation     내 위치. null 이면 숨김
- * @param myLocationIcon 내 위치 점 아이콘. null 이면 SDK 기본
  * @param route          경로선. 2개 미만이면 숨김
  * @param markers        마커 (사진 등)
  * @param onMarkerClick  마커 탭 시 호출 ([MapMarker.id])
@@ -61,7 +60,6 @@ fun RouteeNaverMap(
     modifier: Modifier = Modifier,
     state: RouteeMapState = rememberRouteeMapState(),
     myLocation: Flow<Location>? = null,
-    @DrawableRes myLocationIcon: Int? = null,
     route: List<MapPoint> = emptyList(),
     markers: List<MapMarker> = emptyList(),
     onMarkerClick: (String) -> Unit = {},
@@ -73,7 +71,6 @@ fun RouteeNaverMap(
         NaverMapView(
             state = state,
             myLocation = myLocation,
-            myLocationIcon = myLocationIcon,
             route = route,
             markers = markers,
             logoAnchor = logoAnchor,
@@ -90,7 +87,6 @@ fun RouteeNaverMap(
 private fun NaverMapView(
     state: RouteeMapState,
     myLocation: Flow<Location>?,
-    @DrawableRes myLocationIcon: Int?,
     route: List<MapPoint>,
     markers: List<MapMarker>,
     logoAnchor: MapLogoAnchor?,
@@ -110,14 +106,15 @@ private fun NaverMapView(
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapBounds by remember { mutableStateOf<Rect?>(null) }
     val locationSource = remember { MapLocationSource() }
-    val currentMyLocationIcon by rememberUpdatedState(myLocationIcon)
-    // 지도는 한 번만 만듦. 내 위치가 처음 보일 때부터 앱 아이콘이도록 여기서 먼저 정함
+    // 지도는 한 번만 만듦. 내 위치가 처음 보일 때부터 루티 아이콘이도록 여기서 정함
     val mapView = remember {
         MapView(context, routeeMapOptions(state.initialCamera)).apply {
-            getMapAsync {
-                it.locationSource = locationSource
-                it.applyMyLocationIcon(currentMyLocationIcon)
-                naverMap = it
+            getMapAsync { map ->
+                map.locationSource = locationSource
+                map.applyMyLocationIcon()
+                // 위치 추적 모드가 바뀌면 SDK가 방향 화살표를 되돌려서 다시 적용
+                map.addOnOptionChangeListener { map.applyMyLocationIcon() }
+                naverMap = map
             }
         }
     }
@@ -133,7 +130,7 @@ private fun NaverMapView(
 
     // 지도 준비 뒤 내 위치, 경로선, 마커 반영
     naverMap?.let { map ->
-        MyLocationEffect(map, locationSource, myLocation, myLocationIcon)
+        MyLocationEffect(map, locationSource, myLocation)
         RouteEffect(map, route, color = RouteeTheme.colors.mint300, widthPx = with(density) { RouteWidth.roundToPx() })
         MarkersEffect(map, markers, density, onClick = onMarkerClick)
     }

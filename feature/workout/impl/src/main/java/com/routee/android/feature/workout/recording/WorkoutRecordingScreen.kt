@@ -185,7 +185,6 @@ private fun WorkoutRecordingScreen(
         modifier = modifier.fillMaxSize(),
         state = mapState,
         myLocation = if (uiState.isMapOverlayVisible) myLocation else null,
-        myLocationIcon = DesignSystemR.drawable.ic_my_location_md,
         route = if (uiState.isMapOverlayVisible) uiState.route else persistentListOf(),
     ) {
         AnimatedContent(

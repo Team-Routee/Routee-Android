@@ -22,15 +22,15 @@ import com.naver.maps.map.NaverMap
 import com.naver.maps.map.overlay.Marker
 import com.naver.maps.map.overlay.OverlayImage
 import com.naver.maps.map.overlay.PathOverlay
+import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.map.model.MapCamera
 import com.routee.android.core.map.model.MapMarker
 import com.routee.android.core.map.model.MapPoint
 import kotlinx.coroutines.flow.Flow
 
-// 내 위치 점을 앱 아이콘으로, 방향 화살표(보조 아이콘)는 그리지 않음. null 이면 SDK 기본
-internal fun NaverMap.applyMyLocationIcon(@DrawableRes icon: Int?) {
-    icon ?: return
-    locationOverlay.icon = OverlayImage.fromResource(icon)
+// 내 위치 점은 루티 아이콘, 방향 화살표(보조 아이콘)는 그리지 않음
+internal fun NaverMap.applyMyLocationIcon() {
+    locationOverlay.icon = OverlayImage.fromResource(DesignSystemR.drawable.ic_my_location_md)
     locationOverlay.subIcon = null
 }
 
@@ -39,10 +39,7 @@ internal fun MyLocationEffect(
     map: NaverMap,
     source: MapLocationSource,
     myLocation: Flow<Location>?,
-    @DrawableRes icon: Int?,
 ) {
-    // 내 위치 점 아이콘
-    LaunchedEffect(map, icon) { map.applyMyLocationIcon(icon) }
     // 내 위치를 SDK 에 전달. 화면이 보일 때만 수집
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(map, myLocation, lifecycle) {
