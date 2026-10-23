@@ -1,15 +1,19 @@
 package com.routee.android.feature.workout
 
+import android.graphics.Bitmap
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
+import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
+import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
+import java.io.File
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -100,6 +104,42 @@ internal class FakeWorkoutRemoteRepository(
         trackPoints: List<TrackPoint>,
         mapImageObjectKey: String,
     ): Result<Unit> = Result.success(Unit)
+}
+
+internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
+    override suspend fun getRecord(): Result<WorkoutRecord?> = Result.success(null)
+
+    override suspend fun startRecord(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
+
+    override suspend fun saveRecord(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
+
+    override suspend fun saveTrackPoint(
+        record: WorkoutRecord,
+        point: TrackPoint,
+    ): Result<Unit> = Result.success(Unit)
+
+    override suspend fun getTrackPoints(activityId: Long): Result<List<TrackPoint>> = Result.success(emptyList())
+
+    override suspend fun saveMapImage(
+        record: WorkoutRecord,
+        jpeg: ByteArray,
+    ): Result<WorkoutRecord> = Result.success(record.copy(mapImagePath = "map/${record.activityId}.jpg"))
+
+    override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
+
+    override suspend fun clearRecords(): Result<Unit> = Result.success(Unit)
+}
+
+internal class FakeMapImageRepository : TimelineMapImageRepository {
+    override suspend fun uploadMapImage(
+        activityId: Long,
+        bitmap: Bitmap,
+    ): Result<String> = Result.success("map-key")
+
+    override suspend fun uploadMapImage(
+        activityId: Long,
+        imageFile: File,
+    ): Result<String> = Result.success("map-key")
 }
 
 internal class FakeLocationRepository : LocationRepository {

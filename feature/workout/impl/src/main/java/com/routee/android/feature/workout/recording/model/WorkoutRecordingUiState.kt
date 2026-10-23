@@ -32,6 +32,10 @@ internal data class WorkoutRecordingUiState(
     val maxElevationMeters: Int = 0,
     val route: ImmutableList<MapPoint> = persistentListOf(),
     val photoCount: Int = 0,
+    val isInvalidRouteDialogVisible: Boolean = false,
 ) {
     val isCameraEnabled: Boolean get() = photoCount < MAX_PHOTO_COUNT
+
+    // 종료 캡처에는 경로선, 내 위치를 넣지 않음
+    val isMapOverlayVisible: Boolean get() = mode != WorkoutMode.FINISHING
 }
