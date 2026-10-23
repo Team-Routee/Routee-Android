@@ -157,7 +157,7 @@ internal class WorkoutMainViewModel @Inject constructor(
 
     private fun observeAddress() {
         if (addressJob?.isActive == true) return
-        addressJob = observeCurrentAddress()
+        addressJob = observeCurrentAddress(onAddressFailure = { Timber.w(it, "주소 조회 실패") })
             .onEach { address -> _uiState.update { it.copy(address = address) } }
             .launchIn(viewModelScope)
     }

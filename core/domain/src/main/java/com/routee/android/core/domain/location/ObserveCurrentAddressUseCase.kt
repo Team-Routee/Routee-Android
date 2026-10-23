@@ -13,14 +13,18 @@ class ObserveCurrentAddressUseCase @Inject constructor(
     private val locationRepository: LocationRepository,
     private val reverseGeocodingRepository: ReverseGeocodingRepository,
 ) {
-    operator fun invoke(): Flow<String> = flow {
+    /**
+     * @param onAddressFailure 주소 조회 실패 시 호출 (다음 위치에서 다시 시도)
+     */
+    operator fun invoke(onAddressFailure: (Throwable) -> Unit = {}): Flow<String> = flow {
         var addressedAt: DeviceLocation? = null
         locationRepository.observeLocations().collect { location ->
             if (addressedAt?.let { it.distanceTo(location) < REFRESH_DISTANCE_METERS } == true) return@collect
-            reverseGeocodingRepository.getAddress(location.latitude, location.longitude).onSuccess { address ->
-                addressedAt = location
-                emit(address)
-            }
+            reverseGeocodingRepository.getAddress(location.latitude, location.longitude)
+                .onSuccess { address ->
+                    addressedAt = location
+                    emit(address)
+                }.onFailure(onAddressFailure)
         }
     }
 

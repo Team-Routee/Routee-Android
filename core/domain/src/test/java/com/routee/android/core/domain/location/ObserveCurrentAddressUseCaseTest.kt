@@ -33,16 +33,19 @@ class ObserveCurrentAddressUseCaseTest {
     /**
      * GIVEN: 첫 조회가 실패할 때
      * WHEN: 20m 옮긴 위치가 오면
-     * THEN: 받은 주소가 없어서 다시 조회한다
+     * THEN: 실패를 알리고, 받은 주소가 없어서 다시 조회한다
      */
     @Test
     fun `실패하면 가까운 다음 위치에서 다시 조회한다`() = runTest {
         geocoding.failFirst = true
         val useCase = useCase(location(0.0), location(0.00018))
 
-        val addresses = useCase().toList()
+        val failures = mutableListOf<Throwable>()
+
+        val addresses = useCase(onAddressFailure = { failures.add(it) }).toList()
 
         assertEquals(listOf("주소 2"), addresses)
+        assertEquals(1, failures.size)
     }
 
     private fun useCase(vararg locations: DeviceLocation) =
