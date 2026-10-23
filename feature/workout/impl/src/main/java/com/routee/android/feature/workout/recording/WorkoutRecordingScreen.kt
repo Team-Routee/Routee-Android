@@ -86,7 +86,6 @@ internal fun WorkoutRecordingRoute(
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
     val saveErrorText = stringResource(R.string.workout_recording_save_error_toast)
     val mapState = rememberRouteeMapState()
-    val scope = rememberCoroutineScope()
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -98,10 +97,6 @@ internal fun WorkoutRecordingRoute(
             }
 
             WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
-
-            is WorkoutRecordingSideEffect.CaptureMap -> scope.launch {
-                viewModel.onMapCaptured(mapState.captureJpeg(sideEffect.route))
-            }
 
             is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
 
@@ -115,6 +110,10 @@ internal fun WorkoutRecordingRoute(
     }
 
     RecordingBackHandler(mode = uiState.mode)
+
+    uiState.captureRoute?.let { route ->
+        LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureJpeg(route)) }
+    }
 
     WorkoutRecordingScreen(
         uiState = uiState,

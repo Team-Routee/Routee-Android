@@ -180,8 +180,32 @@ class WorkoutRecordingViewModelTest {
         assertEquals(WorkoutMode.FINISHING, viewModel.uiState.value.mode)
         assertEquals(WorkoutStatus.PENDING_UPLOAD, tracking.state.value.record?.status)
         assertEquals(
-            WorkoutRecordingSideEffect.CaptureMap(listOf(MapPoint(38.0, 127.0), MapPoint(39.0, 127.0))),
-            viewModel.sideEffect.first(),
+            listOf(MapPoint(38.0, 127.0), MapPoint(39.0, 127.0)),
+            viewModel.uiState.value.captureRoute,
+        )
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 지도 캡처를 요청한 뒤 화면이 다시 만들어져 캡처가 두 번 올 때
+     * WHEN: 캡처를 받으면
+     * THEN: 캡처 요청을 비우고 처음 온 캡처로 한 번만 저장한다
+     */
+    @Test
+    fun `캡처는 한 번만 저장한다`() = runTest {
+        val tracking = pausedWithPoints(2)
+        val viewModel = viewModel(tracking)
+        viewModel.onEndLongPress()
+
+        viewModel.onMapCaptured(byteArrayOf(1))
+        viewModel.onMapCaptured(null)
+        viewModel.onFinishAnimationEnd()
+
+        assertNull(viewModel.uiState.value.captureRoute)
+        assertTrue(
+            withTimeout(EFFECT_TIMEOUT_MILLIS) {
+                viewModel.sideEffect.dropWhile { it !is WorkoutRecordingSideEffect.NavigateToTimeline }.first()
+            } is WorkoutRecordingSideEffect.NavigateToTimeline,
         )
         viewModel.close()
     }

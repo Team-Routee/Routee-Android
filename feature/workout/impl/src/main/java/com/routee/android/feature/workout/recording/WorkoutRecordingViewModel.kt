@@ -106,8 +106,10 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { finishWorkout() }
     }
 
-    /** 지도 캡처를 받아 저장, 캡처 실패면 null */
+    /** 지도 캡처를 받아 저장, 캡처 실패면 null. 화면이 다시 만들어져 또 오면 무시 */
     fun onMapCaptured(jpeg: ByteArray?) {
+        if (_uiState.value.captureRoute == null) return
+        _uiState.update { it.copy(captureRoute = null) }
         viewModelScope.launch { saveResult.complete(saveFinishedWorkout(jpeg)) }
     }
 
@@ -144,8 +146,8 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         }
         val state = trackingRepository.state.value
         summary = state.record?.toSummary()
-        val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }
-        _sideEffect.send(WorkoutRecordingSideEffect.CaptureMap(route))
+        val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList()
+        _uiState.update { it.copy(captureRoute = route) }
     }
 
     private fun prepareRecording() {
