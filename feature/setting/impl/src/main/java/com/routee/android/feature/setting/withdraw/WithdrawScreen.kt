@@ -73,13 +73,10 @@ internal fun WithdrawRoute(
 
             WithdrawSideEffect.ShowNetworkErrorToast -> messageState.showToast(
                 text = networkErrorText,
-                duration = RouteeMessageDuration.SHORT,
-            )
-
-            WithdrawSideEffect.ShowUnknownErrorToast -> messageState.showToast(
-                text = unknownErrorText,
                 duration = RouteeMessageDuration.LONG,
             )
+
+            WithdrawSideEffect.ShowUnknownErrorToast -> messageState.showToast(text = unknownErrorText)
         }
     }
 
