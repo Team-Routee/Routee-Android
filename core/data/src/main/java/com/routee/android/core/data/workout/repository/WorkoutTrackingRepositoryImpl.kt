@@ -2,9 +2,12 @@ package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.location.model.DeviceLocation
+import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
+import com.routee.android.core.data.workout.model.WorkoutType
 import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +19,7 @@ import kotlinx.coroutines.sync.withLock
 @Singleton
 internal class WorkoutTrackingRepositoryImpl @Inject constructor(
     private val recordRepository: WorkoutRecordRepository,
+    private val remoteRepository: WorkoutRemoteRepository,
     private val clock: Clock,
 ) : WorkoutTrackingRepository {
     private val _state = MutableStateFlow(WorkoutTrackingState())
@@ -23,13 +27,18 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
 
     private val mutex = Mutex()
 
-    override suspend fun start(record: WorkoutRecord): Result<Unit> = mutex.withLock {
+    override suspend fun start(
+        workout: StartedWorkout,
+        type: WorkoutType,
+        startedAt: Instant,
+    ): Result<Unit> = mutex.withLock {
+        val record = WorkoutRecord.started(workout, type, startedAt, clock.instant())
         recordRepository.startRecord(record).onSuccess { _state.value = WorkoutTrackingState(record = record) }
     }
 
-    override suspend fun pause(): Result<Unit> = updateRecord { it.paused(clock.instant()) }
+    override suspend fun pause(): Result<Unit> = updateStatus { it.paused(clock.instant()) }
 
-    override suspend fun resume(): Result<Unit> = updateRecord { it.resumed(clock.instant()) }
+    override suspend fun resume(): Result<Unit> = updateStatus { it.resumed(clock.instant()) }
 
     override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> = mutex.withLock {
         val next = _state.value.nextTrackPoint(location, clock.instant()) ?: return@withLock Result.success(Unit)
@@ -50,11 +59,17 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun updateRecord(transform: (WorkoutRecord) -> WorkoutRecord): Result<Unit> = mutex.withLock {
-        val record = _state.value.record ?: return@withLock Result.failure(IllegalStateException(NO_RECORD))
-        val updated = transform(record)
-        if (updated == record) return@withLock Result.success(Unit)
-        recordRepository.saveRecord(updated).onSuccess { _state.value = _state.value.copy(record = updated) }
+    private suspend fun updateStatus(transform: (WorkoutRecord) -> WorkoutRecord): Result<Unit> {
+        val changed = mutex.withLock {
+            val record = _state.value.record ?: return Result.failure(IllegalStateException(NO_RECORD))
+            val updated = transform(record)
+            if (updated == record) return Result.success(Unit)
+            recordRepository.saveRecord(updated).onFailure { return Result.failure(it) }
+            _state.value = _state.value.copy(record = updated)
+            updated
+        }
+        remoteRepository.updateStatus(changed.activityId, changed.status)
+        return Result.success(Unit)
     }
 
     private companion object {

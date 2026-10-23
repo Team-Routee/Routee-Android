@@ -40,11 +40,13 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.main.LocationChip
 import com.routee.android.feature.workout.component.main.MyLocationButton
 import com.routee.android.feature.workout.component.main.WorkoutTopGradient
 import com.routee.android.feature.workout.main.model.LocationPermission
+import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
 
 @Composable
@@ -54,6 +56,13 @@ internal fun WorkoutMainRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
+        when (sideEffect) {
+            WorkoutMainSideEffect.NavigateToRecording -> onRecordClick()
+        }
+    }
+
     var isRecordRequested by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),

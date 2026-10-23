@@ -17,6 +17,10 @@
     <string name="workout_main_metric_max_elevation">최고 고도</string>
 
     <!-- 운동 중 -->
+    <!-- TODO P1 기획: 시작 실패 안내 방식과 문구 -->
+    <string name="workout_recording_start_error_toast">네트워크 연결을 확인해주세요.</string>
+    <!-- TODO P1 기획: 이전 기록 복원 실패 문구 -->
+    <string name="workout_recording_restore_error_toast">이전 기록을 불러오지 못했어요.</string>
     <string name="workout_recording_camera_a11y">사진 촬영</string>
     <string name="workout_recording_exit_toast">한 번 더 누르면 앱이 닫히며,\n운동 기록은 계속됩니다.</string>
 

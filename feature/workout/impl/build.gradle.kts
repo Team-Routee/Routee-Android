@@ -11,7 +11,9 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.map)
 
+    implementation(libs.kotlinx.collections.immutable)
     implementation(libs.timber)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

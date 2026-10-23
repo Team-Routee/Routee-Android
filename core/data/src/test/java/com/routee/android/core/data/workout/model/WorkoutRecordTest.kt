@@ -35,6 +35,16 @@ class WorkoutRecordTest {
     }
 
     /**
+     * GIVEN: 시작하고 1.999초가 지났을 때
+     * WHEN: 초 단위 운동 시간을 구하면
+     * THEN: 1초 미만은 버린다
+     */
+    @Test
+    fun `초 단위 운동 시간은 1초 미만을 버린다`() {
+        assertEquals(1, record().durationSecondsAt(START.plusMillis(1_999)))
+    }
+
+    /**
      * GIVEN: 마지막 기록 뒤 앱이 꺼져 있던 기록일 때
      * WHEN: 다시 켜져서 이어가면
      * THEN: 꺼져 있던 시간은 빼고 지금부터 다시 센다
@@ -92,6 +102,29 @@ class WorkoutRecordTest {
             .withTrackPoint(point, addedDistanceMeters = 0.0, elevationMeters = null)
 
         assertEquals(200.0, requireNotNull(updated.maxElevationMeters), 0.0)
+    }
+
+    /**
+     * GIVEN: 시작 API가 id와 제목을 줬을 때
+     * WHEN: 탭 시각과 카운트다운이 끝난 시각으로 기록을 만들면
+     * THEN: 기록 중 상태로 시작 시각은 탭 시각, 운동 시간은 카운트다운 끝부터 센다
+     */
+    @Test
+    fun `시작 직후 기록은 카운트다운이 끝난 시각부터 센다`() {
+        val tappedAt = Instant.ofEpochMilli(1_000_000)
+        val countdownEnd = tappedAt.plusSeconds(3)
+
+        val record = WorkoutRecord.started(
+            StartedWorkout(7, "2026.10.23 기록"),
+            WorkoutType.HIKING,
+            tappedAt,
+            countdownEnd,
+        )
+
+        assertEquals(7L, record.activityId)
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, record.status)
+        assertEquals(tappedAt, record.startedAt)
+        assertEquals(60_000L, record.durationMillisAt(countdownEnd.plusSeconds(60)))
     }
 
     private fun record() = WorkoutRecord(

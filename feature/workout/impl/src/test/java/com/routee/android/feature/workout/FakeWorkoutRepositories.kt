@@ -1,0 +1,122 @@
+package com.routee.android.feature.workout
+
+import com.routee.android.core.data.location.model.DeviceLocation
+import com.routee.android.core.data.location.repository.LocationRepository
+import com.routee.android.core.data.workout.model.StartedWorkout
+import com.routee.android.core.data.workout.model.TrackPoint
+import com.routee.android.core.data.workout.model.WorkoutRecord
+import com.routee.android.core.data.workout.model.WorkoutStatus
+import com.routee.android.core.data.workout.model.WorkoutTrackingState
+import com.routee.android.core.data.workout.model.WorkoutType
+import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
+import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
+
+internal val START: Instant = Instant.ofEpochMilli(1_000_000)
+
+internal class FakeWorkoutTrackingRepository(
+    record: WorkoutRecord? = null,
+    private val savedRecord: WorkoutRecord? = null,
+    private val restoreError: Throwable? = null,
+) : WorkoutTrackingRepository {
+    private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
+    override val state: StateFlow<WorkoutTrackingState> = _state
+    var isRestored = false
+    var startedRecord: WorkoutRecord? = null
+
+    fun setState(state: WorkoutTrackingState) {
+        _state.value = state
+    }
+
+    override suspend fun start(
+        workout: StartedWorkout,
+        type: WorkoutType,
+        startedAt: Instant,
+    ): Result<Unit> {
+        val record = WorkoutRecord.started(workout, type, startedAt, START)
+        startedRecord = record
+        _state.value = WorkoutTrackingState(record = record)
+        return Result.success(Unit)
+    }
+
+    override suspend fun pause(): Result<Unit> {
+        _state.value = _state.value.copy(record = _state.value.record?.paused(START))
+        return Result.success(Unit)
+    }
+
+    override suspend fun resume(): Result<Unit> {
+        _state.value = _state.value.copy(record = _state.value.record?.resumed(START))
+        return Result.success(Unit)
+    }
+
+    override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> = Result.success(Unit)
+
+    override suspend fun restore(): Result<Unit> {
+        isRestored = true
+        restoreError?.let { return Result.failure(it) }
+        if (_state.value.record == null && savedRecord?.isTracking == true) {
+            _state.value = WorkoutTrackingState(record = savedRecord)
+        }
+        return Result.success(Unit)
+    }
+}
+
+internal class FakeWorkoutRemoteRepository(
+    private val createError: Throwable? = null,
+) : WorkoutRemoteRepository {
+    override suspend fun createWorkout(
+        type: WorkoutType,
+        startedAt: Instant,
+    ): Result<StartedWorkout> =
+        createError?.let { Result.failure(it) }
+            ?: Result.success(StartedWorkout(activityId = 1, title = "2026.10.23 기록"))
+
+    override suspend fun updateStatus(
+        activityId: Long,
+        status: WorkoutStatus,
+    ): Result<Unit> = Result.success(Unit)
+}
+
+internal class FakeLocationRepository : LocationRepository {
+    override fun observeLocations(): Flow<DeviceLocation> = emptyFlow()
+}
+
+internal class TestClock(var now: Instant = START) : Clock() {
+    override fun getZone(): ZoneId = ZoneOffset.UTC
+
+    override fun withZone(zone: ZoneId?): Clock = this
+
+    override fun instant(): Instant = now
+}
+
+internal fun record(status: WorkoutStatus = WorkoutStatus.ACTIVITY_IN_PROGRESS) = WorkoutRecord(
+    activityId = 1,
+    title = "2026.10.23 기록",
+    type = WorkoutType.HIKING,
+    status = status,
+    startedAt = START,
+    durationMillis = 0,
+    resumedAt = START.takeIf { status == WorkoutStatus.ACTIVITY_IN_PROGRESS },
+    pausedAt = null,
+    lastRecordedAt = START,
+    distanceMeters = 1_234.4,
+    maxElevationMeters = 302.6,
+    endedAt = null,
+    mapImageObjectKey = null,
+    mapImagePath = null,
+)
+
+internal fun trackPoint(index: Int) = TrackPoint(
+    pointIndex = index,
+    latitude = 37.0 + index,
+    longitude = 127.0,
+    elevation = 100.0,
+    recordedAt = START.plusSeconds(index.toLong()),
+)
