@@ -10,7 +10,7 @@ import com.routee.android.feature.archive.detail.ArchiveDetailRoute
 
 fun EntryProviderScope<NavKey>.archiveEntries(navigator: RouteeNavigator) {
     entry<ArchiveNavKey> {
-        ArchiveRoute()
+        ArchiveRoute(onRecordClick = { activityId -> navigator.navigateTo(ArchiveDetailNavKey(activityId)) })
     }
     entry<ArchiveDetailNavKey> { key ->
         ArchiveDetailRoute(activityId = key.activityId, onBackClick = navigator::navigateBack)

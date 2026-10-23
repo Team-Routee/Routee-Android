@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -17,17 +19,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.component.RouteeAsyncImage
+import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.feature.archive.R
 
 private const val DAYS_IN_WEEK = 7
 private val DayCellSize = 36.dp
-private val DayColumnSpacing = 9.dp
 private val WeekdayLabelResources = intArrayOf(
     R.string.archive_calendar_weekday_monday,
     R.string.archive_calendar_weekday_tuesday,
@@ -51,15 +54,16 @@ internal data class CalendarDay(
 internal fun Calendar(
     days: List<CalendarDay?>,
     modifier: Modifier = Modifier,
+    onDayClick: ((CalendarDay) -> Unit)? = null,
 ) {
     val weekCount = (days.size + DAYS_IN_WEEK - 1) / DAYS_IN_WEEK
 
     Column(
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 11.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing20),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(DayColumnSpacing)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             WeekdayLabelResources.forEach { weekdayLabelResource ->
                 Box(
                     modifier = Modifier.size(width = DayCellSize, height = 16.dp),
@@ -74,15 +78,18 @@ internal fun Calendar(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16)) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing16),
+        ) {
             repeat(weekCount) { week ->
-                Row(horizontalArrangement = Arrangement.spacedBy(DayColumnSpacing)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     repeat(DAYS_IN_WEEK) { weekday ->
                         val day = days.getOrNull(week * DAYS_IN_WEEK + weekday)
                         if (day == null) {
                             Box(modifier = Modifier.size(DayCellSize))
                         } else {
-                            CalendarDayCell(day = day)
+                            CalendarDayCell(day = day, onDayClick = onDayClick)
                         }
                     }
                 }
@@ -94,11 +101,12 @@ internal fun Calendar(
 @Composable
 private fun CalendarDayCell(
     day: CalendarDay,
+    onDayClick: ((CalendarDay) -> Unit)?,
 ) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius12)
     val hasRecord = day.recordCount > 0
     val hasPhoto = !day.photoUrl.isNullOrBlank()
-    val dayContentDescription = if (hasPhoto) {
+    val dayContentDescription = if (hasPhoto || hasRecord) {
         stringResource(R.string.archive_calendar_photo_day_a11y, day.day, day.recordCount)
     } else {
         null
@@ -108,11 +116,17 @@ private fun CalendarDayCell(
     } else {
         Modifier
             .size(DayCellSize)
-            .clearAndSetSemantics { contentDescription = dayContentDescription }
+            .semantics(mergeDescendants = true) { contentDescription = dayContentDescription }
     }
 
     Box(
-        modifier = dayCellModifier,
+        modifier = dayCellModifier.then(
+            if (hasRecord && onDayClick != null) {
+                Modifier.noRippleClickable(role = Role.Button) { onDayClick(day) }
+            } else {
+                Modifier
+            },
+        ),
         contentAlignment = Alignment.Center,
     ) {
         when {

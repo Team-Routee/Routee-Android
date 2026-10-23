@@ -75,9 +75,12 @@ internal fun MountainMap(
             .padding(top = RouteeTheme.spacing.Spacing20, bottom = RouteeTheme.spacing.Spacing10),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp),
+            verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6),
+        ) {
             repeat(MOUNTAIN_MAP_ROW_COUNT) { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     repeat(MOUNTAIN_MAP_COLUMN_COUNT) { column ->
                         MountainMapCell(
                             activityLevel = activityLevels[row * MOUNTAIN_MAP_COLUMN_COUNT + column],
