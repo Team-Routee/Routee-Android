@@ -49,7 +49,7 @@ import com.routee.android.feature.workout.component.main.WorkoutTopGradient
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
-import com.routee.android.feature.workout.recording.model.MY_LOCATION_ZOOM
+import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 

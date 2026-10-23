@@ -11,9 +11,9 @@ import com.routee.android.core.domain.location.ObserveCurrentAddressUseCase
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
-import com.routee.android.feature.workout.recording.model.observeLocationsFromLast
-import com.routee.android.feature.workout.recording.model.toLocation
-import com.routee.android.feature.workout.recording.model.toMapPoint
+import com.routee.android.feature.workout.model.observeLocationsFromLast
+import com.routee.android.feature.workout.model.toLocation
+import com.routee.android.feature.workout.model.toMapPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job

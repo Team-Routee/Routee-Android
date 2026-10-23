@@ -1,4 +1,4 @@
-package com.routee.android.feature.workout.recording.model
+package com.routee.android.feature.workout.model
 
 import android.location.Location
 import com.routee.android.core.data.location.model.DeviceLocation

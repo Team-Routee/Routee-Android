@@ -50,7 +50,7 @@ import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
-import com.routee.android.feature.workout.recording.model.MY_LOCATION_ZOOM
+import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState

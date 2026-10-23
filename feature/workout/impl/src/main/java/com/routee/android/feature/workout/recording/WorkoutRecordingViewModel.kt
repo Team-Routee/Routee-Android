@@ -13,14 +13,14 @@ import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.feature.workout.model.observeLocationsFromLast
+import com.routee.android.feature.workout.model.toLocation
+import com.routee.android.feature.workout.model.toMapPoint
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
-import com.routee.android.feature.workout.recording.model.observeLocationsFromLast
-import com.routee.android.feature.workout.recording.model.toLocation
-import com.routee.android.feature.workout.recording.model.toMapPoint
 import com.routee.android.feature.workout.recording.model.toMode
 import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
