@@ -41,11 +41,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Composable
 internal fun RouteeApp(
+    startKey: NavKey,
     sessionExpired: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
-    // TODO 시작 화면 결정: 토큰 없음 -> LoginNavKey / 진행 중인 운동 있음 -> 운동 중(정지) 화면 / 그 외 -> WorkoutMainNavKey
-    val backStack = rememberNavBackStack(WorkoutMainNavKey)
+    val backStack = rememberNavBackStack(startKey)
     val navigator = rememberRouteeNavigator(backStack, homeKey = WorkoutMainNavKey)
 
     sessionExpired.CollectSideEffect {
