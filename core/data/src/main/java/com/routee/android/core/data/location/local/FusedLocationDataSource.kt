@@ -50,6 +50,7 @@ internal class FusedLocationDataSource @Inject constructor(
             client.lastLocation
                 .addOnSuccessListener { cont.resume(it) }
                 .addOnFailureListener { cont.resumeWithException(it) }
+                .addOnCanceledListener { cont.cancel() }
         } ?: return null
         return withContext(Dispatchers.IO) { location.toDeviceLocation(context) }
     }
