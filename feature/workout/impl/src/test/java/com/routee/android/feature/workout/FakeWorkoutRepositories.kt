@@ -82,6 +82,12 @@ internal class FakeWorkoutRemoteRepository(
         activityId: Long,
         status: WorkoutStatus,
     ): Result<Unit> = Result.success(Unit)
+
+    override suspend fun completeWorkout(
+        record: WorkoutRecord,
+        trackPoints: List<TrackPoint>,
+        mapImageObjectKey: String,
+    ): Result<Unit> = Result.success(Unit)
 }
 
 internal class FakeLocationRepository : LocationRepository {
