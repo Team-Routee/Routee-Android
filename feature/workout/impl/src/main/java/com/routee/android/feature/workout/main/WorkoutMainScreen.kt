@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -51,12 +54,18 @@ internal fun WorkoutMainRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var isRecordRequested by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
         val permission = context.locationPermission()
         viewModel.onLocationPermissionChecked(permission)
-        if (permission != LocationPermission.GRANTED) viewModel.showLocationPermissionDialog()
+        if (permission != LocationPermission.GRANTED) {
+            viewModel.showLocationPermissionDialog()
+        } else if (isRecordRequested) {
+            onRecordClick()
+        }
+        isRecordRequested = false
     }
 
     LifecycleResumeEffect(Unit) {
@@ -73,7 +82,12 @@ internal fun WorkoutMainRoute(
             if (!isLocationGranted) locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
         },
         onRecordClick = {
-            if (isLocationGranted) onRecordClick() else locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
+            if (isLocationGranted) {
+                onRecordClick()
+            } else {
+                isRecordRequested = true
+                locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
+            }
         },
     )
 
