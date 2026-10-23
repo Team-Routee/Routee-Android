@@ -3,6 +3,8 @@ package com.routee.android.core.data.workout.model
 import java.time.Duration
 import java.time.Instant
 
+private const val MILLIS_PER_SECOND = 1_000
+
 /**
  * 기기에 저장된 운동 기록
  *
@@ -38,6 +40,9 @@ data class WorkoutRecord(
     fun durationMillisAt(now: Instant): Long =
         durationMillis + (resumedAt?.let { Duration.between(it, now).toMillis().coerceAtLeast(0) } ?: 0)
 
+    /** [now]까지 운동 시간 (초), 1초 미만은 버림 */
+    fun durationSecondsAt(now: Instant): Int = (durationMillisAt(now) / MILLIS_PER_SECOND).toInt()
+
     /** 일시정지, 기록 중일 때만 (durationMillis += now - resumedAt, resumedAt = null) */
     fun paused(now: Instant): WorkoutRecord {
         if (status != WorkoutStatus.ACTIVITY_IN_PROGRESS) return this
@@ -71,4 +76,34 @@ data class WorkoutRecord(
         maxElevationMeters = elevationMeters?.let { maxOf(maxElevationMeters ?: it, it) } ?: maxElevationMeters,
         lastRecordedAt = point.recordedAt,
     )
+
+    companion object {
+        /**
+         * 시작 직후 기록
+         *
+         * @param startedAt 시작 버튼을 누른 시각
+         * @param now       운동 시간을 세기 시작하는 시각
+         */
+        fun started(
+            workout: StartedWorkout,
+            type: WorkoutType,
+            startedAt: Instant,
+            now: Instant,
+        ): WorkoutRecord = WorkoutRecord(
+            activityId = workout.activityId,
+            title = workout.title,
+            type = type,
+            status = WorkoutStatus.ACTIVITY_IN_PROGRESS,
+            startedAt = startedAt,
+            durationMillis = 0,
+            resumedAt = now,
+            pausedAt = null,
+            lastRecordedAt = now,
+            distanceMeters = 0.0,
+            maxElevationMeters = null,
+            endedAt = null,
+            mapImageObjectKey = null,
+            mapImagePath = null,
+        )
+    }
 }

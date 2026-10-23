@@ -2,6 +2,7 @@ package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.local.WorkoutMapImageLocalDataSource
+import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
@@ -24,6 +25,7 @@ class WorkoutTrackingRepositoryImplTest {
     val tempFolder = TemporaryFolder()
 
     private val clock = TestClock(START)
+    private val remoteRepository = FakeWorkoutRemoteRepository()
     private lateinit var recordRepository: WorkoutRecordRepository
     private lateinit var repository: WorkoutTrackingRepositoryImpl
 
@@ -31,7 +33,99 @@ class WorkoutTrackingRepositoryImplTest {
     fun setUp() {
         recordRepository =
             WorkoutRecordRepositoryImpl(FakeWorkoutDao(), WorkoutMapImageLocalDataSource { tempFolder.root })
-        repository = WorkoutTrackingRepositoryImpl(recordRepository, clock)
+        repository = WorkoutTrackingRepositoryImpl(recordRepository, remoteRepository, clock)
+    }
+
+    /**
+     * GIVEN: 시작 버튼을 누르고 3초 뒤에
+     * WHEN: 기록을 시작하면
+     * THEN: 시작 시각은 누른 시각이고 운동 시간은 지금부터 센다
+     */
+    @Test
+    fun `시작 시각과 운동 시간 기준 시각을 따로 둔다`() = runTest {
+        clock.now = START.plusSeconds(3)
+
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        val record = repository.state.value.record
+        assertEquals(START, record?.startedAt)
+        assertEquals(START.plusSeconds(3), record?.resumedAt)
+        assertEquals(ACTIVITY_ID, record?.activityId)
+    }
+
+    /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 일시정지하고 다시 시작하면
+     * THEN: 서버에 일시정지, 기록 중 상태를 차례로 보낸다
+     */
+    @Test
+    fun `일시정지와 다시 시작은 서버 상태도 바꾼다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        repository.pause()
+        repository.resume()
+
+        assertEquals(
+            listOf(ACTIVITY_ID to WorkoutStatus.ACTIVITY_PAUSED, ACTIVITY_ID to WorkoutStatus.ACTIVITY_IN_PROGRESS),
+            remoteRepository.updatedStatuses,
+        )
+    }
+
+    /**
+     * GIVEN: 서버 상태 변경이 실패할 때
+     * WHEN: 일시정지하면
+     * THEN: 기기 기록은 일시정지되고 성공으로 돌려준다
+     */
+    @Test
+    fun `서버 상태 변경이 실패해도 일시정지는 된다`() = runTest {
+        val repository = WorkoutTrackingRepositoryImpl(
+            recordRepository,
+            FakeWorkoutRemoteRepository(updateStatusError = IllegalStateException()),
+            clock,
+        )
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        val result = repository.pause()
+
+        assertTrue(result.isSuccess)
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, repository.state.value.record?.status)
+    }
+
+    /**
+     * GIVEN: 이미 일시정지 중일 때
+     * WHEN: 다시 일시정지하면
+     * THEN: 서버에 보내지 않는다
+     */
+    @Test
+    fun `상태가 그대로면 서버에 보내지 않는다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        repository.pause()
+
+        repository.pause()
+
+        assertEquals(1, remoteRepository.updatedStatuses.size)
+    }
+
+    /**
+     * GIVEN: 기기 저장이 실패할 때
+     * WHEN: 일시정지하면
+     * THEN: 실패를 돌려주고 기록 중 상태를 유지하며 서버에 보내지 않는다
+     */
+    @Test
+    fun `기기 저장이 실패하면 서버에 보내지 않는다`() = runTest {
+        val failingRecordRepository = object : WorkoutRecordRepository by recordRepository {
+            override suspend fun saveRecord(
+                record: WorkoutRecord,
+            ): Result<Unit> = Result.failure(IllegalStateException())
+        }
+        val repository = WorkoutTrackingRepositoryImpl(failingRecordRepository, remoteRepository, clock)
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        val result = repository.pause()
+
+        assertTrue(result.isFailure)
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, repository.state.value.record?.status)
+        assertTrue(remoteRepository.updatedStatuses.isEmpty())
     }
 
     /**
@@ -72,7 +166,7 @@ class WorkoutTrackingRepositoryImplTest {
      */
     @Test
     fun `일시정지 중에는 경로 좌표를 더하지 않는다`() = runTest {
-        repository.start(record())
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
         repository.pause()
 
         repository.addTrackPoint(location(latitude = 37.0, seconds = 1))
@@ -88,7 +182,7 @@ class WorkoutTrackingRepositoryImplTest {
      */
     @Test
     fun `일시정지하면 기기에 저장한다`() = runTest {
-        repository.start(record())
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
         clock.now = START.plusSeconds(60)
 
         repository.pause()
@@ -105,7 +199,7 @@ class WorkoutTrackingRepositoryImplTest {
      */
     @Test
     fun `다시 시작한 뒤 첫 좌표는 거리에 넣지 않는다`() = runTest {
-        repository.start(record())
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
         clock.now = START.plusSeconds(1)
         repository.addTrackPoint(location(latitude = 37.0, seconds = 1))
         clock.now = START.plusSeconds(2)
@@ -167,6 +261,7 @@ class WorkoutTrackingRepositoryImplTest {
 
     private companion object {
         const val ACTIVITY_ID = 1L
+        val STARTED_WORKOUT = StartedWorkout(ACTIVITY_ID, "2026.10.22 기록")
         val START: Instant = Instant.ofEpochMilli(1_000_000)
     }
 }

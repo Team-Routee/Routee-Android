@@ -2,6 +2,7 @@ package com.routee.android.core.domain.workout
 
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
+import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
@@ -143,7 +144,11 @@ class TrackWorkoutUseCaseTest {
             _state.value = _state.value.copy(record = record)
         }
 
-        override suspend fun start(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
+        override suspend fun start(
+            workout: StartedWorkout,
+            type: WorkoutType,
+            startedAt: Instant,
+        ): Result<Unit> = Result.success(Unit)
 
         override suspend fun pause(): Result<Unit> {
             _state.value = _state.value.copy(record = _state.value.record?.paused(START))
