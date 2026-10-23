@@ -19,6 +19,7 @@ import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiStat
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.recording.model.toLocation
+import com.routee.android.feature.workout.recording.model.toMapPoint
 import com.routee.android.feature.workout.recording.model.toMode
 import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,7 +50,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
-    locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
     private val clock: Clock,
 ) : ViewModel() {
     // TODO 사진 개수 연결
@@ -68,6 +69,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val saveResult = CompletableDeferred<WorkoutSaveResult>()
 
     init {
+        moveToLastLocation()
         prepareRecording()
         observeTracking()
         updateDurationEverySecond()
@@ -149,6 +151,16 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         summary = state.record?.toSummary()
         val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList()
         _uiState.update { it.copy(captureRoute = route) }
+    }
+
+    // 첫 위치를 받기 전 기본 위치가 보이지 않게 마지막 위치에서 시작
+    private fun moveToLastLocation() {
+        viewModelScope.launch {
+            val lastLocation = locationRepository.getLastLocation()
+                .onFailure { Timber.e(it, "마지막 위치 조회 실패") }
+                .getOrNull() ?: return@launch
+            _sideEffect.send(WorkoutRecordingSideEffect.MoveToLastLocation(lastLocation.toMapPoint()))
+        }
     }
 
     private fun prepareRecording() {
