@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.ResultEffect
 import com.routee.android.core.data.archive.model.DailyActivitySummary
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeMonthControl
@@ -38,6 +39,7 @@ import com.routee.android.feature.archive.component.ArchiveCalendarSection
 import com.routee.android.feature.archive.component.MountainMap
 import com.routee.android.feature.archive.component.RecordBottomSheet
 import com.routee.android.feature.archive.component.UserProfile
+import com.routee.android.feature.archive.detail.model.ArchiveRecordChanged
 import com.routee.android.feature.archive.model.ArchiveProfile
 import com.routee.android.feature.archive.model.ArchiveSideEffect
 import com.routee.android.feature.archive.model.ArchiveUiState
@@ -55,6 +57,7 @@ internal fun ArchiveRoute(
     viewModel: ArchiveViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ResultEffect<ArchiveRecordChanged> { viewModel.onRecordChanged() }
     val messages = LocalRouteeMessageState.current
     val networkMessage = stringResource(R.string.archive_network_unavailable)
     val loadFailedMessage = stringResource(R.string.archive_record_load_failed)

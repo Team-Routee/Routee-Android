@@ -66,6 +66,11 @@ internal class ArchiveViewModel @Inject constructor(
 
     fun onRetryClick() = loadSummary()
 
+    fun onRecordChanged() {
+        member = null
+        loadSummary()
+    }
+
     fun onDateClick(date: LocalDate) = loadRecords(date)
 
     fun onRecordClick(activityId: Long) {
