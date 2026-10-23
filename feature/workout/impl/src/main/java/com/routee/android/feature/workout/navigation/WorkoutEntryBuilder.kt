@@ -11,7 +11,7 @@ import com.routee.android.feature.workout.recording.WorkoutRecordingRoute
 
 fun EntryProviderScope<NavKey>.workoutEntries(navigator: RouteeNavigator) {
     entry<WorkoutMainNavKey> {
-        WorkoutMainRoute(onRecordClick = { navigator.navigateTo(WorkoutRecordingNavKey) })
+        WorkoutMainRoute(onNavigateToRecording = { navigator.navigateTo(WorkoutRecordingNavKey) })
     }
     entry<WorkoutRecordingNavKey> {
         WorkoutRecordingRoute(

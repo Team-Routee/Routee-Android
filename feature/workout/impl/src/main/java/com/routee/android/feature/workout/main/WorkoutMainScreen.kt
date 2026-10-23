@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,9 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,8 +37,10 @@ import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.map.RouteeMapState
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.main.LocationChip
@@ -48,56 +49,52 @@ import com.routee.android.feature.workout.component.main.WorkoutTopGradient
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
+import com.routee.android.feature.workout.recording.model.MY_LOCATION_ZOOM
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun WorkoutMainRoute(
-    onRecordClick: () -> Unit,
+    onNavigateToRecording: () -> Unit,
     viewModel: WorkoutMainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val mapState = rememberRouteeMapState()
 
-    viewModel.sideEffect.CollectSideEffect { sideEffect ->
-        when (sideEffect) {
-            WorkoutMainSideEffect.NavigateToRecording -> onRecordClick()
-        }
-    }
-
-    var isRecordRequested by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        val permission = context.locationPermission()
-        viewModel.onLocationPermissionChecked(permission)
-        if (permission != LocationPermission.GRANTED) {
-            viewModel.showLocationPermissionDialog()
-        } else if (isRecordRequested) {
-            onRecordClick()
+        viewModel.onLocationPermissionResult(context.locationPermission())
+    }
+
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
+        when (sideEffect) {
+            WorkoutMainSideEffect.NavigateToRecording -> onNavigateToRecording()
+
+            WorkoutMainSideEffect.RequestLocationPermission -> locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
+
+            is WorkoutMainSideEffect.FollowMyLocation -> scope.launch {
+                sideEffect.from?.let { mapState.moveTo(it, zoom = MY_LOCATION_ZOOM) }
+                mapState.followMyLocation()
+            }
         }
-        isRecordRequested = false
     }
 
     LifecycleResumeEffect(Unit) {
         viewModel.onLocationPermissionChecked(context.locationPermission())
-        onPauseOrDispose {}
+        onPauseOrDispose { viewModel.onScreenPaused() }
     }
 
-    // TODO P1 기획: 피그마는 홈 진입 시 요청하고 거부 직후 안내, 지금은 운동 기록, 내 위치 탭 시 요청하고 거부면 안내 (제안)
+    // TODO P1 기획: 피그마는 거부 직후 안내, 지금은 운동 기록, 내 위치 탭 때 시스템 팝업을 한 번 더 띄우고(흐름 B) 거부면 안내 (제안)
     val isLocationGranted = uiState.locationPermission == LocationPermission.GRANTED
     WorkoutMainScreen(
         uiState = uiState,
-        onMyLocationClick = {
-            // TODO 지도를 내 위치로 이동
-            if (!isLocationGranted) locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
-        },
-        onRecordClick = {
-            if (isLocationGranted) {
-                onRecordClick()
-            } else {
-                isRecordRequested = true
-                locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
-            }
-        },
+        mapState = mapState,
+        myLocation = if (isLocationGranted) viewModel.myLocation else null,
+        onMyLocationClick = viewModel::onMyLocationClick,
+        onRecordClick = viewModel::onRecordClick,
     )
 
     if (uiState.isLocationPermissionDialogVisible) {
@@ -152,11 +149,17 @@ private fun Context.isGranted(permission: String): Boolean =
 @Composable
 private fun WorkoutMainScreen(
     uiState: WorkoutMainUiState,
+    mapState: RouteeMapState,
+    myLocation: Flow<Location>?,
     onMyLocationClick: () -> Unit,
     onRecordClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RouteeNaverMap(modifier = modifier.fillMaxSize()) {
+    RouteeNaverMap(
+        modifier = modifier.fillMaxSize(),
+        state = mapState,
+        myLocation = myLocation,
+    ) {
         WorkoutTopGradient(modifier = Modifier.align(Alignment.TopCenter))
         Column(
             modifier = Modifier
@@ -172,7 +175,7 @@ private fun WorkoutMainScreen(
                 modifier = Modifier.padding(vertical = RouteeTheme.spacing.Spacing14),
             )
             LocationChip(
-                text = if (uiState.locationPermission == LocationPermission.GRANTED) {
+                text = if (uiState.locationPermission == LocationPermission.GRANTED && uiState.address != null) {
                     uiState.address
                 } else {
                     stringResource(R.string.workout_main_location_permission_required)
@@ -210,6 +213,8 @@ private fun WorkoutMainScreenPreview() {
     RouteePreviewTheme {
         WorkoutMainScreen(
             uiState = WorkoutMainUiState(address = "영등포구 의사당대로 1"),
+            mapState = rememberRouteeMapState(),
+            myLocation = null,
             onMyLocationClick = {},
             onRecordClick = {},
         )
