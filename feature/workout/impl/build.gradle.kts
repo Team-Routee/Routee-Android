@@ -8,5 +8,10 @@ android {
 
 dependencies {
     implementation(projects.feature.workout.api)
+    implementation(projects.core.domain)
     implementation(projects.core.map)
+
+    implementation(libs.timber)
+
+    testImplementation(libs.junit)
 }

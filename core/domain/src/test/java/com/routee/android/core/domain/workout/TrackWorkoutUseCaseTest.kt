@@ -84,6 +84,39 @@ class TrackWorkoutUseCaseTest {
         assertEquals(1, locations.flow.subscriptionCount.value)
     }
 
+    /**
+     * GIVEN: 복원할 기록이 없을 때 (서비스가 다시 켜졌는데 기록이 이미 끝난 경우)
+     * WHEN: 위치 기록을 시작하면
+     * THEN: 위치를 구독하지 않고 바로 끝난다
+     */
+    @Test
+    fun `복원할 기록이 없으면 바로 끝난다`() = runTest {
+        tracking.setRecord(null)
+
+        val result = trackWorkout()
+
+        assertTrue(result.isSuccess)
+        assertEquals(0, locations.flow.subscriptionCount.value)
+    }
+
+    /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 기록을 종료해 저장 대기 상태가 되면
+     * THEN: 위치 구독을 끊고 끝난다
+     */
+    @Test
+    fun `기록이 끝나면 위치 구독을 끊고 끝난다`() = runTest {
+        val job = backgroundScope.launch { trackWorkout() }
+        runCurrent()
+        assertEquals(1, locations.flow.subscriptionCount.value)
+
+        tracking.setRecord(tracking.state.value.record?.copy(status = WorkoutStatus.PENDING_UPLOAD))
+        runCurrent()
+
+        assertTrue(job.isCompleted)
+        assertEquals(0, locations.flow.subscriptionCount.value)
+    }
+
     private fun location(seconds: Long = 1) = DeviceLocation(
         latitude = 37.0,
         longitude = 127.0,
@@ -105,6 +138,10 @@ class TrackWorkoutUseCaseTest {
         var isRestored = false
         var addError: Throwable? = null
         val added = mutableListOf<DeviceLocation>()
+
+        fun setRecord(record: WorkoutRecord?) {
+            _state.value = _state.value.copy(record = record)
+        }
 
         override suspend fun start(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
 

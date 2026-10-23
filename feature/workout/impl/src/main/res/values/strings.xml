@@ -3,6 +3,12 @@
     <!-- 운동 메인 -->
     <string name="workout_main_record">운동 기록</string>
     <string name="workout_main_location_permission_required">위치 권한 허용이 필요합니다.</string>
+    <string name="workout_main_location_permission_dialog_title">위치 권한이 필요해요</string>
+    <string name="workout_main_location_permission_dialog_description">운동 경로를 기록하려면 설정에서 위치 접근을 허용해주세요.</string>
+    <string name="workout_main_precise_location_dialog_title">정확한 위치가 필요해요</string>
+    <string name="workout_main_precise_location_dialog_description">운동 경로를 기록하려면 설정에서 정확한 위치를 켜주세요.</string>
+    <string name="workout_main_location_permission_dialog_cancel">취소</string>
+    <string name="workout_main_location_permission_dialog_settings">설정으로 이동</string>
     <string name="workout_main_my_location_a11y">내 위치로 이동</string>
     <string name="workout_main_control_stop">정지</string>
     <string name="workout_main_control_restart">다시 시작</string>
@@ -25,4 +31,18 @@
     <string name="workout_recording_photo_close_a11y">닫기</string>
     <string name="workout_recording_photo_location_placeholder">장소명을 입력해주세요</string>
     <string name="workout_recording_photo_location_edit_a11y">장소명 편집</string>
+
+    <!-- 기록 중 상시 알림 -->
+    <string name="workout_tracking_channel_name">운동 기록</string>
+    <string name="workout_tracking_title_recording">루트를 기록하고 있어요</string>
+    <string name="workout_tracking_title_paused">루트 기록을 멈췄어요</string>
+    <string name="workout_tracking_metrics">%1$skm · %2$s · %3$sm</string>
+    <string name="workout_tracking_action_pause">일시정지</string>
+    <string name="workout_tracking_action_resume">다시 시작</string>
+    <string name="workout_tracking_unit_km">km</string>
+    <string name="workout_tracking_unit_duration">시간</string>
+    <string name="workout_tracking_unit_m">m</string>
+    <string name="workout_tracking_label_distance">거리(km)</string>
+    <string name="workout_tracking_label_duration">시간</string>
+    <string name="workout_tracking_label_max_elevation">최고 고도(m)</string>
 </resources>
