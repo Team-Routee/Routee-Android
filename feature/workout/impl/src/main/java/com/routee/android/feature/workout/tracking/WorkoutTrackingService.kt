@@ -55,17 +55,23 @@ internal class WorkoutTrackingService : Service() {
             return START_NOT_STICKY
         }
         when (intent?.action) {
-            ACTION_PAUSE -> scope.launch { trackingRepository.pause() }
-            ACTION_RESUME -> scope.launch { trackingRepository.resume() }
+            ACTION_PAUSE -> scope.launch {
+                trackingRepository.restore()
+                trackingRepository.pause()
+            }
+
+            ACTION_RESUME -> scope.launch {
+                trackingRepository.restore()
+                trackingRepository.resume()
+            }
         }
         if (trackingJob == null) {
             trackingJob = scope.launch {
                 trackWorkout(
                     onTrackPointFailure = { Timber.e(it, "경로 좌표 저장 실패, 기록 계속") },
-                ).onFailure {
-                    Timber.e(it, "운동 기록 실패, 서비스 종료")
-                    stopSelf()
-                }
+                ).onFailure { Timber.e(it, "운동 기록 실패, 서비스 종료") }
+                trackingJob = null
+                stopSelfResult(startId)
             }
             scope.launch { updateNotification() }
         }
@@ -115,7 +121,7 @@ internal class WorkoutTrackingService : Service() {
         private val FOREGROUND_SERVICE_TYPE =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
 
-        /** 위치 기록 시작, 위치 권한이 있어야 함 */
+        /** 위치 기록 시작, 위치 권한과 시작한 기록이 있어야 함 (기록이 없으면 바로 멈춤) */
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, WorkoutTrackingService::class.java))
         }
