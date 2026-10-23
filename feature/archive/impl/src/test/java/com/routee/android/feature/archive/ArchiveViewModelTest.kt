@@ -140,6 +140,7 @@ class ArchiveViewModelTest {
     private class FakeArchiveRepository(
         private val load: suspend (YearMonth) -> Result<List<DailyActivitySummary>> = { Result.success(emptyList()) },
     ) : ArchiveRepository {
+        override suspend fun getDailyRecords(date: java.time.LocalDate) = error("Unused")
         var error: Exception? = null
         val months = mutableListOf<YearMonth>()
 
