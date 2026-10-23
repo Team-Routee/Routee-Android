@@ -13,4 +13,8 @@
 
     <!-- 이미지 자르기 -->
     <string name="ui_image_crop_confirm">확인</string>
+
+    <string name="ui_photo_saved">갤러리에 저장되었습니다.</string>
+    <string name="ui_photo_access_denied">사진 접근 권한이 없습니다.</string>
+    <string name="ui_photo_save_failed">갤러리 저장에 실패했습니다.</string>
 </resources>
