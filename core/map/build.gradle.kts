@@ -9,5 +9,6 @@ android {
 dependencies {
     implementation(projects.core.designsystem)
 
+    implementation(libs.coil.compose)
     implementation(libs.naver.map.sdk)
 }

@@ -1,6 +1,8 @@
 package com.routee.android.core.data.di
 
 import com.routee.android.core.data.archive.remote.service.ArchiveService
+import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
+import com.routee.android.core.data.archive.repository.ArchiveDetailRepositoryImpl
 import com.routee.android.core.data.archive.repository.ArchiveRepository
 import com.routee.android.core.data.archive.repository.ArchiveRepositoryImpl
 import com.routee.android.core.network.di.Auth
@@ -16,6 +18,10 @@ import retrofit2.create
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class ArchiveModule {
+    @Binds
+    @Singleton
+    abstract fun bindArchiveDetailRepository(impl: ArchiveDetailRepositoryImpl): ArchiveDetailRepository
+
     @Binds
     @Singleton
     abstract fun bindArchiveRepository(impl: ArchiveRepositoryImpl): ArchiveRepository
