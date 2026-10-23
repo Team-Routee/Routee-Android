@@ -81,7 +81,7 @@ private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
 private const val MAX_TITLE_LENGTH = 16
 
-private enum class TimelineDialog { None, Exit, InvalidRoute, SaveFailed }
+private enum class TimelineDialog { None, Exit, SaveFailed }
 
 @Composable
 internal fun TimelineRoute(
@@ -90,7 +90,6 @@ internal fun TimelineRoute(
     onSaveSuccess: (TimelineSaveDestination) -> Unit,
     onSaveRecord: suspend (TimelineDraft) -> TimelineSaveResult,
     modifier: Modifier = Modifier,
-    routePointCount: Int? = null,
     routeMap: (@Composable () -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -116,10 +115,6 @@ internal fun TimelineRoute(
     }
     fun saveAndNavigate(destination: TimelineSaveDestination) {
         if (isSaving || dialog != TimelineDialog.None) return
-        if (routePointCount != null && routePointCount < 2) {
-            dialog = TimelineDialog.InvalidRoute
-            return
-        }
         isSaving = true
         scope.launch {
             val result = suspendRunCatching { onSaveRecord(viewModel.draft(defaultTitle)) }
@@ -127,7 +122,6 @@ internal fun TimelineRoute(
             isSaving = false
             when (result) {
                 TimelineSaveResult.Success -> onSaveSuccess(destination)
-                TimelineSaveResult.InvalidRoute -> dialog = TimelineDialog.InvalidRoute
                 TimelineSaveResult.Failed -> dialog = TimelineDialog.SaveFailed
             }
         }
@@ -185,15 +179,9 @@ internal fun TimelineRoute(
             onDismissRequest = { dialog = TimelineDialog.None },
         )
 
-        TimelineDialog.InvalidRoute, TimelineDialog.SaveFailed -> RouteeOneButtonDialog(
+        TimelineDialog.SaveFailed -> RouteeOneButtonDialog(
             title = stringResource(R.string.timeline_save_failed_title),
-            description = stringResource(
-                if (dialog == TimelineDialog.InvalidRoute) {
-                    R.string.timeline_invalid_route_description
-                } else {
-                    R.string.timeline_save_failed_description
-                },
-            ),
+            description = stringResource(R.string.timeline_save_failed_description),
             buttonText = stringResource(R.string.timeline_confirm),
             onButtonClick = onExit,
             onDismissRequest = {},

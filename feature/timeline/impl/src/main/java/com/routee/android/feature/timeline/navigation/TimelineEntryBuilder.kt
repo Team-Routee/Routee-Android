@@ -23,7 +23,6 @@ fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
                 }
             },
             onSaveRecord = viewModel::save,
-            routePointCount = key.routePoints.size,
             routeMap = {
                 TimelineRouteMap(
                     routePoints = key.routePoints,
