@@ -36,9 +36,10 @@ internal class LoginViewModel @AssistedInject constructor(
     private var isLoggingIn = false
 
     fun onIdTokenResult(result: Result<String>) {
-        val idToken = result
-            .onFailure { e -> if (e !is GoogleLoginException.Cancelled) Timber.e(e) }
-            .getOrNull() ?: return
+        val idToken = result.getOrElse { e ->
+            onGoogleLoginFailure(e)
+            return
+        }
         if (isLoggingIn) return
         isLoggingIn = true
         viewModelScope.launch {
@@ -49,6 +50,20 @@ internal class LoginViewModel @AssistedInject constructor(
 
     fun onSessionExpiredDialogDismiss() {
         _uiState.update { it.copy(isSessionExpiredDialogVisible = false) }
+    }
+
+    private fun onGoogleLoginFailure(throwable: Throwable) {
+        val sideEffect = when (throwable) {
+            is GoogleLoginException.Cancelled -> return
+
+            is GoogleLoginException.NetworkUnavailable -> LoginSideEffect.ShowNetworkErrorToast
+
+            else -> {
+                Timber.e(throwable)
+                LoginSideEffect.ShowUnknownErrorToast
+            }
+        }
+        viewModelScope.launch { _sideEffect.send(sideEffect) }
     }
 
     private suspend fun login(idToken: String) {
