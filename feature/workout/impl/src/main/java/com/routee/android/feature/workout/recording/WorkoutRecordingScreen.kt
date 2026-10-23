@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
@@ -56,19 +57,25 @@ private const val FINISH_ANIMATION_SPEED = 1.5f
 
 @Composable
 internal fun WorkoutRecordingRoute(
-    viewModel: WorkoutRecordingViewModel,
-    onNavigateBack: () -> Unit,
+    onStartFail: () -> Unit,
     onFinish: () -> Unit,
+    viewModel: WorkoutRecordingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val messageState = LocalRouteeMessageState.current
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
+    val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             WorkoutRecordingSideEffect.StartTrackingService -> WorkoutTrackingService.start(context)
-            WorkoutRecordingSideEffect.NavigateBack -> onNavigateBack()
+
+            WorkoutRecordingSideEffect.StartFailed -> {
+                messageState.showToast(text = startErrorText)
+                onStartFail()
+            }
+
             WorkoutRecordingSideEffect.NavigateToTimeline -> onFinish()
         }
     }
