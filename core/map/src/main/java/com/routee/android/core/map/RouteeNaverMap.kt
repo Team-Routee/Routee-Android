@@ -110,11 +110,13 @@ private fun NaverMapView(
     var naverMap by remember { mutableStateOf<NaverMap?>(null) }
     var mapBounds by remember { mutableStateOf<Rect?>(null) }
     val locationSource = remember { MapLocationSource() }
-    // 지도는 한 번만 만듦
+    val currentMyLocationIcon by rememberUpdatedState(myLocationIcon)
+    // 지도는 한 번만 만듦. 내 위치가 처음 보일 때부터 앱 아이콘이도록 여기서 먼저 정함
     val mapView = remember {
         MapView(context, routeeMapOptions(state.initialCamera)).apply {
             getMapAsync {
                 it.locationSource = locationSource
+                it.applyMyLocationIcon(currentMyLocationIcon)
                 naverMap = it
             }
         }
