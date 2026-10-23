@@ -217,6 +217,11 @@ class SaveFinishedWorkoutUseCaseTest {
             completedKey = mapImageObjectKey
             return Result.success(Unit)
         }
+
+        override suspend fun updateRoutes(
+            activityId: Long,
+            names: List<String>,
+        ): Result<Unit> = Result.success(Unit)
     }
 
     private companion object {

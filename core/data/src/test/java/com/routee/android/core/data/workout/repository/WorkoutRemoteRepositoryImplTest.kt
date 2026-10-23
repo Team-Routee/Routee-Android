@@ -7,6 +7,7 @@ import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.remote.dto.request.ActivityTrackPointRequest
 import com.routee.android.core.data.workout.remote.dto.request.CompleteActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.CreateActivityRequest
+import com.routee.android.core.data.workout.remote.dto.request.RouteRequest
 import com.routee.android.core.data.workout.remote.dto.request.UpdateActivityStatusRequest
 import com.routee.android.core.data.workout.remote.dto.request.UpdateRoutesRequest
 import com.routee.android.core.data.workout.remote.dto.response.CreateActivityResponse
@@ -120,6 +121,27 @@ class WorkoutRemoteRepositoryImplTest {
         val result = repository.completeWorkout(finishedRecord(), listOf(point(1), point(2)), "map.jpg")
 
         assertTrue(result.isFailure)
+    }
+
+    /**
+     * GIVEN: 지점 이름이 순서대로 있을 때
+     * WHEN: 루트를 저장하면
+     * THEN: 같은 이름도 각각 보내고 순서는 1부터 매긴다
+     */
+    @Test
+    fun `루트를 저장하면 순서를 1부터 매긴다`() = runTest {
+        repository.updateRoutes(activityId = 7, names = listOf("창의문", "청운대", "창의문")).getOrThrow()
+
+        assertEquals(
+            7L to UpdateRoutesRequest(
+                routes = listOf(
+                    RouteRequest(name = "창의문", sequence = 1),
+                    RouteRequest(name = "청운대", sequence = 2),
+                    RouteRequest(name = "창의문", sequence = 3),
+                ),
+            ),
+            service.routesRequest,
+        )
     }
 
     private fun finishedRecord() = WorkoutRecord(
