@@ -17,10 +17,15 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.BINARY)
 internal annotation class TokenDataStore
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+internal annotation class PermissionDataStore
+
 @Module
 @InstallIn(SingletonComponent::class)
 internal object DataStoreModule {
     private const val TOKEN_DATASTORE_NAME = "routee_token"
+    private const val PERMISSION_DATASTORE_NAME = "routee_permission"
 
     @TokenDataStore
     @Provides
@@ -29,5 +34,14 @@ internal object DataStoreModule {
         @ApplicationContext context: Context,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
         produceFile = { context.preferencesDataStoreFile(TOKEN_DATASTORE_NAME) },
+    )
+
+    @PermissionDataStore
+    @Provides
+    @Singleton
+    fun providePermissionDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        produceFile = { context.preferencesDataStoreFile(PERMISSION_DATASTORE_NAME) },
     )
 }
