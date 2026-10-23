@@ -2,6 +2,8 @@ package com.routee.android.feature.setting.withdraw
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.auth.exception.AuthException
+import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.feature.setting.withdraw.model.WithdrawSideEffect
 import com.routee.android.feature.setting.withdraw.model.WithdrawUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,23 +15,39 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @HiltViewModel
-internal class WithdrawViewModel @Inject constructor() : ViewModel() {
+internal class WithdrawViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+) : ViewModel() {
     private val _uiState = MutableStateFlow(WithdrawUiState())
     val uiState: StateFlow<WithdrawUiState> = _uiState.asStateFlow()
 
     private val _sideEffect = Channel<WithdrawSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
+    private var isWithdrawing = false
+
     fun onAgreeChange(agreed: Boolean) {
         _uiState.update { it.copy(isAgreed = agreed) }
     }
 
     fun onWithdrawClick() {
-        if (!_uiState.value.isAgreed) return
-        // TODO 회원 탈퇴 API(DELETE /api/v1/member/withdraw) 연결, 실패 처리
-        // TODO 탈퇴 성공 시 기기 운동 기록 삭제
-        viewModelScope.launch { _sideEffect.send(WithdrawSideEffect.NavigateToLogin) }
+        if (!_uiState.value.isAgreed || isWithdrawing) return
+        isWithdrawing = true
+        viewModelScope.launch {
+            authRepository.withdraw()
+                .onSuccess { _sideEffect.send(WithdrawSideEffect.NavigateToLogin) }
+                .onFailure { e ->
+                    if (e is AuthException.NetworkUnavailable) {
+                        _sideEffect.send(WithdrawSideEffect.ShowNetworkErrorToast)
+                    } else {
+                        Timber.e(e)
+                        _sideEffect.send(WithdrawSideEffect.ShowUnknownErrorToast)
+                    }
+                }
+            isWithdrawing = false
+        }
     }
 }

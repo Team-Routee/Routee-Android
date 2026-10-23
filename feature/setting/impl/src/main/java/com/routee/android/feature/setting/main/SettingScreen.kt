@@ -54,12 +54,14 @@ internal fun SettingRoute(
     val uriHandler = LocalUriHandler.current
     val messageState = LocalRouteeMessageState.current
     val linkErrorText = stringResource(R.string.setting_main_link_error)
+    val unknownErrorText = stringResource(R.string.setting_unknown_error_toast)
     val context = LocalContext.current
     val appVersion = remember(context) { context.appVersionName }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             SettingSideEffect.NavigateToLogin -> onLogout()
+            SettingSideEffect.ShowUnknownErrorToast -> messageState.showToast(text = unknownErrorText)
         }
     }
 

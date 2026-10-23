@@ -21,4 +21,9 @@ interface AuthRepository {
      * 로그아웃. 서버 요청이 실패해도 저장된 토큰은 지운다
      */
     suspend fun logout(): Result<Unit>
+
+    /**
+     * 회원 탈퇴. 성공하면 저장된 토큰을 지운다
+     */
+    suspend fun withdraw(): Result<Unit>
 }
