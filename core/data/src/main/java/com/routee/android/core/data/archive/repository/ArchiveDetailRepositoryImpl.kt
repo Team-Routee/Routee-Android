@@ -18,6 +18,12 @@ internal class ArchiveDetailRepositoryImpl @Inject constructor(
     private val recapRepository: RecapRepository,
     private val apiResponseHandler: ApiResponseHandler,
 ) : ArchiveDetailRepository {
+    override suspend fun updateTitle(activityId: Long, title: String): Result<Unit> =
+        recapRepository.updateRecapTitle(activityId, title)
+
+    override suspend fun deleteActivity(activityId: Long): Result<Unit> =
+        apiResponseHandler.safeUnitApiCall { service.deleteActivity(activityId) }
+
     override suspend fun getDetail(activityId: Long): Result<ArchiveDetail> = suspendRunCatching {
         coroutineScope {
             val statistics = async { apiResponseHandler.safeApiCall { service.getStatistics(activityId) }.getOrThrow() }
