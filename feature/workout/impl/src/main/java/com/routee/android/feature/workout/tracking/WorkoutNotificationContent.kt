@@ -23,14 +23,12 @@ internal data class WorkoutNotificationContent(
     val action: String,
 )
 
-private const val MILLIS_PER_SECOND = 1_000
-
 internal fun WorkoutRecord.toNotificationContent(now: Instant): WorkoutNotificationContent {
     val isPaused = status == WorkoutStatus.ACTIVITY_PAUSED
     return WorkoutNotificationContent(
         titleRes = if (isPaused) R.string.workout_tracking_title_paused else R.string.workout_tracking_title_recording,
         distance = formatDistanceKm(distanceMeters.roundToInt()),
-        duration = formatDurationClock((durationMillisAt(now) / MILLIS_PER_SECOND).toInt()),
+        duration = formatDurationClock(durationSecondsAt(now)),
         maxElevation = (maxElevationMeters?.roundToInt() ?: 0).toString(),
         actionLabelRes = if (isPaused) {
             R.string.workout_tracking_action_resume
