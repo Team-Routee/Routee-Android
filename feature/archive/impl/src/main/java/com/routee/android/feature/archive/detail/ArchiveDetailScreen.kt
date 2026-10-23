@@ -25,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,7 +35,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.routee.android.core.common.util.suspendRunCatching
+import androidx.navigation3.runtime.result.LocalResultEventBus
+import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
@@ -52,6 +52,7 @@ import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteePhotoRouteMap
 import com.routee.android.core.network.exception.ApiException
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.UiState
 import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
@@ -59,29 +60,31 @@ import com.routee.android.core.ui.loading.LocalRouteeLoadingState
 import com.routee.android.core.ui.loading.RouteeLoadingHost
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.loading.RouteeLoadingState
+import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.archive.R
 import com.routee.android.feature.archive.component.RoutePointItem
 import com.routee.android.feature.archive.detail.model.ArchiveDetailRecord
+import com.routee.android.feature.archive.detail.model.ArchiveDetailSideEffect
 import com.routee.android.feature.archive.detail.model.ArchiveDetailUiState
+import com.routee.android.feature.archive.detail.model.ArchiveRecordChanged
+import java.time.Instant
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun ArchiveDetailRoute(
     viewModel: ArchiveDetailViewModel,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onSaveTitle: suspend (String) -> Boolean = { false },
-    onDeleteRecord: suspend () -> Boolean = { false },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val resultEventBus = LocalResultEventBus.current
     var expanded by rememberSaveable { mutableStateOf(false) }
     val record = (uiState.record as? UiState.Success)?.data
     val titleState = rememberTextFieldState()
     val focusManager = LocalFocusManager.current
-    val scope = rememberCoroutineScope()
     val messageState = LocalRouteeMessageState.current
-    var isSaving by remember { mutableStateOf(false) }
+    val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
+    val isSaving = uiState.isSaving
     val defaultTitle = stringResource(R.string.archive_detail_default_title, record?.date.orEmpty())
     val updateFailed = stringResource(R.string.archive_detail_update_failed)
     val deleteFailed = stringResource(R.string.archive_detail_delete_failed)
@@ -92,47 +95,52 @@ internal fun ArchiveDetailRoute(
         }
     }
 
-    fun finishTitleEdit(onFinished: () -> Unit = {}) {
-        if (isSaving) return
-        if (!viewModel.uiState.value.isTitleEditing || record == null) {
-            onFinished()
-            return
-        }
-        viewModel.onTitleEditingChange(false)
-        focusManager.clearFocus()
-        val title = titleState.text.toString().trim().ifEmpty { defaultTitle }
-        titleState.setTextAndPlaceCursorAtEnd(title)
-        if (title == record.title) {
-            onFinished()
-            return
-        }
-        isSaving = true
-        scope.launch {
-            try {
-                if (!suspendRunCatching { onSaveTitle(title) }.getOrDefault(false)) {
-                    titleState.setTextAndPlaceCursorAtEnd(record.title)
-                    messageState.showToast(updateFailed)
-                } else {
-                    onFinished()
-                }
-            } finally {
-                isSaving = false
+    viewModel.sideEffect.CollectSideEffect { effect ->
+        when (effect) {
+            ArchiveDetailSideEffect.RecordChanged -> resultEventBus.sendResult(ArchiveRecordChanged)
+
+            ArchiveDetailSideEffect.NavigateBack -> onBackClick()
+
+            ArchiveDetailSideEffect.Deleted -> {
+                resultEventBus.sendResult(ArchiveRecordChanged)
+                messageState.showToast(deleted)
+                onBackClick()
             }
+
+            ArchiveDetailSideEffect.TitleSaveFailed -> {
+                titleState.setTextAndPlaceCursorAtEnd(record?.title.orEmpty())
+                messageState.showToast(updateFailed)
+            }
+
+            ArchiveDetailSideEffect.DeleteFailed -> messageState.showToast(deleteFailed)
         }
     }
 
+    fun finishTitleEdit(action: (String) -> Unit) {
+        val title = titleState.text.toString().trim().ifEmpty { defaultTitle }
+        titleState.setTextAndPlaceCursorAtEnd(title)
+        action(title)
+        focusManager.clearFocus()
+    }
+
     BackHandler(enabled = isSaving || uiState.isTitleEditing) {
-        if (!isSaving) finishTitleEdit()
+        if (!isSaving) finishTitleEdit(viewModel::onTitleEditFinish)
     }
     ArchiveDetailScreen(
         uiState = uiState,
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        onBackClick = { finishTitleEdit(onBackClick) },
+        onBackClick = { finishTitleEdit(viewModel::onBackClick) },
         titleState = titleState,
-        onEditTitleClick = { if (!isSaving) viewModel.onTitleEditingChange(true) },
-        onTitleEditFinish = { finishTitleEdit() },
-        onDeleteClick = { finishTitleEdit { viewModel.onDeleteDialogChange(true) } },
+        savedPhotoIndex = gallerySave.savedPhotoIndex,
+        onPhotoSaveClick = { index ->
+            record?.photos?.getOrNull(index)?.let { photo ->
+                gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
+            }
+        },
+        onEditTitleClick = { viewModel.onTitleEditingChange(true) },
+        onTitleEditFinish = { finishTitleEdit(viewModel::onTitleEditFinish) },
+        onDeleteClick = { finishTitleEdit(viewModel::onDeleteClick) },
         onHomeClick = onHomeClick,
         onRetryClick = viewModel::onRetryClick,
     )
@@ -143,25 +151,8 @@ internal fun ArchiveDetailRoute(
             description = stringResource(R.string.archive_detail_delete_description),
             leftButtonText = stringResource(R.string.archive_detail_cancel),
             rightButtonText = stringResource(R.string.archive_detail_delete_confirm),
-            onDismissRequest = { if (!isSaving) viewModel.onDeleteDialogChange(false) },
-            onRightButtonClick = {
-                if (!isSaving) {
-                    isSaving = true
-                    scope.launch {
-                        try {
-                            if (suspendRunCatching { onDeleteRecord() }.getOrDefault(false)) {
-                                viewModel.onDeleteDialogChange(false)
-                                messageState.showToast(deleted)
-                                onBackClick()
-                            } else {
-                                messageState.showToast(deleteFailed)
-                            }
-                        } finally {
-                            isSaving = false
-                        }
-                    }
-                }
-            },
+            onDismissRequest = { viewModel.onDeleteDialogChange(false) },
+            onRightButtonClick = viewModel::onDeleteConfirm,
         )
     }
 }
@@ -179,6 +170,8 @@ private fun ArchiveDetailScreen(
     onEditTitleClick: () -> Unit = {},
     onTitleEditFinish: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
+    savedPhotoIndex: Int = -1,
+    onPhotoSaveClick: (Int) -> Unit = {},
 ) {
     when (val record = uiState.record) {
         UiState.Empty, is UiState.Failure -> RouteeErrorScreen(
@@ -213,6 +206,8 @@ private fun ArchiveDetailScreen(
                         expanded = expanded,
                         onExpandedChange = onExpandedChange,
                         titleState = titleState ?: rememberTextFieldState(record.data.title),
+                        savedPhotoIndex = savedPhotoIndex,
+                        onPhotoSaveClick = onPhotoSaveClick,
                         isTitleEditing = uiState.isTitleEditing,
                         onEditTitleClick = onEditTitleClick,
                         onTitleEditFinish = onTitleEditFinish,
@@ -235,6 +230,8 @@ private fun ArchiveDetailContent(
     isTitleEditing: Boolean,
     onEditTitleClick: () -> Unit,
     onTitleEditFinish: () -> Unit,
+    savedPhotoIndex: Int,
+    onPhotoSaveClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -260,7 +257,14 @@ private fun ArchiveDetailContent(
         }
         if (record.photos.isNotEmpty()) {
             Spacer(Modifier.height(52.dp))
-            RouteePhotoTimelineSection(photos = record.photos, date = record.date)
+            RouteePhotoTimelineSection(
+                photos = remember(record.photos) {
+                    record.photos.map { RouteeTimelinePhoto(it.imageUrl, it.location) }
+                },
+                date = record.date,
+                savedPhotoIndex = savedPhotoIndex,
+                onSaveClick = onPhotoSaveClick,
+            )
         }
         if (record.routeNames.isNotEmpty()) {
             Spacer(Modifier.height(if (record.photos.isEmpty()) 52.dp else 48.dp))
@@ -301,7 +305,10 @@ private fun ArchiveDetailScreenPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문"), RouteeTimelinePhoto(null, null)),
+                        photos = persistentListOf(
+                            ArchivePhoto(1L, "창의문", "", Instant.EPOCH),
+                            ArchivePhoto(2L, null, "", Instant.EPOCH),
+                        ),
                         routeNames = persistentListOf("창의문", "청운대", "말바위", "백숙 먹으러 가는 중"),
                     ),
                 ),
@@ -378,7 +385,7 @@ private fun ArchiveDetailScreenWithoutRoutesPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문")),
+                        photos = persistentListOf(ArchivePhoto(1L, "창의문", "", Instant.EPOCH)),
                     ),
                 ),
             ),

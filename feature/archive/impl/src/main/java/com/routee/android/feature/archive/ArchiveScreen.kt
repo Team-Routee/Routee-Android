@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.ResultEffect
 import com.routee.android.core.data.archive.model.DailyActivitySummary
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeMonthControl
@@ -36,12 +37,18 @@ import com.routee.android.core.ui.error.RouteeErrorType
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.archive.component.ArchiveCalendarSection
 import com.routee.android.feature.archive.component.MountainMap
+import com.routee.android.feature.archive.component.RecordBottomSheet
 import com.routee.android.feature.archive.component.UserProfile
+import com.routee.android.feature.archive.detail.model.ArchiveRecordChanged
 import com.routee.android.feature.archive.model.ArchiveProfile
 import com.routee.android.feature.archive.model.ArchiveSideEffect
 import com.routee.android.feature.archive.model.ArchiveUiState
 import com.routee.android.feature.archive.model.archiveContent
+import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+
+private val SheetDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 @Composable
 internal fun ArchiveRoute(
@@ -50,11 +57,15 @@ internal fun ArchiveRoute(
     viewModel: ArchiveViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ResultEffect<ArchiveRecordChanged> { viewModel.onRecordChanged() }
     val messages = LocalRouteeMessageState.current
     val networkMessage = stringResource(R.string.archive_network_unavailable)
+    val loadFailedMessage = stringResource(R.string.archive_record_load_failed)
     viewModel.sideEffect.CollectSideEffect { effect ->
         when (effect) {
             ArchiveSideEffect.NetworkUnavailable -> messages.showToast(networkMessage, RouteeMessageDuration.LONG)
+            ArchiveSideEffect.RecordLoadFailed -> messages.showToast(loadFailedMessage)
+            is ArchiveSideEffect.NavigateToDetail -> onRecordClick(effect.activityId)
         }
     }
     ArchiveScreen(
@@ -62,8 +73,9 @@ internal fun ArchiveRoute(
         onPreviousMonthClick = viewModel::onPreviousMonthClick,
         onNextMonthClick = viewModel::onNextMonthClick,
         onRetryClick = viewModel::onRetryClick,
-        onOfflineClick = viewModel::onRetryClick,
-        onRecordClick = onRecordClick,
+        onDateClick = viewModel::onDateClick,
+        onRecordSheetDismiss = viewModel::onRecordSheetDismiss,
+        onRecordClick = viewModel::onRecordClick,
         onHomeClick = onHomeClick,
     )
 }
@@ -74,7 +86,8 @@ private fun ArchiveScreen(
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
     onRetryClick: () -> Unit,
-    onOfflineClick: () -> Unit,
+    onDateClick: (LocalDate) -> Unit,
+    onRecordSheetDismiss: () -> Unit,
     onRecordClick: (Long) -> Unit,
     onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,18 +136,21 @@ private fun ArchiveScreen(
                 ArchiveCalendarSection(
                     month = data.month,
                     days = data.calendarDays,
-                    records = emptyList(),
-                    onRecordClick = onRecordClick,
-                    onDateClick = if (uiState.isOffline) {
-                        { onOfflineClick() }
-                    } else {
-                        null
-                    },
+                    onDateClick = onDateClick,
                     modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
                 )
                 Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
             }
-            if (uiState.isRefreshing) RouteeLoadingOverlay()
+            if (uiState.isRefreshing || uiState.isLoadingRecords) RouteeLoadingOverlay()
+            val date = uiState.selectedDate
+            if (date != null && uiState.records.size > 1) {
+                RecordBottomSheet(
+                    date = date.format(SheetDateFormatter),
+                    records = uiState.records,
+                    onRecordClick = onRecordClick,
+                    onDismissRequest = onRecordSheetDismiss,
+                )
+            }
         }
     }
 }
@@ -148,7 +164,8 @@ private fun ArchiveScreenPreview() {
             onPreviousMonthClick = {},
             onNextMonthClick = {},
             onRetryClick = {},
-            onOfflineClick = {},
+            onDateClick = {},
+            onRecordSheetDismiss = {},
             onRecordClick = {},
             onHomeClick = {},
         )
@@ -164,7 +181,8 @@ private fun ArchiveScreenOfflinePreview() {
             onPreviousMonthClick = {},
             onNextMonthClick = {},
             onRetryClick = {},
-            onOfflineClick = {},
+            onDateClick = {},
+            onRecordSheetDismiss = {},
             onRecordClick = {},
             onHomeClick = {},
         )
@@ -180,7 +198,8 @@ private fun ArchiveScreenEmptyPreview() {
             onPreviousMonthClick = {},
             onNextMonthClick = {},
             onRetryClick = {},
-            onOfflineClick = {},
+            onDateClick = {},
+            onRecordSheetDismiss = {},
             onRecordClick = {},
             onHomeClick = {},
         )

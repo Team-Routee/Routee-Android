@@ -5,8 +5,11 @@ import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.archive.component.CalendarDay
 import com.routee.android.feature.archive.component.MountainActivityLevel
+import com.routee.android.feature.archive.component.RecordSheetItem
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Immutable
 internal data class ArchiveUiState(
@@ -15,6 +18,9 @@ internal data class ArchiveUiState(
     val content: UiState<ArchiveContent> = UiState.Loading,
     val isRefreshing: Boolean = false,
     val isOffline: Boolean = false,
+    val selectedDate: LocalDate? = null,
+    val records: ImmutableList<RecordSheetItem> = persistentListOf(),
+    val isLoadingRecords: Boolean = false,
 ) {
     val isPreviousMonthEnabled: Boolean
         get() = (content as? UiState.Success)?.data?.profile?.joinedMonth?.let { selectedMonth > it } ?: false
@@ -47,4 +53,8 @@ internal fun MemberSummary.toArchiveProfile() = ArchiveProfile(
     imageUrl = profileImageUrl,
 )
 
-internal enum class ArchiveSideEffect { NetworkUnavailable }
+internal sealed interface ArchiveSideEffect {
+    data object NetworkUnavailable : ArchiveSideEffect
+    data object RecordLoadFailed : ArchiveSideEffect
+    data class NavigateToDetail(val activityId: Long) : ArchiveSideEffect
+}

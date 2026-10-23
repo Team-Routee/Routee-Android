@@ -1,7 +1,6 @@
 package com.routee.android.feature.archive.detail.model
 
 import com.routee.android.core.data.archive.model.ArchiveDetail
-import com.routee.android.core.designsystem.component.RouteeTimelinePhoto
 import com.routee.android.core.map.model.MapPhoto
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.core.ui.format.formatDistanceKm
@@ -21,6 +20,6 @@ internal fun ArchiveDetail.toArchiveDetailRecord() = ArchiveDetailRecord(
     markers = track.timelineMarkers.map {
         MapPhoto(it.timelineId.toString(), it.thumbnailUrl, MapPoint(it.latitude, it.longitude))
     }.toImmutableList(),
-    photos = photos.map { RouteeTimelinePhoto(it.imageUrl, it.location?.takeIf(String::isNotBlank)) }.toImmutableList(),
+    photos = photos.map { it.copy(location = it.location?.takeIf(String::isNotBlank)) }.toImmutableList(),
     routeNames = routes.map { it.name }.toImmutableList(),
 )
