@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="archive_title">아카이브</string>
+
     <!-- 기록 상세 -->
     <string name="archive_detail_route_empty">기록된 루트가 없습니다</string>
 
