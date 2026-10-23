@@ -31,6 +31,21 @@ class ArchiveViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
+    fun changedRecordRefreshesMemberSummaryWithoutChangingSelectedMonth() = runTest {
+        val repository = FakeArchiveRepository()
+        val members = FakeMemberRepository()
+        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
+        viewModel.onPreviousMonthClick()
+        val month = viewModel.uiState.value.selectedMonth
+
+        viewModel.onRecordChanged()
+
+        assertEquals(2, members.callCount)
+        assertEquals(month, viewModel.content().month)
+        assertEquals(3, repository.months.size)
+    }
+
+    @Test
     fun monthMovementHonorsJoinAndCurrentMonthsWithoutReloadingMember() = runTest {
         val repository = FakeArchiveRepository()
         val members = FakeMemberRepository()

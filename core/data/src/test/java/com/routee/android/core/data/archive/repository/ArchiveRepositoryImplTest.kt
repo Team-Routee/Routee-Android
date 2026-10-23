@@ -57,6 +57,8 @@ class ArchiveRepositoryImplTest {
     }
 
     private class FakeService(private val error: Exception? = null) : ArchiveService {
+        override suspend fun deleteActivity(activityId: Long) = error("Unused")
+
         var requestedDate: String? = null
         override suspend fun getDailyRecords(date: String): BaseResponse<DailyRecordsResponse> {
             requestedDate = date
