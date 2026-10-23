@@ -24,6 +24,7 @@ internal val START: Instant = Instant.ofEpochMilli(1_000_000)
 internal class FakeWorkoutTrackingRepository(
     record: WorkoutRecord? = null,
     private val savedRecord: WorkoutRecord? = null,
+    private val restoreError: Throwable? = null,
 ) : WorkoutTrackingRepository {
     private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
     override val state: StateFlow<WorkoutTrackingState> = _state
@@ -59,6 +60,7 @@ internal class FakeWorkoutTrackingRepository(
 
     override suspend fun restore(): Result<Unit> {
         isRestored = true
+        restoreError?.let { return Result.failure(it) }
         if (_state.value.record == null && savedRecord?.isTracking == true) {
             _state.value = WorkoutTrackingState(record = savedRecord)
         }

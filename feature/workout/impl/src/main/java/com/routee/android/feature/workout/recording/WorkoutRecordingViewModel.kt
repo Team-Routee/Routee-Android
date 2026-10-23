@@ -102,7 +102,10 @@ internal class WorkoutRecordingViewModel @Inject constructor(
 
     private fun prepareRecording() {
         preparing = viewModelScope.launch {
-            trackingRepository.restore().onFailure { Timber.e(it, "운동 기록 복원 실패") }
+            trackingRepository.restore().onFailure {
+                Timber.e(it, "운동 기록 복원 실패")
+                _sideEffect.send(WorkoutRecordingSideEffect.ShowRestoreFailed)
+            }
             val record = trackingRepository.state.value.record
             if (record?.isTracking == true) continueRecording(record) else createWorkout()
         }

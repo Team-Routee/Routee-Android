@@ -70,6 +70,25 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 기기 기록 복원이 실패할 때
+     * WHEN: 화면에 들어와 카운트다운이 끝나면
+     * THEN: 복원 실패를 알리고 새 기록을 시작한다
+     */
+    @Test
+    fun `기기 기록 복원이 실패하면 알리고 새로 시작한다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(restoreError = IOException())
+        val viewModel = viewModel(tracking)
+
+        assertEquals(WorkoutRecordingSideEffect.ShowRestoreFailed, viewModel.sideEffect.first())
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(1L, tracking.startedRecord?.activityId)
+        assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 진행 중인 기록이 일시정지 상태로 남아 있을 때
      * WHEN: 화면에 들어오면
      * THEN: 카운트다운 없이 정지 화면으로 열고 서비스를 켠다

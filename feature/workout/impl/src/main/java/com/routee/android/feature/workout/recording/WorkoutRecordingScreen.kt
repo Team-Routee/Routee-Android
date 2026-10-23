@@ -66,6 +66,7 @@ internal fun WorkoutRecordingRoute(
     val messageState = LocalRouteeMessageState.current
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
+    val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -75,6 +76,8 @@ internal fun WorkoutRecordingRoute(
                 messageState.showToast(text = startErrorText)
                 onStartFail()
             }
+
+            WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
 
             WorkoutRecordingSideEffect.NavigateToTimeline -> onFinish()
         }
