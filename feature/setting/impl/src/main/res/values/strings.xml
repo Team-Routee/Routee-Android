@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 공통 -->
-    <string name="setting_network_error_toast">네트워크 연결을 확인해주세요.</string>
+    <string name="setting_network_error_toast">네트워크 연결을 확인해주세요</string>
     <string name="setting_unknown_error_toast">일시적인 오류가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
 
     <!-- 설정 메인 -->
