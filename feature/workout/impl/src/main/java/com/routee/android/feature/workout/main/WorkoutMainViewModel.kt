@@ -11,6 +11,7 @@ import com.routee.android.core.domain.location.ObserveCurrentAddressUseCase
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
+import com.routee.android.feature.workout.recording.model.observeLocationsFromLast
 import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMapPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,7 +45,7 @@ internal class WorkoutMainViewModel @Inject constructor(
     private val _sideEffect = Channel<WorkoutMainSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    val myLocation: Flow<Location> = locationRepository.observeLocations().map { it.toLocation() }
+    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast().map { it.toLocation() }
 
     // 위치 권한을 요청한 곳. 권한 팝업 중 프로세스가 종료돼도 결과를 처리하게 저장
     private var permissionRequest: PermissionRequest

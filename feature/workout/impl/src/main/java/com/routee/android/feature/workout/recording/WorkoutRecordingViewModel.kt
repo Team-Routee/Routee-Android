@@ -18,6 +18,7 @@ import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEf
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
+import com.routee.android.feature.workout.recording.model.observeLocationsFromLast
 import com.routee.android.feature.workout.recording.model.toLocation
 import com.routee.android.feature.workout.recording.model.toMapPoint
 import com.routee.android.feature.workout.recording.model.toMode
@@ -60,7 +61,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val _sideEffect = Channel<WorkoutRecordingSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    val myLocation: Flow<Location> = locationRepository.observeLocations().map { it.toLocation() }
+    val myLocation: Flow<Location> = locationRepository.observeLocationsFromLast().map { it.toLocation() }
 
     private val startedAt = clock.instant()
     private var startedWorkout: Deferred<Result<StartedWorkout>>? = null
