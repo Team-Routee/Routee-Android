@@ -13,4 +13,7 @@ dependencies {
     implementation(projects.feature.recordEdit.api)
     implementation(libs.coil.compose)
     implementation(libs.timber)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
