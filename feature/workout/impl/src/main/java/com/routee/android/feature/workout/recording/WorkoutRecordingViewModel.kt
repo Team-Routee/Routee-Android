@@ -331,12 +331,11 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         }
     }
 
-    // 일시정지로 불러온 기록을 기록 중으로, 화면이 떠 있을 때 서비스 시작
+    // 일시정지로 불러온 기록을 기록 중으로, 화면이 떠 있을 때 서비스 시작. 기기 저장이 실패하면 정지 화면으로 둠
     private suspend fun resumeRecovered() {
         isResumingRecovered = false
         trackingRepository.resume().onFailure { Timber.e(it, "복구한 기록 다시 시작 실패") }
-        _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
-        _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
+        continueRecording()
     }
 
     private fun createWorkout() {

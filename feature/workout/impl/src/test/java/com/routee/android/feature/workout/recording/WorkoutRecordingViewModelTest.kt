@@ -156,6 +156,23 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 복구로 들어왔는데 기기 저장이 실패할 때
+     * WHEN: 카운트다운이 끝나 다시 시작하면
+     * THEN: 기록이 일시정지 그대로라 정지 화면으로 둔다
+     */
+    @Test
+    fun `복구한 기록을 다시 시작하지 못하면 정지 화면으로 둔다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().recovered(START), resumeError = IOException())
+        val viewModel = viewModel(tracking, key = WorkoutRecordingNavKey(isRecovering = true))
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
+        assertEquals(WorkoutMode.PAUSED, viewModel.uiState.value.mode)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 앱이 다시 켜져 사진 목록이 비었고 서버에 올린 사진이 있을 때
      * WHEN: 복구로 들어오면
      * THEN: 서버 사진으로 마커와 개수를 채운다

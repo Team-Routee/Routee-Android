@@ -33,6 +33,7 @@ internal class FakeWorkoutTrackingRepository(
     record: WorkoutRecord? = null,
     private val savedRecord: WorkoutRecord? = null,
     private val savedTrackPoints: List<TrackPoint> = emptyList(),
+    private val resumeError: Throwable? = null,
 ) : WorkoutTrackingRepository {
     private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
     override val state: StateFlow<WorkoutTrackingState> = _state
@@ -60,6 +61,7 @@ internal class FakeWorkoutTrackingRepository(
     }
 
     override suspend fun resume(): Result<Unit> {
+        resumeError?.let { return Result.failure(it) }
         _state.value = _state.value.copy(record = _state.value.record?.resumed(START))
         return Result.success(Unit)
     }
