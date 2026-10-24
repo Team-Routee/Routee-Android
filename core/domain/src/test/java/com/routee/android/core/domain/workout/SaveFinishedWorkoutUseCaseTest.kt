@@ -3,6 +3,7 @@ package com.routee.android.core.domain.workout
 import android.graphics.Bitmap
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
+import com.routee.android.core.data.workout.exception.WorkoutException
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
@@ -135,24 +136,98 @@ class SaveFinishedWorkoutUseCaseTest {
     }
 
     /**
-     * GIVEN: 지도 캡처에 실패했을 때
+     * GIVEN: 지도 캡처에 실패했고 저장해 둔 캡처도 없을 때
      * WHEN: 저장하면
-     * THEN: 실패를 돌려주고 기기 기록은 남긴다
+     * THEN: 다시 캡처하라고 돌려주고 기기 기록은 남긴다
      */
     @Test
-    fun `캡처가 없으면 실패하고 기기 기록을 남긴다`() = runTest {
+    fun `캡처가 없으면 다시 캡처하라고 하고 기기 기록을 남긴다`() = runTest {
         tracking.state(points = 2)
 
         val result = saveFinishedWorkout(null)
 
-        assertEquals(WorkoutSaveResult.Failed, result)
+        assertEquals(WorkoutSaveResult.MapImageMissing, result)
+        assertNull(remote.completedKey)
         assertFalse(tracking.isCleared)
     }
+
+    /**
+     * GIVEN: 앱이 다시 켜져 상태는 비었고 기기에 지도 키를 올려 둔 업로드 대기 기록이 있을 때
+     * WHEN: 캡처 없이 저장하면
+     * THEN: 기기 기록을 불러와 지도는 다시 올리지 않고 그 키로 완료한 뒤 지운다
+     */
+    @Test
+    fun `저장해 둔 지도 키가 있으면 다시 올리지 않고 완료한다`() = runTest {
+        tracking.pending = pendingState(RECORD.copy(mapImageObjectKey = "saved-key", mapImagePath = "map/7.jpg"))
+
+        val result = saveFinishedWorkout(null)
+
+        assertEquals(WorkoutSaveResult.Saved, result)
+        assertNull(mapImages.uploadedPath)
+        assertEquals("saved-key", remote.completedKey)
+        assertTrue(tracking.isCleared)
+    }
+
+    /**
+     * GIVEN: 지도 키는 없고 캡처 파일만 남은 업로드 대기 기록일 때
+     * WHEN: 캡처 없이 저장하면
+     * THEN: 남은 캡처 파일을 올려 완료한다
+     */
+    @Test
+    fun `저장해 둔 캡처 파일이 있으면 그 파일을 올려 완료한다`() = runTest {
+        tracking.pending = pendingState(RECORD.copy(mapImagePath = "map/7.jpg"))
+
+        val result = saveFinishedWorkout(null)
+
+        assertEquals(WorkoutSaveResult.Saved, result)
+        assertEquals("map/7.jpg", mapImages.uploadedPath)
+        assertEquals("map-key", remote.completedKey)
+    }
+
+    /**
+     * GIVEN: 서버에 기록이 없어 완료를 거절할 때
+     * WHEN: 저장하면
+     * THEN: 다시 보내도 안 되니 기기 기록과 사진을 지운다
+     */
+    @Test
+    fun `완료를 거절하면 기기 기록을 지운다`() = runTest {
+        tracking.state(points = 2)
+        remote.error = WorkoutException.Rejected("ACTIVITY_NOT_FOUND")
+
+        val result = saveFinishedWorkout(JPEG)
+
+        assertEquals(WorkoutSaveResult.Rejected, result)
+        assertTrue(tracking.isCleared)
+        assertTrue(photos.isCleared)
+    }
+
+    /**
+     * GIVEN: 서버에 기록이 없어 지도 업로드 주소를 주지 않을 때
+     * WHEN: 저장하면
+     * THEN: 완료하지 않고 기기 기록을 지운다
+     */
+    @Test
+    fun `지도 업로드를 거절하면 기기 기록을 지운다`() = runTest {
+        tracking.state(points = 2)
+        mapImages.error = WorkoutException.Rejected("ACTIVITY_NOT_FOUND")
+
+        val result = saveFinishedWorkout(JPEG)
+
+        assertEquals(WorkoutSaveResult.Rejected, result)
+        assertNull(remote.completedKey)
+        assertTrue(tracking.isCleared)
+    }
+
+    private fun pendingState(record: WorkoutRecord) =
+        WorkoutTrackingState(record = record, trackPoints = (1..2).map(::point))
 
     private class FakeTrackingRepository : WorkoutTrackingRepository {
         private val _state = MutableStateFlow(WorkoutTrackingState())
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isCleared = false
+
+        // 기기에 남은 업로드 대기 기록, 불러오면 상태가 됨
+        var pending: WorkoutTrackingState? = null
 
         fun state(
             points: Int,
@@ -177,7 +252,10 @@ class SaveFinishedWorkoutUseCaseTest {
 
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
-        override suspend fun loadPendingUpload(): Result<Unit> = Result.success(Unit)
+        override suspend fun loadPendingUpload(): Result<Unit> {
+            pending?.let { _state.value = it }
+            return Result.success(Unit)
+        }
 
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
@@ -238,6 +316,7 @@ class SaveFinishedWorkoutUseCaseTest {
 
     private class FakeRemoteRepository : WorkoutRemoteRepository {
         var completedKey: String? = null
+        var error: Throwable? = null
 
         override suspend fun createWorkout(
             type: WorkoutType,
@@ -254,6 +333,7 @@ class SaveFinishedWorkoutUseCaseTest {
             trackPoints: List<TrackPoint>,
             mapImageObjectKey: String,
         ): Result<Unit> {
+            error?.let { return Result.failure(it) }
             completedKey = mapImageObjectKey
             return Result.success(Unit)
         }
