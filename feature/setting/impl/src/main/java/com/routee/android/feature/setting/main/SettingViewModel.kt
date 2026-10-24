@@ -28,8 +28,6 @@ internal class SettingViewModel @Inject constructor(
     private val _sideEffect = Channel<SettingSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    private var isLoggingOut = false
-
     fun onLogoutClick() {
         _uiState.update { it.copy(isLogoutDialogVisible = true) }
     }
@@ -39,9 +37,8 @@ internal class SettingViewModel @Inject constructor(
     }
 
     fun onLogoutConfirm() {
-        _uiState.update { it.copy(isLogoutDialogVisible = false) }
-        if (isLoggingOut) return
-        isLoggingOut = true
+        if (_uiState.value.isLoggingOut) return
+        _uiState.update { it.copy(isLogoutDialogVisible = false, isLoggingOut = true) }
         viewModelScope.launch {
             authRepository.logout()
                 .onSuccess {
@@ -52,7 +49,7 @@ internal class SettingViewModel @Inject constructor(
                     Timber.e(e)
                     _sideEffect.send(SettingSideEffect.ShowUnknownErrorToast)
                 }
-            isLoggingOut = false
+            _uiState.update { it.copy(isLoggingOut = false) }
         }
     }
 }
