@@ -20,6 +20,6 @@ internal fun ArchiveDetail.toArchiveDetailRecord() = ArchiveDetailRecord(
     markers = track.timelineMarkers.map {
         MapPhoto(it.timelineId.toString(), it.thumbnailUrl, MapPoint(it.latitude, it.longitude))
     }.toImmutableList(),
-    photos = photos.map { it.copy(location = it.location?.takeIf(String::isNotBlank)) }.toImmutableList(),
+    photos = photos.toImmutableList(),
     routeNames = routes.map { it.name }.toImmutableList(),
 )

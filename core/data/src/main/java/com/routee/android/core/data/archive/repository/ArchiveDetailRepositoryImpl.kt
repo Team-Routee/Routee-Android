@@ -28,7 +28,7 @@ internal class ArchiveDetailRepositoryImpl @Inject constructor(
         coroutineScope {
             val statistics = async { apiResponseHandler.safeApiCall { service.getStatistics(activityId) }.getOrThrow() }
             val track = async { recapRepository.getActivityTrack(activityId).getOrThrow() }
-            val timeline = async { apiResponseHandler.safeApiCall { service.getTimeline(activityId) }.getOrThrow() }
+            val photos = async { getPhotos(activityId).getOrThrow() }
             val routes = async { apiResponseHandler.safeApiCall { service.getRoutes(activityId) }.getOrThrow() }
             val summary = statistics.await()
             ArchiveDetail(
@@ -38,11 +38,21 @@ internal class ArchiveDetailRepositoryImpl @Inject constructor(
                 durationSeconds = summary.durationSec,
                 maxElevationMeters = summary.maxElevationMeter,
                 track = track.await(),
-                photos = timeline.await().timelines.map {
-                    ArchivePhoto(it.timelineId, it.title, it.imageUrl, Instant.parse(it.createdAt))
-                }.sortedBy { it.createdAt },
+                photos = photos.await(),
                 routes = routes.await().routes.sortedBy { it.sequence }.map { RecapRoute(it.sequence, it.name) },
             )
         }
     }
+
+    override suspend fun getPhotos(activityId: Long): Result<List<ArchivePhoto>> =
+        apiResponseHandler.safeApiCall { service.getTimeline(activityId) }.mapCatching { response ->
+            response.timelines.map {
+                ArchivePhoto(
+                    it.timelineId,
+                    it.title?.takeIf(String::isNotBlank),
+                    it.imageUrl,
+                    Instant.parse(it.createdAt),
+                )
+            }.sortedBy { it.createdAt }
+        }
 }

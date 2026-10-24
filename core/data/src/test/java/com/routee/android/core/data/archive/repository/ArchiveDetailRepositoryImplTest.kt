@@ -137,7 +137,7 @@ class ArchiveDetailRepositoryImplTest {
                 Json.decodeFromString<ArchiveTimelineResponse>(
                     """{"activityId":42,"timelines":[
                     {"timelineId":2,"title":"정상","imageUrl":"second","createdAt":"2026-03-12T04:00:00Z"},
-                    {"timelineId":1,"title":null,"imageUrl":"first","createdAt":"2026-03-12T03:00:00Z"}]}""",
+                    {"timelineId":1,"title":" ","imageUrl":"first","createdAt":"2026-03-12T03:00:00Z"}]}""",
                 ),
             )
         }
