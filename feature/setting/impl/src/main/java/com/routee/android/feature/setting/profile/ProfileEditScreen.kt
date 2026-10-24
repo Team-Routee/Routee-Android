@@ -48,9 +48,9 @@ import com.routee.android.core.ui.error.RouteeErrorType
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.setting.R
 import com.routee.android.feature.setting.component.profile.ProfileImage
+import com.routee.android.feature.setting.profile.crop.ProfileImageCropResult
 import com.routee.android.feature.setting.profile.model.ProfileEditSideEffect
 import com.routee.android.feature.setting.profile.model.ProfileEditUiState
-import com.routee.android.feature.setting.profile.model.ProfileImageCropResult
 
 private val ProfileImageTopSpacing = 51.dp
 private val NicknameTopSpacing = 42.dp

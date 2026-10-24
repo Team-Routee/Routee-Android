@@ -1,4 +1,4 @@
-package com.routee.android.feature.setting.profile.model
+package com.routee.android.feature.setting.profile.crop
 
 /**
  * 프로필 사진 자르기 화면에서 프로필 변경 화면으로 돌려주는 결과

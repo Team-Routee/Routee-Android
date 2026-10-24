@@ -12,7 +12,7 @@ import com.routee.android.feature.setting.api.WithdrawNavKey
 import com.routee.android.feature.setting.contact.ContactRoute
 import com.routee.android.feature.setting.main.SettingRoute
 import com.routee.android.feature.setting.profile.ProfileEditRoute
-import com.routee.android.feature.setting.profile.ProfileImageCropRoute
+import com.routee.android.feature.setting.profile.crop.ProfileImageCropRoute
 import com.routee.android.feature.setting.withdraw.WithdrawRoute
 
 fun EntryProviderScope<NavKey>.settingEntries(navigator: RouteeNavigator) {

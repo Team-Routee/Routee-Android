@@ -1,4 +1,4 @@
-package com.routee.android.feature.setting.profile
+package com.routee.android.feature.setting.profile.crop
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -7,7 +7,6 @@ import androidx.core.net.toUri
 import androidx.navigation3.runtime.result.LocalResultEventBus
 import com.routee.android.core.designsystem.component.RouteeCropAspectRatio
 import com.routee.android.core.ui.imagecrop.RouteeImageCropScreen
-import com.routee.android.feature.setting.profile.model.ProfileImageCropResult
 import timber.log.Timber
 
 /**
