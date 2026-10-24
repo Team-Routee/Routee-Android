@@ -21,10 +21,12 @@ import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.component.skeleton.skeleton
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.format.formatDistanceKm
+import com.routee.android.core.ui.format.formatDurationClock
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private val TitleSkeletonHeight = 28.dp
 private val MapSkeletonHeight = 480.dp
@@ -53,8 +55,8 @@ internal fun WorkoutSavingSkeleton(
                 )
                 Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
                 RouteeWorkoutMetricCard(
-                    distance = String.format(Locale.US, "%.2f", distanceMeters / 1000.0),
-                    duration = String.format(Locale.US, "%02d:%02d", durationSec / 3600, durationSec / 60 % 60),
+                    distance = formatDistanceKm(distanceMeters),
+                    duration = formatDurationClock(durationSec),
                     maxElevation = maxElevationMeters.toString(),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -77,7 +79,7 @@ internal fun WorkoutSavingSkeleton(
 @PreviewDeviceSizes
 @Composable
 private fun WorkoutSavingSkeletonPreview() {
-    RouteeTheme {
+    RouteePreviewTheme {
         WorkoutSavingSkeleton(
             distanceMeters = 15_530,
             durationSec = 12_000,

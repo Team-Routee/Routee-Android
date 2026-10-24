@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.component.skeleton.skeleton
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
+import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
 /** 사진 타임라인 카드에 표시할 이미지와 위치 */
@@ -100,7 +101,7 @@ private fun RouteePhotoTimelineSectionPreview() {
 @PreviewFontSizes
 @Composable
 private fun RouteePhotoTimelineSectionLoadingPreview() {
-    RouteeTheme {
+    RouteePreviewTheme {
         RouteePhotoTimelineSection(
             photos = emptyList(),
             date = "2026.03.12",
