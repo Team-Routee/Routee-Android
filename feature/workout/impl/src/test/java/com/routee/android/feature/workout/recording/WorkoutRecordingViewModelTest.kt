@@ -169,6 +169,25 @@ class WorkoutRecordingViewModelTest {
 
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
         assertEquals(WorkoutMode.PAUSED, viewModel.uiState.value.mode)
+        assertEquals(WorkoutRecordingSideEffect.ShowResumeFailed, viewModel.sideEffect.first())
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 정지 화면에서 기기 저장이 실패할 때
+     * WHEN: 다시 시작을 누르면
+     * THEN: 정지 화면에 남고 실패를 알린다
+     */
+    @Test
+    fun `다시 시작하지 못하면 정지 화면에 남고 알린다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record(WorkoutStatus.ACTIVITY_PAUSED), resumeError = IOException())
+        val viewModel = viewModel(tracking)
+        assertEquals(WorkoutRecordingSideEffect.StartTrackingService, viewModel.sideEffect.first())
+
+        viewModel.onRestartClick()
+
+        assertEquals(WorkoutMode.PAUSED, viewModel.uiState.value.mode)
+        assertEquals(WorkoutRecordingSideEffect.ShowResumeFailed, viewModel.sideEffect.first())
         viewModel.close()
     }
 

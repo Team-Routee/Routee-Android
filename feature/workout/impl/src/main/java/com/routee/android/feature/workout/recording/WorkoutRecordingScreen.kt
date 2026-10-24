@@ -91,6 +91,7 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
+    val resumeErrorText = stringResource(R.string.workout_recording_resume_error_toast)
     val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
     val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
     val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
@@ -115,6 +116,8 @@ internal fun WorkoutRecordingRoute(
             }
 
             WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
+
+            WorkoutRecordingSideEffect.ShowResumeFailed -> messageState.showToast(text = resumeErrorText)
 
             is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
 

@@ -29,6 +29,8 @@
     <string name="workout_recording_start_error_toast">네트워크 연결을 확인해주세요.</string>
     <!-- TODO P1 기획: 이전 기록 복원 실패 문구 -->
     <string name="workout_recording_restore_error_toast">이전 기록을 불러오지 못했어요.</string>
+    <!-- TODO P1 기획: 다시 시작(복구 포함) 기기 저장 실패 문구 -->
+    <string name="workout_recording_resume_error_toast">기록을 다시 시작하지 못했어요.\n다시 시작을 눌러 주세요.</string>
     <string name="workout_recording_save_failure_title">기록 등록 실패</string>
     <!-- TODO P1 기획: 실패해도 기기에 남겨 다음 실행 때 다시 보내는데 "다시 기록해주세요" 문구 확인 -->
     <string name="workout_recording_save_failure_network_description">인터넷 연결이 불안정해서\n기록이 등록되지 않았어요.\n연결이 안정되면 다시 기록해주세요.</string>

@@ -115,7 +115,12 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     }
 
     fun onRestartClick() {
-        viewModelScope.launch { trackingRepository.resume().onFailure { Timber.e(it, "다시 시작 실패") } }
+        viewModelScope.launch {
+            trackingRepository.resume().onFailure {
+                Timber.e(it, "다시 시작 실패")
+                _sideEffect.send(WorkoutRecordingSideEffect.ShowResumeFailed)
+            }
+        }
     }
 
     /** 카메라 원본을 쓸 파일을 만들어 기본 카메라 실행, 찍는 중이거나 20장이거나 삭제 스낵바가 떠 있으면 무시 */
@@ -334,7 +339,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     // 일시정지로 불러온 기록을 기록 중으로, 화면이 떠 있을 때 서비스 시작. 기기 저장이 실패하면 정지 화면으로 둠
     private suspend fun resumeRecovered() {
         isResumingRecovered = false
-        trackingRepository.resume().onFailure { Timber.e(it, "복구한 기록 다시 시작 실패") }
+        trackingRepository.resume().onFailure {
+            Timber.e(it, "복구한 기록 다시 시작 실패")
+            _sideEffect.send(WorkoutRecordingSideEffect.ShowResumeFailed)
+        }
         continueRecording()
     }
 

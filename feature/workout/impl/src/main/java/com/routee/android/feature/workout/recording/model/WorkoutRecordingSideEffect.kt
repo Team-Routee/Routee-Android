@@ -9,6 +9,9 @@ internal sealed interface WorkoutRecordingSideEffect {
 
     data object ShowRestoreFailed : WorkoutRecordingSideEffect
 
+    // 기기 저장이 실패해 정지 화면에 남음
+    data object ShowResumeFailed : WorkoutRecordingSideEffect
+
     data class NavigateToTimeline(val summary: WorkoutSummary) : WorkoutRecordingSideEffect
 
     data object NavigateToHome : WorkoutRecordingSideEffect
