@@ -1,5 +1,6 @@
 package com.routee.android.feature.setting.main
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.link.RouteeLink
 import com.routee.android.core.ui.link.tryOpenUri
 import com.routee.android.core.ui.link.tryOpenUriInNativeApp
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.setting.R
 import com.routee.android.feature.setting.component.main.SettingMenuItem
 import com.routee.android.feature.setting.component.main.SettingSection
@@ -65,6 +67,9 @@ internal fun SettingRoute(
         }
     }
 
+    // 요청 중 뒤로가기로 앱을 나가면 서버 로그아웃 뒤 기기 정리가 취소될 수 있음
+    BackHandler(enabled = uiState.isLoggingOut) {}
+
     SettingScreen(
         uiState = uiState,
         appVersion = appVersion,
@@ -81,6 +86,8 @@ internal fun SettingRoute(
         onLogoutDismiss = viewModel::onLogoutDismiss,
         onWithdrawClick = onWithdrawClick,
     )
+
+    if (uiState.isLoggingOut) RouteeLoadingOverlay()
 }
 
 @Composable

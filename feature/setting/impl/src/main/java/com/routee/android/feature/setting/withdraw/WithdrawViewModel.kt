@@ -29,15 +29,13 @@ internal class WithdrawViewModel @Inject constructor(
     private val _sideEffect = Channel<WithdrawSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    private var isWithdrawing = false
-
     fun onAgreeChange(agreed: Boolean) {
         _uiState.update { it.copy(isAgreed = agreed) }
     }
 
     fun onWithdrawClick() {
-        if (!_uiState.value.isAgreed || isWithdrawing) return
-        isWithdrawing = true
+        if (!_uiState.value.isAgreed || _uiState.value.isWithdrawing) return
+        _uiState.update { it.copy(isWithdrawing = true) }
         viewModelScope.launch {
             authRepository.withdraw()
                 .onSuccess {
@@ -52,7 +50,7 @@ internal class WithdrawViewModel @Inject constructor(
                         _sideEffect.send(WithdrawSideEffect.ShowUnknownErrorToast)
                     }
                 }
-            isWithdrawing = false
+            _uiState.update { it.copy(isWithdrawing = false) }
         }
     }
 }

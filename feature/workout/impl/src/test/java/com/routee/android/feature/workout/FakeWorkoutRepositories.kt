@@ -81,6 +81,13 @@ internal class FakeWorkoutTrackingRepository(
         return Result.success(Unit)
     }
 
+    override suspend fun loadPendingUpload(): Result<Unit> {
+        if (_state.value.record?.isTracking != true && savedRecord?.status == WorkoutStatus.PENDING_UPLOAD) {
+            _state.value = WorkoutTrackingState(record = savedRecord, trackPoints = savedTrackPoints)
+        }
+        return Result.success(Unit)
+    }
+
     override suspend fun finish(endedAt: Instant?): Result<Unit> {
         _state.value = _state.value.copy(record = _state.value.record?.finished(START, endedAt ?: START))
         return Result.success(Unit)
@@ -95,6 +102,7 @@ internal class FakeWorkoutTrackingRepository(
 
 internal class FakeWorkoutRemoteRepository(
     private val createError: Throwable? = null,
+    private val completeError: Throwable? = null,
 ) : WorkoutRemoteRepository {
     override suspend fun createWorkout(
         type: WorkoutType,
@@ -112,7 +120,7 @@ internal class FakeWorkoutRemoteRepository(
         record: WorkoutRecord,
         trackPoints: List<TrackPoint>,
         mapImageObjectKey: String,
-    ): Result<Unit> = Result.success(Unit)
+    ): Result<Unit> = completeError?.let { Result.failure(it) } ?: Result.success(Unit)
 
     override suspend fun updateRoutes(
         activityId: Long,

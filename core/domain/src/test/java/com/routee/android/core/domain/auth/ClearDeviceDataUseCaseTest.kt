@@ -78,6 +78,8 @@ class ClearDeviceDataUseCaseTest {
 
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
+        override suspend fun loadPendingUpload(): Result<Unit> = Result.success(Unit)
+
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
         override suspend fun clear(): Result<Unit> {

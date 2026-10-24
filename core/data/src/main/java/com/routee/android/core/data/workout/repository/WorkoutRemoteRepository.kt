@@ -1,5 +1,6 @@
 package com.routee.android.core.data.workout.repository
 
+import com.routee.android.core.data.workout.exception.WorkoutException
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
@@ -22,7 +23,7 @@ interface WorkoutRemoteRepository {
     ): Result<Unit>
 
     /**
-     * 기록 완료, 이미 완료된 기록이면 성공
+     * 기록 완료, 이미 완료된 기록이면 성공. 서버에 기록이 없으면 [WorkoutException.Rejected]
      *
      * @param record            종료 시각이 있는 기록
      * @param mapImageObjectKey 지도 캡처 업로드 결과

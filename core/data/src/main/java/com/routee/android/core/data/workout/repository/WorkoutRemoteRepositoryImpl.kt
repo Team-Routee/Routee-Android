@@ -1,5 +1,6 @@
 package com.routee.android.core.data.workout.repository
 
+import com.routee.android.core.data.workout.exception.mapWorkoutException
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
@@ -14,6 +15,7 @@ import com.routee.android.core.data.workout.remote.dto.request.UpdateActivitySta
 import com.routee.android.core.data.workout.remote.dto.request.UpdateRoutesRequest
 import com.routee.android.core.data.workout.remote.service.WorkoutService
 import com.routee.android.core.network.exception.ApiException
+import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.util.ApiResponseHandler
 import java.time.Instant
 import java.time.LocalDateTime
@@ -57,7 +59,7 @@ internal class WorkoutRemoteRepositoryImpl @Inject constructor(
         )
     }.recoverCatching { error ->
         if (error !is ApiException.Conflict || error.serverCode != ACTIVITY_ALREADY_COMPLETED) throw error
-    }
+    }.mapApiException(::mapWorkoutException)
 
     override suspend fun updateRoutes(
         activityId: Long,

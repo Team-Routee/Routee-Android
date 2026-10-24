@@ -195,6 +195,38 @@ class WorkoutTrackingRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 앱이 다시 켜져 상태는 비었고 기기에 지도 키를 저장한 업로드 대기 기록이 있을 때
+     * WHEN: 업로드 대기 기록을 불러오면
+     * THEN: 지도 키와 경로 좌표까지 불러온다
+     */
+    @Test
+    fun `업로드 대기 기록을 경로와 함께 불러온다`() = runTest {
+        val pending = record().copy(status = WorkoutStatus.PENDING_UPLOAD, endedAt = START)
+        recordRepository.startRecord(record())
+        recordRepository.saveTrackPoint(record(), point(1))
+        recordRepository.saveRecord(pending.copy(mapImageObjectKey = "map.jpg"))
+
+        repository.loadPendingUpload()
+
+        assertEquals("map.jpg", repository.state.value.record?.mapImageObjectKey)
+        assertEquals(listOf(1), repository.state.value.trackPoints.map { it.pointIndex })
+    }
+
+    /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 업로드 대기 기록을 불러오면
+     * THEN: 기록 중인 상태를 그대로 둔다
+     */
+    @Test
+    fun `기록 중이면 업로드 대기 기록을 불러오지 않는다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        repository.loadPendingUpload()
+
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, repository.state.value.record?.status)
+    }
+
+    /**
      * GIVEN: 일시정지한 기록일 때
      * WHEN: 경로 좌표를 더하면
      * THEN: 더하지 않는다

@@ -45,6 +45,9 @@ interface WorkoutTrackingRepository {
      */
     suspend fun finish(endedAt: Instant? = null): Result<Unit>
 
+    /** 기기에 저장된 업로드 대기 기록을 경로와 함께 불러옴, 저장해 둔 지도 키와 캡처 경로도 반영. 기록 중이면 그대로 */
+    suspend fun loadPendingUpload(): Result<Unit>
+
     /** 저장을 마쳤거나 저장할 수 없는 기록 삭제, 상태 비움 */
     suspend fun clear(): Result<Unit>
 }
