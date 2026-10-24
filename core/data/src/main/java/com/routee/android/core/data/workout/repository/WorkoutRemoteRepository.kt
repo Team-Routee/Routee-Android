@@ -23,7 +23,7 @@ interface WorkoutRemoteRepository {
     ): Result<Unit>
 
     /**
-     * 기록 완료, 이미 완료된 기록이면 성공. 서버에 기록이 없거나 값이 잘못되면 [WorkoutException.Rejected]
+     * 기록 완료, 이미 완료된 기록이면 성공. 서버에 기록이 없으면 [WorkoutException.Rejected]
      *
      * @param record            종료 시각이 있는 기록
      * @param mapImageObjectKey 지도 캡처 업로드 결과

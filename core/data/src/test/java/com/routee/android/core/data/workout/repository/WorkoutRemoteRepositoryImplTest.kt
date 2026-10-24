@@ -126,6 +126,21 @@ class WorkoutRemoteRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 보낸 값이 잘못돼 서버가 400을 줄 때
+     * WHEN: 완료하면
+     * THEN: 앱을 고치면 다시 보낼 수 있게 거절이 아닌 실패로 돌려준다
+     */
+    @Test
+    fun `잘못된 요청은 거절이 아닌 실패로 돌려준다`() = runTest {
+        service.completeError = httpException(400, "INVALID_TRACK")
+
+        val result = repository.completeWorkout(finishedRecord(), listOf(point(1), point(2)), "map.jpg")
+
+        assertTrue(result.isFailure)
+        assertFalse(result.exceptionOrNull() is WorkoutException.Rejected)
+    }
+
+    /**
      * GIVEN: 서버 오류일 때
      * WHEN: 완료하면
      * THEN: 거절이 아닌 실패로 돌려준다
