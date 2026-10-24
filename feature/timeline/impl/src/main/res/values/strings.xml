@@ -10,8 +10,10 @@
     <string name="timeline_exit">나가기</string>
     <!-- TODO P1 기획: 피그마는 저장 실패 시 "기록 등록 실패" 모달 → 홈, 기록은 종료 때 이미 저장돼서 토스트 후 타임라인 유지 (제안) -->
     <string name="timeline_network_error_toast">네트워크 연결을 확인해주세요.</string>
+    <string name="timeline_unknown_error_toast">일시적인 오류가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
     <!-- TODO P1 기획: 나가기 삭제 실패 시에도 홈으로 이동 (기록은 남음, 제안) -->
-    <string name="timeline_delete_error_toast">네트워크 연결을 확인해주세요.\n기록을 삭제하지 못했어요.</string>
+    <string name="timeline_delete_network_error_toast">네트워크 연결을 확인해주세요.\n기록을 삭제하지 못했어요.</string>
+    <string name="timeline_delete_unknown_error_toast">일시적인 오류가 발생했어요.\n기록을 삭제하지 못했어요.</string>
     <!-- 나의 루트 편집 -->
     <string name="timeline_route_title">나의 루트</string>
     <string name="timeline_route_point_count">(%1$d/%2$d)</string>

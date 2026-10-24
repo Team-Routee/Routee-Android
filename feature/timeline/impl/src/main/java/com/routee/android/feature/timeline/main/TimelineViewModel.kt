@@ -10,8 +10,9 @@ import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.main.model.TimelineDraft
-import com.routee.android.feature.timeline.main.model.TimelineSaveResult
+import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineUiState
+import com.routee.android.feature.timeline.main.model.toRequestFailure
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -83,10 +84,15 @@ internal class TimelineViewModel @AssistedInject constructor(
         routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
     )
 
-    suspend fun save(draft: TimelineDraft): TimelineSaveResult = recordSaver.save(activityId, draft)
+    suspend fun save(draft: TimelineDraft): TimelineRequestResult = recordSaver.save(activityId, draft)
 
-    suspend fun deleteRecord(): Result<Unit> =
-        archiveDetailRepository.deleteActivity(activityId).onFailure { Timber.e(it, "기록 삭제 실패") }
+    suspend fun deleteRecord(): TimelineRequestResult = archiveDetailRepository.deleteActivity(activityId).fold(
+        onSuccess = { TimelineRequestResult.Success },
+        onFailure = {
+            Timber.e(it, "기록 삭제 실패")
+            it.toRequestFailure()
+        },
+    )
 
     @AssistedFactory
     interface Factory : NavKeyViewModelFactory<TimelineNavKey, TimelineViewModel>

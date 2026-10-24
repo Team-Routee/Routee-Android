@@ -67,8 +67,8 @@ import com.routee.android.feature.timeline.component.MyRouteEditor
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineDraft
+import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
-import com.routee.android.feature.timeline.main.model.TimelineSaveResult
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
@@ -86,7 +86,7 @@ internal fun TimelineRoute(
     viewModel: TimelineViewModel,
     onExit: () -> Unit,
     onSaveSuccess: (TimelineSaveDestination) -> Unit,
-    onSaveRecord: suspend (TimelineDraft) -> TimelineSaveResult,
+    onSaveRecord: suspend (TimelineDraft) -> TimelineRequestResult,
     modifier: Modifier = Modifier,
     routeMap: (@Composable () -> Unit)? = null,
 ) {
@@ -96,7 +96,9 @@ internal fun TimelineRoute(
     val scope = rememberCoroutineScope()
     val messageState = LocalRouteeMessageState.current
     val networkErrorText = stringResource(R.string.timeline_network_error_toast)
-    val deleteErrorText = stringResource(R.string.timeline_delete_error_toast)
+    val unknownErrorText = stringResource(R.string.timeline_unknown_error_toast)
+    val deleteNetworkErrorText = stringResource(R.string.timeline_delete_network_error_toast)
+    val deleteUnknownErrorText = stringResource(R.string.timeline_delete_unknown_error_toast)
 
     BackHandler {
         if (!isSaving) showExitDialog = true
@@ -118,11 +120,15 @@ internal fun TimelineRoute(
         if (isSaving) return
         isSaving = true
         scope.launch {
-            val isDeleted = suspendRunCatching { viewModel.deleteRecord().getOrThrow() }.isSuccess
+            val result = suspendRunCatching { viewModel.deleteRecord() }.getOrDefault(TimelineRequestResult.Failed)
             isSaving = false
             // TODO P1 기획: 삭제 성공 토스트 여부 (아카이브는 "기록이 삭제되었습니다.")
             // 실패해도 나감 (기록은 남고 아카이브에서 삭제 가능)
-            if (!isDeleted) messageState.showToast(text = deleteErrorText)
+            when (result) {
+                TimelineRequestResult.Success -> Unit
+                TimelineRequestResult.NetworkFailed -> messageState.showToast(text = deleteNetworkErrorText)
+                TimelineRequestResult.Failed -> messageState.showToast(text = deleteUnknownErrorText)
+            }
             onExit()
         }
     }
@@ -131,11 +137,12 @@ internal fun TimelineRoute(
         isSaving = true
         scope.launch {
             val result = suspendRunCatching { onSaveRecord(viewModel.draft(defaultTitle)) }
-                .getOrDefault(TimelineSaveResult.Failed)
+                .getOrDefault(TimelineRequestResult.Failed)
             isSaving = false
             when (result) {
-                TimelineSaveResult.Success -> onSaveSuccess(destination)
-                TimelineSaveResult.Failed -> messageState.showToast(text = networkErrorText)
+                TimelineRequestResult.Success -> onSaveSuccess(destination)
+                TimelineRequestResult.NetworkFailed -> messageState.showToast(text = networkErrorText)
+                TimelineRequestResult.Failed -> messageState.showToast(text = unknownErrorText)
             }
         }
     }

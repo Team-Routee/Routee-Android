@@ -11,8 +11,9 @@ import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
+import com.routee.android.core.network.exception.ApiException
 import com.routee.android.feature.timeline.main.model.TimelineDraft
-import com.routee.android.feature.timeline.main.model.TimelineSaveResult
+import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import java.io.IOException
 import java.time.Instant
 import java.time.YearMonth
@@ -34,7 +35,7 @@ class TimelineRecordSaverTest {
     fun `바뀐 게 없으면 요청하지 않는다`() = runTest {
         val result = saver.save(ACTIVITY_ID, TimelineDraft(title = null, routePoints = emptyList()))
 
-        assertEquals(TimelineSaveResult.Success, result)
+        assertEquals(TimelineRequestResult.Success, result)
         assertEquals(emptyList<List<String>>(), workoutRemote.savedRoutes)
         assertEquals(emptyList<String>(), recap.savedTitles)
     }
@@ -66,7 +67,7 @@ class TimelineRecordSaverTest {
 
         val result = saver.save(ACTIVITY_ID, TimelineDraft(title = null, routePoints = emptyList()))
 
-        assertEquals(TimelineSaveResult.Success, result)
+        assertEquals(TimelineRequestResult.Success, result)
         assertEquals(listOf(listOf("창의문"), emptyList()), workoutRemote.savedRoutes)
     }
 
@@ -84,8 +85,8 @@ class TimelineRecordSaverTest {
         recap.failure = null
         val retried = saver.save(ACTIVITY_ID, draft)
 
-        assertEquals(TimelineSaveResult.Failed, failed)
-        assertEquals(TimelineSaveResult.Success, retried)
+        assertEquals(TimelineRequestResult.Failed, failed)
+        assertEquals(TimelineRequestResult.Success, retried)
         assertEquals(listOf(listOf("창의문")), workoutRemote.savedRoutes)
         assertEquals(listOf("북한산"), recap.savedTitles)
     }
@@ -101,8 +102,22 @@ class TimelineRecordSaverTest {
 
         val result = saver.save(ACTIVITY_ID, TimelineDraft(title = "북한산", routePoints = listOf("창의문")))
 
-        assertEquals(TimelineSaveResult.Failed, result)
+        assertEquals(TimelineRequestResult.Failed, result)
         assertEquals(emptyList<String>(), recap.savedTitles)
+    }
+
+    /**
+     * GIVEN: 인터넷 연결이 끊겨 루트 저장이 실패할 때
+     * WHEN: 저장하면
+     * THEN: 네트워크 실패를 돌려준다
+     */
+    @Test
+    fun `인터넷 연결 실패는 네트워크 실패로 돌려준다`() = runTest {
+        workoutRemote.failure = ApiException.NetworkConnection(IOException())
+
+        val result = saver.save(ACTIVITY_ID, TimelineDraft(title = null, routePoints = listOf("창의문")))
+
+        assertEquals(TimelineRequestResult.NetworkFailed, result)
     }
 
     private class FakeWorkoutRemoteRepository : WorkoutRemoteRepository {

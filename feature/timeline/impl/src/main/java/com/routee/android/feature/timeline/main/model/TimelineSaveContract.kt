@@ -1,5 +1,10 @@
 package com.routee.android.feature.timeline.main.model
 
-internal enum class TimelineSaveResult { Success, Failed }
+import com.routee.android.core.network.exception.ApiException
+
+internal enum class TimelineRequestResult { Success, NetworkFailed, Failed }
 
 internal enum class TimelineSaveDestination { Home, RecordEdit }
+
+internal fun Throwable.toRequestFailure(): TimelineRequestResult =
+    if (this is ApiException.NetworkConnection) TimelineRequestResult.NetworkFailed else TimelineRequestResult.Failed
