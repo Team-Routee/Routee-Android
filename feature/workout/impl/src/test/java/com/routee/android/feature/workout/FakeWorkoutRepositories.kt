@@ -102,6 +102,7 @@ internal class FakeWorkoutTrackingRepository(
 
 internal class FakeWorkoutRemoteRepository(
     private val createError: Throwable? = null,
+    private val completeError: Throwable? = null,
 ) : WorkoutRemoteRepository {
     override suspend fun createWorkout(
         type: WorkoutType,
@@ -119,7 +120,7 @@ internal class FakeWorkoutRemoteRepository(
         record: WorkoutRecord,
         trackPoints: List<TrackPoint>,
         mapImageObjectKey: String,
-    ): Result<Unit> = Result.success(Unit)
+    ): Result<Unit> = completeError?.let { Result.failure(it) } ?: Result.success(Unit)
 
     override suspend fun updateRoutes(
         activityId: Long,

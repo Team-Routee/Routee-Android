@@ -3,6 +3,7 @@ package com.routee.android.feature.workout.main
 import androidx.lifecycle.SavedStateHandle
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WORKOUT_PAUSE_LIMIT
+import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.domain.location.ObserveCurrentAddressUseCase
 import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
@@ -215,6 +216,64 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 앱이 다시 켜졌고 지도 키를 올려 둔 업로드 대기 기록이 있을 때
+     * WHEN: 운동 메인에 들어오면
+     * THEN: 다시 보내 저장 토스트를 띄우고 기기 기록을 지운다
+     */
+    @Test
+    fun `업로드 대기 기록이 있으면 다시 보내고 저장 토스트`() = runTest {
+        val pending = PENDING_RECORD.copy(mapImageObjectKey = "map-key")
+        val tracking = pendingTracking(pending)
+
+        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(pending))
+
+        assertEquals(WorkoutMainSideEffect.ShowRecoverySaved, viewModel.sideEffect.first())
+        assertFalse(viewModel.uiState.value.isCheckingUnfinishedWorkout)
+        assertTrue(tracking.isCleared)
+    }
+
+    /**
+     * GIVEN: 지도 키도 캡처 파일도 없는 업로드 대기 기록일 때
+     * WHEN: 운동 메인에 들어오면
+     * THEN: 로딩과 함께 경로 전체 캡처를 요청하고, 캡처를 받으면 저장 토스트
+     */
+    @Test
+    fun `캡처가 없는 업로드 대기 기록은 다시 캡처해 보낸다`() = runTest {
+        val tracking = pendingTracking(PENDING_RECORD)
+
+        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(PENDING_RECORD))
+
+        assertTrue(viewModel.uiState.value.isRecoverySaving)
+        assertEquals(listOf(MapPoint(38.0, 127.0), MapPoint(39.0, 127.0)), viewModel.uiState.value.recoveryCaptureRoute)
+
+        viewModel.onRecoveryMapCaptured(byteArrayOf(1))
+
+        assertEquals(WorkoutMainSideEffect.ShowRecoverySaved, viewModel.sideEffect.first())
+        assertFalse(viewModel.uiState.value.isRecoverySaving)
+        assertTrue(tracking.isCleared)
+    }
+
+    /**
+     * GIVEN: 인터넷이 끊겨 다시 보내기가 실패할 때
+     * WHEN: 운동 메인에 들어오면
+     * THEN: 안내 없이 기기 기록을 남긴다
+     */
+    @Test
+    fun `다시 보내기가 실패하면 안내 없이 기록을 남긴다`() = runTest {
+        val pending = PENDING_RECORD.copy(mapImageObjectKey = "map-key")
+        val tracking = pendingTracking(pending)
+
+        val viewModel = viewModel(
+            tracking = tracking,
+            records = FakeWorkoutRecordRepository(pending),
+            remote = FakeWorkoutRemoteRepository(completeError = IOException()),
+        )
+
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+        assertFalse(tracking.isCleared)
+    }
+
+    /**
      * GIVEN: 위치 권한을 물어본 적 없을 때
      * WHEN: 처음 확인한 권한이 거부면
      * THEN: 시스템 팝업을 요청하고 물어봤다고 남긴다
@@ -382,6 +441,7 @@ class WorkoutMainViewModelTest {
         tracking: FakeWorkoutTrackingRepository = FakeWorkoutTrackingRepository(),
         records: FakeWorkoutRecordRepository = FakeWorkoutRecordRepository(),
         location: FakeLocationRepository = FakeLocationRepository(),
+        remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
     ) = WorkoutMainViewModel(
         savedStateHandle = SavedStateHandle(),
         trackingRepository = tracking,
@@ -393,15 +453,23 @@ class WorkoutMainViewModelTest {
             trackingRepository = tracking,
             recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
-            remoteRepository = FakeWorkoutRemoteRepository(),
+            remoteRepository = remote,
             photoRepository = FakeWorkoutPhotoRepository(),
         ),
         discardWorkout = DiscardWorkoutUseCase(tracking, records, FakeWorkoutPhotoRepository()),
     )
 
+    private fun pendingTracking(record: WorkoutRecord) = FakeWorkoutTrackingRepository(
+        savedRecord = record,
+        savedTrackPoints = listOf(trackPoint(1), trackPoint(2)),
+    )
+
     private companion object {
         // 1분 기록하고 앱이 꺼진 기록
         val STOPPED_RECORD = record().copy(lastRecordedAt = START.plusSeconds(60))
+
+        // 1분 기록하고 종료했지만 서버 저장을 확인하지 못한 기록
+        val PENDING_RECORD = STOPPED_RECORD.finished(START.plusSeconds(60))
         val LOCATION = DeviceLocation(
             latitude = 37.0,
             longitude = 127.0,

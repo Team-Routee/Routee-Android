@@ -282,6 +282,7 @@ private fun WorkoutMainScreen(
             RouteeCtaPrimaryButton(
                 text = stringResource(R.string.workout_main_record),
                 onClick = onRecordClick,
+                enabled = !uiState.isCheckingUnfinishedWorkout,
                 modifier = Modifier
                     .fillMaxWidth()
                     .routeeMessageAnchor()
@@ -296,7 +297,7 @@ private fun WorkoutMainScreen(
 private fun WorkoutMainScreenPreview() {
     RouteePreviewTheme {
         WorkoutMainScreen(
-            uiState = WorkoutMainUiState(address = "영등포구 의사당대로 1"),
+            uiState = WorkoutMainUiState(address = "영등포구 의사당대로 1", isCheckingUnfinishedWorkout = false),
             mapState = rememberRouteeMapState(),
             myLocation = null,
             onMyLocationClick = {},

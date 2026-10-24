@@ -135,7 +135,7 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    /** 종료 후 저장 지도 캡처를 받아 저장, 캡처 실패면 null */
+    /** 종료 후 저장, 재전송 지도 캡처를 받아 저장, 캡처 실패면 null */
     fun onRecoveryMapCaptured(jpeg: ByteArray?) {
         if (_uiState.value.recoveryCaptureRoute == null) return
         _uiState.update { it.copy(recoveryCaptureRoute = null) }
@@ -181,25 +181,38 @@ internal class WorkoutMainViewModel @Inject constructor(
         _uiState.update { it.copy(isLocationPermissionDialogVisible = false) }
     }
 
-    // 앱이 살아 있으면 기록 화면으로, 꺼졌다 켜졌거나 일시정지 2시간이 넘었으면 복구 모달
+    // 확인과 재전송이 끝날 때까지 운동 기록 비활성화, 새 기록이 남은 기록과 겹치지 않게
     private fun checkUnfinishedWorkout() {
         viewModelScope.launch {
-            val unfinished = getUnfinishedWorkout().getOrElse {
-                Timber.e(it, "남은 운동 기록 확인 실패")
-                return@launch
+            getUnfinishedWorkout()
+                .onSuccess { handleUnfinishedWorkout(it) }
+                .onFailure { Timber.e(it, "남은 운동 기록 확인 실패") }
+            _uiState.update { it.copy(isCheckingUnfinishedWorkout = false) }
+        }
+    }
+
+    // 앱이 살아 있으면 기록 화면으로, 꺼졌다 켜졌거나 일시정지 2시간이 넘었으면 복구 모달, 저장 확인 전이면 다시 보냄
+    private suspend fun handleUnfinishedWorkout(unfinished: UnfinishedWorkout) {
+        when (unfinished) {
+            UnfinishedWorkout.None -> Unit
+
+            UnfinishedWorkout.Tracking -> _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording)
+
+            is UnfinishedWorkout.Recoverable -> {
+                _uiState.update { it.copy(recovery = unfinished.record.toRecoveryUiModel()) }
             }
-            when (unfinished) {
-                UnfinishedWorkout.None -> Unit
 
-                UnfinishedWorkout.Tracking -> _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording)
+            is UnfinishedWorkout.PendingUpload -> resendPendingWorkout()
+        }
+    }
 
-                is UnfinishedWorkout.Recoverable -> {
-                    _uiState.update { it.copy(recovery = unfinished.record.toRecoveryUiModel()) }
-                }
-
-                // TODO #112 저장 확인 못 한 기록 다시 보내기
-                is UnfinishedWorkout.PendingUpload -> Unit
-            }
+    // TODO P1 기획: 다시 보낸 결과 토스트, 인터넷이나 서버 오류면 안내 없이 다음 진입 때 다시
+    // 지도 키나 캡처 파일이 있으면 그대로 보내고, 없으면 경로 전체를 다시 캡처
+    private suspend fun resendPendingWorkout() {
+        when (val result = saveFinishedWorkout(mapImage = null)) {
+            WorkoutSaveResult.MapImageMissing -> requestRouteCapture()
+            WorkoutSaveResult.Failed -> Timber.w("업로드 대기 기록 다시 보내기 실패, 다음 진입 때 다시")
+            else -> showSaveResultToast(result)
         }
     }
 
@@ -224,25 +237,34 @@ internal class WorkoutMainViewModel @Inject constructor(
                 val record = checkNotNull(trackingRepository.state.value.record) { "복구할 기록 없음" }
                 trackingRepository.finish(endedAt = record.lastRecordedAt).getOrThrow()
             }.onSuccess {
-                val route = trackingRepository.state.value.trackPoints.map { it.toMapPoint() }.toImmutableList()
-                _uiState.update { it.copy(recoveryCaptureRoute = route) }
+                requestRouteCapture()
             }.onFailure {
                 Timber.e(it, "복구한 기록 종료 실패")
                 showRecoverySaveResult(WorkoutSaveResult.Failed)
             }
     }
 
-    // TODO P1 기획: 경로가 2점 미만이라 저장할 수 없을 때도 실패 토스트
+    // 경로 전체 캡처를 로딩과 함께 요청, 캡처는 onRecoveryMapCaptured로 받음
+    private fun requestRouteCapture() {
+        val route = trackingRepository.state.value.trackPoints.map { it.toMapPoint() }.toImmutableList()
+        _uiState.update { it.copy(isRecoverySaving = true, recoveryCaptureRoute = route) }
+    }
+
     private suspend fun showRecoverySaveResult(result: WorkoutSaveResult) {
         _uiState.update { it.copy(isRecoverySaving = false) }
-        val isSaved = result == WorkoutSaveResult.Saved || result == WorkoutSaveResult.PhotosMissing
-        if (!isSaved) Timber.w("복구한 기록 저장 실패: $result")
-        _sideEffect.send(
-            if (isSaved) WorkoutMainSideEffect.ShowRecoverySaved else WorkoutMainSideEffect.ShowRecoverySaveFailed,
-        )
+        showSaveResultToast(result)
         if (_uiState.value.locationPermission == LocationPermission.GRANTED) {
             _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null))
         }
+    }
+
+    // TODO P1 기획: 경로가 2점 미만이라 저장할 수 없을 때도 실패 토스트
+    private suspend fun showSaveResultToast(result: WorkoutSaveResult) {
+        val isSaved = result == WorkoutSaveResult.Saved || result == WorkoutSaveResult.PhotosMissing
+        if (!isSaved) Timber.w("운동 기록 저장 실패: $result")
+        _sideEffect.send(
+            if (isSaved) WorkoutMainSideEffect.ShowRecoverySaved else WorkoutMainSideEffect.ShowRecoverySaveFailed,
+        )
     }
 
     // 설치 후 첫 진입에만 시스템 팝업. 거부 안내 모달은 운동 기록, 내 위치를 누를 때만
