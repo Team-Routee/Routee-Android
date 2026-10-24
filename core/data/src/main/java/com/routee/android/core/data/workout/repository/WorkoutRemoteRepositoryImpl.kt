@@ -5,6 +5,7 @@ import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutType
+import com.routee.android.core.data.workout.model.toServerElevation
 import com.routee.android.core.data.workout.remote.dto.request.ActivityTrackPointRequest
 import com.routee.android.core.data.workout.remote.dto.request.CompleteActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.CreateActivityRequest
@@ -79,13 +80,13 @@ internal class WorkoutRemoteRepositoryImpl @Inject constructor(
             title = title,
             distance = distanceMeters.roundToInt(),
             durationSec = durationSecondsAt(endedAt),
-            maxElevation = maxElevationMeters?.roundToInt() ?: 0,
+            maxElevation = maxElevationMeters?.toServerElevation() ?: 0,
             mapImageObjectKey = mapImageObjectKey,
             track = trackPoints.map { point ->
                 ActivityTrackPointRequest(
                     latitude = point.latitude,
                     longitude = point.longitude,
-                    elevation = point.elevation.roundToInt(),
+                    elevation = point.elevation.toServerElevation(),
                     pointIndex = point.pointIndex,
                 )
             },
