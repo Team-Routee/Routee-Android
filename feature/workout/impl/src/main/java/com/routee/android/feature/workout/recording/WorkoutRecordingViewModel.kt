@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
-import com.routee.android.core.data.workout.model.WorkoutRecord
+import com.routee.android.core.data.workout.model.UnfinishedWorkout
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
@@ -13,8 +13,11 @@ import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
+import com.routee.android.core.navigation.util.NavKeyViewModelFactory
+import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.model.observeLocationsFromLast
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
@@ -27,10 +30,12 @@ import com.routee.android.feature.workout.recording.model.toMapPhoto
 import com.routee.android.feature.workout.recording.model.toMode
 import com.routee.android.feature.workout.recording.model.toOpenedPhoto
 import com.routee.android.feature.workout.recording.model.toSummary
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import java.time.Clock
-import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CompletableDeferred
@@ -54,9 +59,11 @@ import timber.log.Timber
 
 private const val DURATION_TICK_MILLIS = 1_000L
 
-@HiltViewModel
-internal class WorkoutRecordingViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = WorkoutRecordingViewModel.Factory::class)
+internal class WorkoutRecordingViewModel @AssistedInject constructor(
+    @Assisted private val key: WorkoutRecordingNavKey,
     private val trackingRepository: WorkoutTrackingRepository,
+    private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
     private val addWorkoutPhoto: AddWorkoutPhotoUseCase,
@@ -81,6 +88,9 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val saveResult = CompletableDeferred<WorkoutSaveResult>()
     private var isTakingPhoto = false
 
+    // 복구 모달에서 이어서 기록, 카운트다운이 끝나면 불러온 기록을 다시 시작
+    private var isResumingRecovered = false
+
     // 삭제 스낵바가 떠 있는 사진, 스낵바가 닫히면 삭제 확정
     private val pendingDeletePhotoId = MutableStateFlow<String?>(null)
 
@@ -92,22 +102,11 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         updateDurationEverySecond()
     }
 
-    /** 카운트다운이 끝나면 시작 API 결과를 기다려 기록 시작, 시작 API 실패는 카운트다운 중에 바로 알림 */
+    /** 카운트다운이 끝나면 시작 API 결과를 기다려 기록 시작, 시작 API 실패는 카운트다운 중에 바로 알림. 복구면 불러온 기록을 다시 시작 */
     fun onCountdownFinish() {
         viewModelScope.launch {
             preparing?.join()
-            val pending = startedWorkout ?: return@launch
-            startedWorkout = null
-            pending.await().onSuccess { workout ->
-                trackingRepository.start(workout, WorkoutType.HIKING, startedAt)
-                    .onSuccess {
-                        _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
-                        _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
-                    }.onFailure {
-                        Timber.e(it, "운동 기록 시작 실패")
-                        _sideEffect.send(WorkoutRecordingSideEffect.StartFailed)
-                    }
-            }
+            if (isResumingRecovered) resumeRecovered() else startCreatedWorkout()
         }
     }
 
@@ -145,7 +144,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     ) {
         isTakingPhoto = false
         viewModelScope.launch {
-            // 카메라가 떠 있는 동안 앱이 종료됐으면 기기 기록 복원을 기다림
+            // 기록 확인을 기다림. 카메라가 떠 있는 동안 앱이 종료됐으면 복구 모달로 가고 사진은 버림
             preparing?.join()
             val file = File(filePath)
             if (!isSaved) {
@@ -284,20 +283,51 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         }
     }
 
+    // 앱이 꺼졌다 켜져 기록 화면이 바로 열리면 운동 메인의 복구 모달로 보냄
     private fun prepareRecording() {
         preparing = viewModelScope.launch {
-            trackingRepository.restore().onFailure {
+            val unfinished = getUnfinishedWorkout().getOrElse {
                 Timber.e(it, "운동 기록 복원 실패")
                 _sideEffect.send(WorkoutRecordingSideEffect.ShowRestoreFailed)
+                UnfinishedWorkout.None
             }
-            val record = trackingRepository.state.value.record
-            if (record?.isTracking == true) continueRecording(record) else createWorkout()
+            when (unfinished) {
+                UnfinishedWorkout.Tracking -> if (key.isRecovering) isResumingRecovered = true else continueRecording()
+
+                is UnfinishedWorkout.Recoverable -> _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+
+                else -> createWorkout()
+            }
         }
     }
 
-    private fun continueRecording(record: WorkoutRecord) {
-        _uiState.update { it.copy(mode = record.status.toMode() ?: it.mode) }
+    private fun continueRecording() {
+        val status = trackingRepository.state.value.record?.status ?: return
+        _uiState.update { it.copy(mode = status.toMode() ?: it.mode) }
         _sideEffect.trySend(WorkoutRecordingSideEffect.StartTrackingService)
+    }
+
+    private suspend fun startCreatedWorkout() {
+        val pending = startedWorkout ?: return
+        startedWorkout = null
+        pending.await().onSuccess { workout ->
+            trackingRepository.start(workout, WorkoutType.HIKING, startedAt)
+                .onSuccess {
+                    _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
+                    _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
+                }.onFailure {
+                    Timber.e(it, "운동 기록 시작 실패")
+                    _sideEffect.send(WorkoutRecordingSideEffect.StartFailed)
+                }
+        }
+    }
+
+    // 일시정지로 불러온 기록을 기록 중으로, 화면이 떠 있을 때 서비스 시작
+    private suspend fun resumeRecovered() {
+        isResumingRecovered = false
+        trackingRepository.resume().onFailure { Timber.e(it, "복구한 기록 다시 시작 실패") }
+        _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
+        _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
     }
 
     private fun createWorkout() {
@@ -368,4 +398,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         val record = trackingRepository.state.value.record ?: return
         _uiState.update { it.copy(durationSec = record.durationSecondsAt(clock.instant())) }
     }
+
+    @AssistedFactory
+    interface Factory : NavKeyViewModelFactory<WorkoutRecordingNavKey, WorkoutRecordingViewModel>
 }

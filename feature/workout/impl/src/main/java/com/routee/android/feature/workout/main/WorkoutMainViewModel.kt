@@ -6,16 +6,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.permission.repository.PermissionRepository
+import com.routee.android.core.data.workout.model.UnfinishedWorkout
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.location.ObserveCurrentAddressUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
+import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
+import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
+import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
+import com.routee.android.feature.workout.main.model.toRecoveryUiModel
 import com.routee.android.feature.workout.model.observeLocationsFromLast
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -38,8 +45,10 @@ internal class WorkoutMainViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
     private val permissionRepository: PermissionRepository,
     private val observeCurrentAddress: ObserveCurrentAddressUseCase,
+    private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
+    private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
+    private val discardWorkout: DiscardWorkoutUseCase,
 ) : ViewModel() {
-    // TODO 저장 확인 못 한 기록 다시 보내기, 복구 안내
     private val _uiState = MutableStateFlow(WorkoutMainUiState())
     val uiState: StateFlow<WorkoutMainUiState> = _uiState.asStateFlow()
 
@@ -56,12 +65,19 @@ internal class WorkoutMainViewModel @Inject constructor(
         set(value) {
             savedStateHandle[KEY_PERMISSION_REQUEST] = value
         }
+
+    // 복구 모달에서 [이어서 기록]을 눌러 권한 흐름 중. 권한 팝업 중 프로세스가 종료돼도 새 기록을 만들지 않게 저장
+    private var isContinuingRecovery: Boolean
+        get() = savedStateHandle[KEY_CONTINUING_RECOVERY] ?: false
+        set(value) {
+            savedStateHandle[KEY_CONTINUING_RECOVERY] = value
+        }
     private var isPermissionChecked = false
     private var isCameraMoved = false
     private var addressJob: Job? = null
 
     init {
-        openRecordingIfTracking()
+        checkUnfinishedWorkout()
     }
 
     fun onLocationPermissionChecked(permission: LocationPermission) {
@@ -88,9 +104,42 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    /** 알림 권한 팝업 결과. 거부해도 안내 없이 기록 화면으로 */
+    /** 알림 권한 팝업 결과. 거부해도 안내 없이 기록 화면으로, 복구 중이면 이전 기록을 불러와 이어서 기록 */
     fun onNotificationPermissionResult() {
-        viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording) }
+        if (isContinuingRecovery) {
+            continueRecovery()
+        } else {
+            viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording) }
+        }
+    }
+
+    /** 복구 모달 [이어서 기록], [운동 기록]과 같은 권한 흐름 뒤 이어서 기록 */
+    fun onRecoveryContinueClick() {
+        isContinuingRecovery = true
+        onRecordClick()
+    }
+
+    /** 복구 모달 [종료 후 저장], 마지막 기록 시각에 종료하고 경로 전체를 캡처해 저장. 위치 권한은 필요 없음 */
+    fun onRecoverySaveClick() {
+        if (_uiState.value.isRecoverySaving) return
+        _uiState.update { it.copy(recovery = null, isRecoverySaving = true) }
+        viewModelScope.launch { finishRecoveredWorkout() }
+    }
+
+    /** 복구 모달 X, 저장하지 않고 기기 기록 삭제 */
+    fun onRecoveryDiscardClick() {
+        viewModelScope.launch {
+            discardWorkout()
+                .onSuccess { _uiState.update { it.copy(recovery = null) } }
+                .onFailure { Timber.e(it, "복구하지 않을 기록 삭제 실패") }
+        }
+    }
+
+    /** 종료 후 저장 지도 캡처를 받아 저장, 캡처 실패면 null */
+    fun onRecoveryMapCaptured(jpeg: ByteArray?) {
+        if (_uiState.value.recoveryCaptureRoute == null) return
+        _uiState.update { it.copy(recoveryCaptureRoute = null) }
+        viewModelScope.launch { showRecoverySaveResult(saveFinishedWorkout(jpeg)) }
     }
 
     fun onMyLocationClick() {
@@ -126,16 +175,73 @@ internal class WorkoutMainViewModel @Inject constructor(
         _uiState.update { it.copy(isLocationPermissionDialogVisible = true) }
     }
 
+    /** 위치 권한 안내 모달 닫기, 복구 중이었으면 복구 모달로 돌아감 */
     fun onLocationPermissionDialogDismiss() {
+        isContinuingRecovery = false
         _uiState.update { it.copy(isLocationPermissionDialogVisible = false) }
     }
 
-    private fun openRecordingIfTracking() {
+    // 앱이 살아 있으면 기록 화면으로, 꺼졌다 켜졌거나 일시정지 2시간이 넘었으면 복구 모달
+    private fun checkUnfinishedWorkout() {
         viewModelScope.launch {
-            trackingRepository.restore().onFailure { Timber.e(it, "운동 기록 복원 실패") }
-            if (trackingRepository.state.value.record?.isTracking == true) {
-                _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording)
+            val unfinished = getUnfinishedWorkout().getOrElse {
+                Timber.e(it, "남은 운동 기록 확인 실패")
+                return@launch
             }
+            when (unfinished) {
+                UnfinishedWorkout.None -> Unit
+
+                UnfinishedWorkout.Tracking -> _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording)
+
+                is UnfinishedWorkout.Recoverable -> {
+                    _uiState.update { it.copy(recovery = unfinished.record.toRecoveryUiModel()) }
+                }
+
+                // TODO #112 저장 확인 못 한 기록 다시 보내기
+                is UnfinishedWorkout.PendingUpload -> Unit
+            }
+        }
+    }
+
+    private fun continueRecovery() {
+        viewModelScope.launch {
+            isContinuingRecovery = false
+            trackingRepository.recover()
+                .onSuccess {
+                    _uiState.update { it.copy(recovery = null) }
+                    _sideEffect.send(WorkoutMainSideEffect.NavigateToRecoveredRecording)
+                }.onFailure {
+                    Timber.e(it, "운동 기록 복구 실패")
+                    _sideEffect.send(WorkoutMainSideEffect.ShowRecoveryFailed)
+                }
+        }
+    }
+
+    // 꺼져 있던 시간은 빼고 마지막 기록 시각에 종료
+    private suspend fun finishRecoveredWorkout() {
+        trackingRepository.recover()
+            .mapCatching {
+                val record = checkNotNull(trackingRepository.state.value.record) { "복구할 기록 없음" }
+                trackingRepository.finish(endedAt = record.lastRecordedAt).getOrThrow()
+            }.onSuccess {
+                val route = trackingRepository.state.value.trackPoints.map { it.toMapPoint() }.toImmutableList()
+                _uiState.update { it.copy(recoveryCaptureRoute = route) }
+            }.onFailure {
+                Timber.e(it, "복구한 기록 종료 실패")
+                showRecoverySaveResult(WorkoutSaveResult.Failed)
+            }
+    }
+
+    // TODO P1 기획: 경로가 2점 미만이라 저장할 수 없을 때도 실패 토스트
+    private suspend fun showRecoverySaveResult(result: WorkoutSaveResult) {
+        _uiState.update { it.copy(isRecoverySaving = false) }
+        val isSaved = result == WorkoutSaveResult.Saved || result == WorkoutSaveResult.PhotosMissing
+        if (!isSaved) Timber.w("복구한 기록 저장 실패: $result")
+        _sideEffect.send(
+            if (isSaved) WorkoutMainSideEffect.ShowRecoverySaved else WorkoutMainSideEffect.ShowRecoverySaveFailed,
+        )
+        if (_uiState.value.locationPermission == LocationPermission.GRANTED) {
+            _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null))
         }
     }
 
@@ -180,5 +286,6 @@ internal class WorkoutMainViewModel @Inject constructor(
 }
 
 private const val KEY_PERMISSION_REQUEST = "permission_request"
+private const val KEY_CONTINUING_RECOVERY = "continuing_recovery"
 
 private enum class PermissionRequest { NONE, FIRST_ENTRY, MY_LOCATION, RECORD }

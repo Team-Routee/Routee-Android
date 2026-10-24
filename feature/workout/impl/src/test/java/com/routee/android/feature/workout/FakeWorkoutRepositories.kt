@@ -32,11 +32,10 @@ internal val START: Instant = Instant.ofEpochMilli(1_000_000)
 internal class FakeWorkoutTrackingRepository(
     record: WorkoutRecord? = null,
     private val savedRecord: WorkoutRecord? = null,
-    private val restoreError: Throwable? = null,
+    private val savedTrackPoints: List<TrackPoint> = emptyList(),
 ) : WorkoutTrackingRepository {
     private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
     override val state: StateFlow<WorkoutTrackingState> = _state
-    var isRestored = false
     var isCleared = false
     var startedRecord: WorkoutRecord? = null
 
@@ -67,18 +66,16 @@ internal class FakeWorkoutTrackingRepository(
 
     override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> = Result.success(Unit)
 
-    override suspend fun restore(): Result<Unit> {
-        isRestored = true
-        restoreError?.let { return Result.failure(it) }
-        if (_state.value.record == null && savedRecord?.isTracking == true) {
-            _state.value = WorkoutTrackingState(record = savedRecord)
-        }
-        return Result.success(Unit)
-    }
+    override suspend fun restore(): Result<Unit> = Result.success(Unit)
 
     override suspend fun recover(): Result<Unit> {
-        val record = _state.value.record ?: savedRecord?.takeIf { it.isTracking } ?: return Result.success(Unit)
-        _state.value = _state.value.copy(record = record.recovered(START))
+        val current = _state.value
+        val record = current.record
+        if (record != null) {
+            _state.value = current.copy(record = record.recovered(START))
+        } else if (savedRecord?.isTracking == true) {
+            _state.value = WorkoutTrackingState(record = savedRecord.recovered(START), trackPoints = savedTrackPoints)
+        }
         return Result.success(Unit)
     }
 
@@ -121,8 +118,14 @@ internal class FakeWorkoutRemoteRepository(
     ): Result<Unit> = Result.success(Unit)
 }
 
-internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
-    override suspend fun getRecord(): Result<WorkoutRecord?> = Result.success(null)
+internal class FakeWorkoutRecordRepository(
+    private val record: WorkoutRecord? = null,
+    private val getError: Throwable? = null,
+) : WorkoutRecordRepository {
+    var isCleared = false
+
+    override suspend fun getRecord(): Result<WorkoutRecord?> =
+        getError?.let { Result.failure(it) } ?: Result.success(record)
 
     override suspend fun startRecord(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
 
@@ -142,7 +145,10 @@ internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
 
     override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
 
-    override suspend fun clearRecords(): Result<Unit> = Result.success(Unit)
+    override suspend fun clearRecords(): Result<Unit> {
+        isCleared = true
+        return Result.success(Unit)
+    }
 }
 
 internal class FakeMapImageRepository : TimelineMapImageRepository {

@@ -5,6 +5,7 @@ import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.FakeLocationRepository
@@ -16,6 +17,7 @@ import com.routee.android.feature.workout.FakeWorkoutTrackingRepository
 import com.routee.android.feature.workout.MainDispatcherRule
 import com.routee.android.feature.workout.START
 import com.routee.android.feature.workout.TestClock
+import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.photo
 import com.routee.android.feature.workout.record
 import com.routee.android.feature.workout.recording.model.OpenedPhoto
@@ -84,14 +86,14 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
-     * GIVEN: 기기 기록 복원이 실패할 때
+     * GIVEN: 기기 기록을 읽지 못할 때
      * WHEN: 화면에 들어와 카운트다운이 끝나면
      * THEN: 복원 실패를 알리고 새 기록을 시작한다
      */
     @Test
     fun `기기 기록 복원이 실패하면 알리고 새로 시작한다`() = runTest {
-        val tracking = FakeWorkoutTrackingRepository(restoreError = IOException())
-        val viewModel = viewModel(tracking)
+        val tracking = FakeWorkoutTrackingRepository()
+        val viewModel = viewModel(tracking, records = FakeWorkoutRecordRepository(getError = IOException()))
 
         assertEquals(WorkoutRecordingSideEffect.ShowRestoreFailed, viewModel.sideEffect.first())
 
@@ -117,19 +119,37 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
-     * GIVEN: 앱이 죽은 뒤 기록 화면이 바로 복원돼서 기기 기록이 아직 메모리에 없을 때
+     * GIVEN: 앱이 꺼졌다 켜져 기록 화면이 바로 복원돼서 기기에만 기록이 있을 때
      * WHEN: 화면에 들어오고 카운트다운 끝 신호가 와도
-     * THEN: 기기 기록을 먼저 불러와 이어가고 새 기록은 시작하지 않는다
+     * THEN: 복구 모달을 띄우게 운동 메인으로 보내고 새 기록은 시작하지 않는다
      */
     @Test
-    fun `기기에 저장된 기록이 있으면 먼저 불러와 이어간다`() = runTest {
-        val tracking = FakeWorkoutTrackingRepository(savedRecord = record())
-        val viewModel = viewModel(tracking)
+    fun `앱이 꺼졌다 켜져 기록 화면이 바로 열리면 운동 메인으로 보낸다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository()
+        val viewModel = viewModel(tracking, records = FakeWorkoutRecordRepository(record = record()))
 
         viewModel.onCountdownFinish()
 
-        assertTrue(tracking.isRestored)
+        assertEquals(WorkoutRecordingSideEffect.NavigateToHome, viewModel.sideEffect.first())
         assertNull(tracking.startedRecord)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 복구 모달에서 이어서 기록을 골라 기록을 일시정지로 불러왔을 때
+     * WHEN: 카운트다운이 끝나면
+     * THEN: 새 기록 없이 불러온 기록을 기록 중으로 바꾸고 서비스를 켠다
+     */
+    @Test
+    fun `복구로 들어오면 카운트다운 뒤 불러온 기록을 다시 시작한다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().recovered(START))
+        val viewModel = viewModel(tracking, key = WorkoutRecordingNavKey(isRecovering = true))
+        assertEquals(WorkoutMode.COUNTDOWN, viewModel.uiState.value.mode)
+
+        viewModel.onCountdownFinish()
+
+        assertNull(tracking.startedRecord)
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, tracking.state.value.record?.status)
         assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
         assertEquals(WorkoutRecordingSideEffect.StartTrackingService, viewModel.sideEffect.first())
         viewModel.close()
@@ -510,12 +530,16 @@ class WorkoutRecordingViewModelTest {
         remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
         location: FakeLocationRepository = FakeLocationRepository(),
         photos: FakeWorkoutPhotoRepository = FakeWorkoutPhotoRepository(),
+        records: FakeWorkoutRecordRepository = FakeWorkoutRecordRepository(),
+        key: WorkoutRecordingNavKey = WorkoutRecordingNavKey(),
     ) = WorkoutRecordingViewModel(
+        key = key,
         trackingRepository = tracking,
+        getUnfinishedWorkout = GetUnfinishedWorkoutUseCase(tracking, records, clock),
         remoteRepository = remote,
         saveFinishedWorkout = SaveFinishedWorkoutUseCase(
             trackingRepository = tracking,
-            recordRepository = FakeWorkoutRecordRepository(),
+            recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
             photoRepository = photos,

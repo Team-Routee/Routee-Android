@@ -36,7 +36,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
@@ -81,10 +80,10 @@ private const val FINISH_ANIMATION_SPEED = 1.5f
 
 @Composable
 internal fun WorkoutRecordingRoute(
+    viewModel: WorkoutRecordingViewModel,
     onStartFail: () -> Unit,
     onNavigateToTimeline: (WorkoutSummary) -> Unit,
     onNavigateToHome: () -> Unit,
-    viewModel: WorkoutRecordingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -3,18 +3,26 @@ package com.routee.android.feature.workout.navigation
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.routee.android.core.navigation.RouteeNavigator
+import com.routee.android.core.navigation.util.viewModelEntry
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
 import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.main.WorkoutMainRoute
 import com.routee.android.feature.workout.recording.WorkoutRecordingRoute
+import com.routee.android.feature.workout.recording.WorkoutRecordingViewModel
 
 fun EntryProviderScope<NavKey>.workoutEntries(navigator: RouteeNavigator) {
     entry<WorkoutMainNavKey> {
-        WorkoutMainRoute(onNavigateToRecording = { navigator.navigateTo(WorkoutRecordingNavKey) })
+        WorkoutMainRoute(
+            onNavigateToRecording = { isRecovering -> navigator.navigateTo(WorkoutRecordingNavKey(isRecovering)) },
+        )
     }
-    entry<WorkoutRecordingNavKey> {
+    viewModelEntry<WorkoutRecordingNavKey, WorkoutRecordingViewModel, WorkoutRecordingViewModel.Factory> {
+            _,
+            viewModel,
+        ->
         WorkoutRecordingRoute(
+            viewModel = viewModel,
             onStartFail = navigator::navigateBack,
             onNavigateToTimeline = { summary ->
                 navigator.navigateBack()
