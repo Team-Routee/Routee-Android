@@ -81,6 +81,13 @@ internal class FakeWorkoutTrackingRepository(
         return Result.success(Unit)
     }
 
+    override suspend fun loadPendingUpload(): Result<Unit> {
+        if (_state.value.record?.isTracking != true && savedRecord?.status == WorkoutStatus.PENDING_UPLOAD) {
+            _state.value = WorkoutTrackingState(record = savedRecord, trackPoints = savedTrackPoints)
+        }
+        return Result.success(Unit)
+    }
+
     override suspend fun finish(endedAt: Instant?): Result<Unit> {
         _state.value = _state.value.copy(record = _state.value.record?.finished(START, endedAt ?: START))
         return Result.success(Unit)

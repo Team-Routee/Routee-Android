@@ -4,6 +4,7 @@ import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.WorkoutRecord
+import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import java.time.Clock
@@ -81,6 +82,16 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         val finished = record.finished(now, endedAt ?: now)
         if (finished == record) return@withLock Result.success(Unit)
         recordRepository.saveRecord(finished).onSuccess { _state.value = _state.value.copy(record = finished) }
+    }
+
+    override suspend fun loadPendingUpload(): Result<Unit> = mutex.withLock {
+        suspendRunCatching {
+            if (_state.value.record?.isTracking == true) return@suspendRunCatching
+            val saved = recordRepository.getRecord().getOrThrow()
+            if (saved?.status != WorkoutStatus.PENDING_UPLOAD) return@suspendRunCatching
+            val trackPoints = recordRepository.getTrackPoints(saved.activityId).getOrThrow()
+            _state.value = WorkoutTrackingState(record = saved, trackPoints = trackPoints)
+        }
     }
 
     override suspend fun clear(): Result<Unit> = mutex.withLock {
