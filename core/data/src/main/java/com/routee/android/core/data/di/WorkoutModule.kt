@@ -1,6 +1,8 @@
 package com.routee.android.core.data.di
 
 import com.routee.android.core.data.workout.remote.service.WorkoutService
+import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
+import com.routee.android.core.data.workout.repository.WorkoutPhotoRepositoryImpl
 import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutRecordRepositoryImpl
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
@@ -32,6 +34,10 @@ internal abstract class WorkoutModule {
     @Binds
     @Singleton
     abstract fun bindWorkoutRemoteRepository(impl: WorkoutRemoteRepositoryImpl): WorkoutRemoteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWorkoutPhotoRepository(impl: WorkoutPhotoRepositoryImpl): WorkoutPhotoRepository
 
     companion object {
         @Provides
