@@ -12,6 +12,7 @@ import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
 import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.auth.ClearDeviceDataUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import java.io.File
 import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,9 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 internal fun clearDeviceData(records: FakeWorkoutRecordRepository = FakeWorkoutRecordRepository()) =
     ClearDeviceDataUseCase(
-        trackingRepository = FakeWorkoutTrackingRepository(),
-        recordRepository = records,
-        photoRepository = FakeWorkoutPhotoRepository(),
+        discardWorkout = DiscardWorkoutUseCase(FakeWorkoutTrackingRepository(), records, FakeWorkoutPhotoRepository()),
         imageCacheRepository = FakeImageCacheRepository(),
     )
 
