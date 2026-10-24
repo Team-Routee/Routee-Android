@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -39,14 +40,16 @@ private val DialogMaxWidth = 304.dp
  *
  * 시스템 바와 키보드를 피해 가운데에 놓인다. 키보드가 올라와 공간이 모자라면 카드 크기는 그대로 두고 위쪽을 화면 밖으로 밀어낸다
  *
- * @param onDismissRequest  뒤로가기, 딤 탭 시 호출
- * @param contentPadding    카드 안쪽 여백
+ * @param onDismissRequest   뒤로가기, 딤 탭 시 호출
+ * @param contentPadding     카드 안쪽 여백
+ * @param dismissOnDimClick  false 이면 딤 탭 시 닫지 않고 키보드만 닫음
  */
 @Composable
 fun RouteeDialogContainer(
     onDismissRequest: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    dismissOnDimClick: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(
@@ -58,13 +61,16 @@ fun RouteeDialogContainer(
     ) {
         val window = (LocalView.current.parent as? DialogWindowProvider)?.window
         SideEffect { window?.setDimAmount(0f) }
+        val focusManager = LocalFocusManager.current
 
         // dim_rectangle
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(RouteeTheme.colors.dimSecondary)
-                .pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } }
+                .pointerInput(onDismissRequest, dismissOnDimClick) {
+                    detectTapGestures { if (dismissOnDimClick) onDismissRequest() else focusManager.clearFocus() }
+                }
                 .safeDrawingPadding(),
             contentAlignment = Alignment.Center,
         ) {
