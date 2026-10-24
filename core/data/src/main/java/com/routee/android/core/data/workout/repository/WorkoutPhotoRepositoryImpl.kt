@@ -30,6 +30,9 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     // 서버에서 지울 사진 (activityId, timelineId)
     private val removedTimelines = MutableStateFlow<Set<Pair<Long, Long>>>(emptySet())
+
+    // 기기에서 지울 사진 파일, 올리는 중일 수 있어 동기화 때 지움
+    private val removedFiles = MutableStateFlow<Set<String>>(emptySet())
     private val mutex = Mutex()
     private val syncMutex = Mutex()
 
@@ -73,10 +76,14 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             removed = photos.find { it.id == photoId }
             photos.filterNot { it.id == photoId }
         }
-        removed?.let { photo -> photo.timelineId?.let { markRemoved(photo.activityId, it) } }
+        removed?.let { photo ->
+            removedFiles.update { it + photo.filePath }
+            photo.timelineId?.let { markRemoved(photo.activityId, it) }
+        }
     }
 
     override suspend fun syncPhotos(activityId: Long): Int = syncMutex.withLock {
+        deleteRemovedFiles()
         uploadPending(activityId)
         updateTitles(activityId)
         deleteRemoved(activityId)
@@ -88,6 +95,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             _photos.value.map { it.activityId }.distinct().forEach { timelinePhotoRepository.clearUploadState(it) }
             _photos.value = emptyList()
             removedTimelines.value = emptySet()
+            removedFiles.value = emptySet()
             localDataSource.clear()
         }
     }
@@ -121,6 +129,12 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
                     }
                 }
             }
+    }
+
+    private suspend fun deleteRemovedFiles() {
+        val paths = removedFiles.value
+        paths.forEach { localDataSource.delete(it) }
+        removedFiles.update { it - paths }
     }
 
     private suspend fun deleteRemoved(activityId: Long) {

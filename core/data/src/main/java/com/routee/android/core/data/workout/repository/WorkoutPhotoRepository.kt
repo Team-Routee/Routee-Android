@@ -36,7 +36,7 @@ interface WorkoutPhotoRepository {
         title: String,
     )
 
-    /** 사진 삭제, 올린 사진은 다음 [syncPhotos] 때 서버에서도 지움 */
+    /** 사진 삭제, 다음 [syncPhotos] 때 기기 파일과 서버 사진도 지움 */
     fun removePhoto(photoId: String)
 
     /** 못 올린 사진 업로드, 바뀐 장소명 수정, 지운 사진 삭제를 서버에 반영. 끝까지 못 올린 사진 수 반환 */
