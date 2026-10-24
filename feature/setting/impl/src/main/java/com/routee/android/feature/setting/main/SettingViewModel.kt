@@ -3,6 +3,7 @@ package com.routee.android.feature.setting.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.domain.auth.ClearDeviceDataUseCase
 import com.routee.android.feature.setting.main.model.SettingSideEffect
 import com.routee.android.feature.setting.main.model.SettingUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +20,7 @@ import timber.log.Timber
 @HiltViewModel
 internal class SettingViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val clearDeviceData: ClearDeviceDataUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingUiState())
     val uiState: StateFlow<SettingUiState> = _uiState.asStateFlow()
@@ -42,7 +44,10 @@ internal class SettingViewModel @Inject constructor(
         isLoggingOut = true
         viewModelScope.launch {
             authRepository.logout()
-                .onSuccess { _sideEffect.send(SettingSideEffect.NavigateToLogin) }
+                .onSuccess {
+                    clearDeviceData().onFailure { Timber.e(it, "기기 데이터 삭제 실패") }
+                    _sideEffect.send(SettingSideEffect.NavigateToLogin)
+                }
                 .onFailure { e ->
                     Timber.e(e)
                     _sideEffect.send(SettingSideEffect.ShowUnknownErrorToast)

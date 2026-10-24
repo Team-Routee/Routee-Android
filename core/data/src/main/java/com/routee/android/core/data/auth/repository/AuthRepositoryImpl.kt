@@ -81,13 +81,11 @@ internal class AuthRepositoryImpl @Inject constructor(
         suspendRunCatching { tokenLocalDataSource.getRefreshToken() }.getOrNull()?.let { refreshToken ->
             apiResponseHandler.safeUnitApiCall { logoutService.logout(LogoutRequest(refreshToken = refreshToken)) }
         }
-        // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
     }
 
     override suspend fun withdraw(): Result<Unit> {
         requestWithdraw().onFailure { return Result.failure(it) }
-        // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
     }
 
