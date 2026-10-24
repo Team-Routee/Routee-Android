@@ -48,6 +48,8 @@
     <string name="workout_recording_photo_close_a11y">닫기</string>
     <string name="workout_recording_photo_location_placeholder">장소명을 입력해주세요</string>
     <string name="workout_recording_photo_location_edit_a11y">장소명 편집</string>
+    <string name="workout_recording_photo_deleted_snackbar">삭제되었습니다</string>
+    <string name="workout_recording_photo_deleted_undo">취소</string>
 
     <!-- 기록 중 상시 알림 -->
     <string name="workout_tracking_channel_name">운동 기록</string>
