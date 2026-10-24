@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -68,12 +69,27 @@ internal fun WorkoutMainRoute(
     ) {
         viewModel.onLocationPermissionResult(context.locationPermission())
     }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) {
+        viewModel.onNotificationPermissionResult()
+    }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             WorkoutMainSideEffect.NavigateToRecording -> onNavigateToRecording()
 
             WorkoutMainSideEffect.RequestLocationPermission -> locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
+
+            WorkoutMainSideEffect.RequestNotificationPermission -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    !context.isGranted(Manifest.permission.POST_NOTIFICATIONS)
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    viewModel.onNotificationPermissionResult()
+                }
+            }
 
             is WorkoutMainSideEffect.FollowMyLocation -> scope.launch {
                 sideEffect.from?.let { mapState.moveTo(it, zoom = MY_LOCATION_ZOOM) }

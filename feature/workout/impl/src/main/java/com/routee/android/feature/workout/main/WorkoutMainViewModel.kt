@@ -78,12 +78,19 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
+    // TODO P1 기획: 알림 권한 요청 시점
+    // 운동 기록을 누를 때마다 위치 권한 다음에 알림 권한 요청, 두 번 거부하면 시스템이 팝업을 막음
     fun onRecordClick() {
         if (uiState.value.locationPermission == LocationPermission.GRANTED) {
-            viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording) }
+            viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestNotificationPermission) }
         } else {
             requestLocationPermission(PermissionRequest.RECORD)
         }
+    }
+
+    /** 알림 권한 팝업 결과. 거부해도 안내 없이 기록 화면으로 */
+    fun onNotificationPermissionResult() {
+        viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording) }
     }
 
     fun onMyLocationClick() {
