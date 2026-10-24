@@ -221,7 +221,8 @@ internal fun MyRouteEditor(
                 }
             }
         }
-        if (points.size < MAX_POINT_COUNT) {
+        // 사진 장소명으로 초기 목록을 채우기 전에는 추가하지 않음
+        if (!isLoading && points.size < MAX_POINT_COUNT) {
             RouteeSecondaryButton(
                 text = stringResource(R.string.timeline_route_add_point),
                 onClick = {
