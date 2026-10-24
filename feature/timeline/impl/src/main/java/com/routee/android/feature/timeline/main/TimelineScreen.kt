@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.common.util.suspendRunCatching
+import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
@@ -59,16 +60,17 @@ import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.timeline.R
-import com.routee.android.feature.timeline.api.TimelinePhoto
 import com.routee.android.feature.timeline.component.MyRouteEditor
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineDraft
 import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
+import com.routee.android.feature.timeline.main.model.TimelineSideEffect
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
@@ -88,7 +90,6 @@ internal fun TimelineRoute(
     onSaveSuccess: (TimelineSaveDestination) -> Unit,
     onSaveRecord: suspend (TimelineDraft) -> TimelineRequestResult,
     modifier: Modifier = Modifier,
-    routeMap: (@Composable () -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showExitDialog by rememberSaveable(viewModel.activityId) { mutableStateOf(false) }
@@ -102,6 +103,16 @@ internal fun TimelineRoute(
 
     BackHandler {
         if (!isSaving) showExitDialog = true
+    }
+
+    // TODO P1 기획: 경로 조회 실패 문구 (저장 실패 토스트 문구 재사용)
+    viewModel.sideEffect.CollectSideEffect { sideEffect ->
+        when (sideEffect) {
+            is TimelineSideEffect.TrackLoadFailed -> {
+                val isNetwork = sideEffect.result == TimelineRequestResult.NetworkFailed
+                messageState.showToast(text = if (isNetwork) networkErrorText else unknownErrorText)
+            }
+        }
     }
 
     val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
@@ -148,7 +159,7 @@ internal fun TimelineRoute(
     }
     TimelineScreen(
         uiState = uiState,
-        photos = viewModel.photos,
+        photos = uiState.photos,
         titleState = viewModel.titleState,
         defaultTitle = defaultTitle,
         isTitleEditing = uiState.isTitleEditing,
@@ -167,9 +178,9 @@ internal fun TimelineRoute(
         modifier = modifier,
         savedPhotoIndex = gallerySave.savedPhotoIndex,
         onPhotoSaveClick = { index, photo ->
-            gallerySave.onSavePhoto(index, photo.imageUrl, photo.capturedAtEpochMillis)
+            gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
         },
-        routeMap = routeMap,
+        routeMap = { TimelineRouteMap(track = uiState.track) },
         myRoute = {
             MyRouteEditor(
                 points = viewModel.points,
@@ -206,7 +217,7 @@ internal fun TimelineRoute(
 @Composable
 private fun TimelineScreen(
     uiState: TimelineUiState,
-    photos: List<TimelinePhoto>,
+    photos: List<ArchivePhoto>,
     titleState: TextFieldState,
     defaultTitle: String,
     isTitleEditing: Boolean,
@@ -216,7 +227,7 @@ private fun TimelineScreen(
     onTitleEditFinish: () -> Unit,
     onOutsideClick: () -> Unit,
     onRecordEditClick: () -> Unit,
-    onPhotoSaveClick: (Int, TimelinePhoto) -> Unit,
+    onPhotoSaveClick: (Int, ArchivePhoto) -> Unit,
     modifier: Modifier = Modifier,
     savedPhotoIndex: Int = -1,
     routeMap: (@Composable () -> Unit)? = null,
