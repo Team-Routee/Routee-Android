@@ -15,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import com.routee.android.core.designsystem.R
+import com.routee.android.core.designsystem.component.skeleton.skeleton
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
@@ -30,6 +32,7 @@ data class RouteeTimelinePhoto(val imageUrl: String?, val location: String?)
  * @param date 날짜 표시 문자열
  * @param onSaveClick 현재 사진 인덱스 전달. null이면 저장 버튼을 숨김
  * @param savedPhotoIndex 저장 완료 표시할 사진 인덱스
+ * @param isLoading true 이면 사진 대신 스켈레톤 카드 표시
  */
 @Composable
 fun RouteePhotoTimelineSection(
@@ -38,8 +41,9 @@ fun RouteePhotoTimelineSection(
     modifier: Modifier = Modifier,
     onSaveClick: ((Int) -> Unit)? = null,
     savedPhotoIndex: Int? = null,
+    isLoading: Boolean = false,
 ) {
-    if (photos.isEmpty()) return
+    if (photos.isEmpty() && !isLoading) return
     val pagerState = rememberPagerState(pageCount = { photos.size })
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -55,6 +59,10 @@ fun RouteePhotoTimelineSection(
             Text(text = date, style = RouteeTheme.typography.labelM12, color = RouteeTheme.colors.grey200)
         }
         Spacer(Modifier.height(RouteeTheme.spacing.Spacing16))
+        if (isLoading) {
+            Box(Modifier.fillMaxWidth().aspectRatio(1f).skeleton(RectangleShape))
+            return@Column
+        }
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth().aspectRatio(1f),
@@ -85,6 +93,18 @@ private fun RouteePhotoTimelineSectionPreview() {
             photos = List(6) { RouteeTimelinePhoto(null, if (it == 0) "창의문" else null) },
             date = "2026.03.12",
             onSaveClick = {},
+        )
+    }
+}
+
+@PreviewFontSizes
+@Composable
+private fun RouteePhotoTimelineSectionLoadingPreview() {
+    RouteeTheme {
+        RouteePhotoTimelineSection(
+            photos = emptyList(),
+            date = "2026.03.12",
+            isLoading = true,
         )
     }
 }
