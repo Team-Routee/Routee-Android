@@ -126,6 +126,30 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 복구 모달이 떠 있고 위치 권한이 있을 때
+     * WHEN: 이어서 기록을 누르고 결과가 오기 전에 이어서 기록, 종료 후 저장, X를 또 누르면
+     * THEN: 모달을 내리고 로딩을 띄우며, 처음 누른 것만 처리한다
+     */
+    @Test
+    fun `이어서 기록을 누르면 처리하는 동안 모달의 다른 버튼을 막는다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(savedRecord = STOPPED_RECORD)
+        val records = FakeWorkoutRecordRepository(STOPPED_RECORD)
+        val viewModel = grantedViewModel(tracking, records)
+
+        viewModel.onRecoveryContinueClick()
+        viewModel.onRecoveryContinueClick()
+        viewModel.onRecoverySaveClick()
+        viewModel.onRecoveryDiscardClick()
+
+        assertEquals(WorkoutMainSideEffect.RequestNotificationPermission, viewModel.sideEffect.first())
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+        assertFalse(viewModel.uiState.value.isRecoveryDialogVisible)
+        assertTrue(viewModel.uiState.value.isLoadingVisible)
+        assertFalse(viewModel.uiState.value.isRecoverySaving)
+        assertFalse(records.isCleared)
+    }
+
+    /**
      * GIVEN: 복구 모달이 떠 있고 위치 권한이 없을 때
      * WHEN: 이어서 기록을 눌러 시스템 팝업에서 거부하면
      * THEN: 위치 권한 모달을 띄우고, 닫으면 복구 모달로 돌아간다. 기록은 그대로 둔다

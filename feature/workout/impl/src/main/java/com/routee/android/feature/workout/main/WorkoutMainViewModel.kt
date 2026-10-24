@@ -113,25 +113,30 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    /** 복구 모달 [이어서 기록], [운동 기록]과 같은 권한 흐름 뒤 이어서 기록 */
+    /** 복구 모달 [이어서 기록], 모달을 내리고 [운동 기록]과 같은 권한 흐름 뒤 이어서 기록 */
     fun onRecoveryContinueClick() {
+        if (!startRecoveryAction()) return
         isContinuingRecovery = true
         onRecordClick()
     }
 
     /** 복구 모달 [종료 후 저장], 마지막 기록 시각에 종료하고 경로 전체를 캡처해 저장. 위치 권한은 필요 없음 */
     fun onRecoverySaveClick() {
-        if (_uiState.value.isRecoverySaving) return
+        if (_uiState.value.isRecoverySaving || _uiState.value.isRecoveryInProgress) return
         _uiState.update { it.copy(recovery = null, isRecoverySaving = true) }
         viewModelScope.launch { finishRecoveredWorkout() }
     }
 
-    /** 복구 모달 X, 저장하지 않고 기기 기록 삭제 */
+    /** 복구 모달 X, 저장하지 않고 기기 기록 삭제. 실패하면 모달로 돌아감 */
     fun onRecoveryDiscardClick() {
+        if (!startRecoveryAction()) return
         viewModelScope.launch {
             discardWorkout()
-                .onSuccess { _uiState.update { it.copy(recovery = null) } }
-                .onFailure { Timber.e(it, "복구하지 않을 기록 삭제 실패") }
+                .onSuccess { _uiState.update { it.copy(recovery = null, isRecoveryInProgress = false) } }
+                .onFailure {
+                    Timber.e(it, "복구하지 않을 기록 삭제 실패")
+                    _uiState.update { state -> state.copy(isRecoveryInProgress = false) }
+                }
         }
     }
 
@@ -178,7 +183,14 @@ internal class WorkoutMainViewModel @Inject constructor(
     /** 위치 권한 안내 모달 닫기, 복구 중이었으면 복구 모달로 돌아감 */
     fun onLocationPermissionDialogDismiss() {
         isContinuingRecovery = false
-        _uiState.update { it.copy(isLocationPermissionDialogVisible = false) }
+        _uiState.update { it.copy(isLocationPermissionDialogVisible = false, isRecoveryInProgress = false) }
+    }
+
+    // 고른 동작이 끝날 때까지 모달을 내려 다른 버튼을 막음, 이미 처리 중이면 false
+    private fun startRecoveryAction(): Boolean {
+        if (_uiState.value.isRecoveryInProgress || _uiState.value.isRecoverySaving) return false
+        _uiState.update { it.copy(isRecoveryInProgress = true) }
+        return true
     }
 
     // 확인과 재전송이 끝날 때까지 운동 기록 비활성화, 새 기록이 남은 기록과 겹치지 않게
@@ -221,10 +233,11 @@ internal class WorkoutMainViewModel @Inject constructor(
             isContinuingRecovery = false
             trackingRepository.recover()
                 .onSuccess {
-                    _uiState.update { it.copy(recovery = null) }
+                    _uiState.update { it.copy(recovery = null, isRecoveryInProgress = false) }
                     _sideEffect.send(WorkoutMainSideEffect.NavigateToRecoveredRecording)
                 }.onFailure {
                     Timber.e(it, "운동 기록 복구 실패")
+                    _uiState.update { state -> state.copy(isRecoveryInProgress = false) }
                     _sideEffect.send(WorkoutMainSideEffect.ShowRecoveryFailed)
                 }
         }

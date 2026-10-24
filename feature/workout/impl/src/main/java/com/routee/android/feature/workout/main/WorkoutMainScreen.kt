@@ -142,7 +142,7 @@ internal fun WorkoutMainRoute(
         onRecordClick = viewModel::onRecordClick,
     )
 
-    if (uiState.isRecoverySaving) RouteeLoadingOverlay()
+    if (uiState.isLoadingVisible) RouteeLoadingOverlay()
 
     uiState.recovery?.takeIf { uiState.isRecoveryDialogVisible }?.let { recovery ->
         WorkoutRecoveryDialog(
