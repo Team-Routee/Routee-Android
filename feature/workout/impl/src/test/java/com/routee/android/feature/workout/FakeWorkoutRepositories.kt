@@ -165,11 +165,13 @@ internal class FakeMapImageRepository : TimelineMapImageRepository {
 
 internal class FakeWorkoutPhotoRepository(
     private val missingCount: Int = 0,
+    private val serverPhotos: List<WorkoutPhoto> = emptyList(),
 ) : WorkoutPhotoRepository {
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos
     val discarded = mutableListOf<File>()
     var captureFileCount = 0
+    val restoredActivityIds = mutableListOf<Long>()
 
     fun setPhotos(photos: List<WorkoutPhoto>) {
         _photos.value = photos
@@ -195,6 +197,12 @@ internal class FakeWorkoutPhotoRepository(
         )
         _photos.value += photo
         return Result.success(photo)
+    }
+
+    override suspend fun restore(activityId: Long): Result<Unit> {
+        restoredActivityIds += activityId
+        if (_photos.value.none { it.activityId == activityId }) _photos.value = serverPhotos
+        return Result.success(Unit)
     }
 
     override suspend fun discardCaptureFile(file: File) {

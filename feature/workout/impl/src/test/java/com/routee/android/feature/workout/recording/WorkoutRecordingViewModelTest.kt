@@ -156,6 +156,27 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 앱이 다시 켜져 사진 목록이 비었고 서버에 올린 사진이 있을 때
+     * WHEN: 복구로 들어오면
+     * THEN: 서버 사진으로 마커와 개수를 채운다
+     */
+    @Test
+    fun `복구로 들어오면 서버에 올린 사진으로 마커와 개수를 채운다`() = runTest {
+        val serverPhoto = photo("timeline-9").copy(filePath = null, serverImageUrl = "https://image/9.jpg")
+        val photos = FakeWorkoutPhotoRepository(serverPhotos = listOf(serverPhoto))
+        val viewModel = viewModel(
+            FakeWorkoutTrackingRepository(record().recovered(START)),
+            photos = photos,
+            key = WorkoutRecordingNavKey(isRecovering = true),
+        )
+
+        assertEquals(listOf(1L), photos.restoredActivityIds)
+        assertEquals(1, viewModel.uiState.value.photoCount)
+        assertEquals("https://image/9.jpg", viewModel.uiState.value.photos.single().imageUrl)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 기록 중일 때
      * WHEN: 저장소에 경로 좌표가 쌓이고 5분이 지나면
      * THEN: 거리, 최고 고도는 반올림하고 시간은 초 단위로, 경로는 좌표 목록으로 보여준다

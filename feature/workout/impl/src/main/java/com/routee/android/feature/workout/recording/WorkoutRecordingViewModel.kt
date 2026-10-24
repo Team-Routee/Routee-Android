@@ -292,13 +292,22 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 UnfinishedWorkout.None
             }
             when (unfinished) {
-                UnfinishedWorkout.Tracking -> if (key.isRecovering) isResumingRecovered = true else continueRecording()
+                UnfinishedWorkout.Tracking -> {
+                    restorePhotos()
+                    if (key.isRecovering) isResumingRecovered = true else continueRecording()
+                }
 
                 is UnfinishedWorkout.Recoverable -> _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
 
                 else -> createWorkout()
             }
         }
+    }
+
+    // 앱이 다시 켜져 사진 목록이 비었으면 서버에 올린 사진으로 마커와 개수 복구, 복구면 카운트다운 동안
+    private fun restorePhotos() {
+        val activityId = trackingRepository.state.value.record?.activityId ?: return
+        viewModelScope.launch { photoRepository.restore(activityId).onFailure { Timber.e(it, "운동 사진 복구 실패") } }
     }
 
     private fun continueRecording() {

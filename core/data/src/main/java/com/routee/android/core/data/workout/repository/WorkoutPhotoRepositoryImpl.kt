@@ -1,6 +1,10 @@
 package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.common.util.suspendRunCatching
+import com.routee.android.core.data.archive.model.ArchivePhoto
+import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
+import com.routee.android.core.data.recap.model.TimelineMarker
+import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.data.timeline.model.TimelinePhotoStatus
 import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.repository.TimelinePhotoRepository
@@ -13,6 +17,8 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +30,8 @@ import kotlinx.coroutines.sync.withLock
 internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val localDataSource: WorkoutPhotoLocalDataSource,
     private val timelinePhotoRepository: TimelinePhotoRepository,
+    private val recapRepository: RecapRepository,
+    private val archiveDetailRepository: ArchiveDetailRepository,
 ) : WorkoutPhotoRepository {
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos.asStateFlow()
@@ -48,17 +56,26 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         val path = localDataSource.compress(activityId, id, original)
         val photo = WorkoutPhoto(id = id, activityId = activityId, filePath = path, point = point, takenAt = takenAt)
         mutex.withLock {
-            val previous = _photos.value
-            if (previous.any { it.activityId != activityId }) {
-                localDataSource.deleteOthers(activityId)
-                previous.map { it.activityId }.distinct().forEach { timelinePhotoRepository.clearUploadState(it) }
-                removedTimelines.update { removed -> removed.filterTo(mutableSetOf()) { it.first == activityId } }
-                _photos.value = listOf(photo)
-            } else {
-                _photos.value = previous + photo
-            }
+            clearOthers(activityId)
+            _photos.value += photo
         }
         photo
+    }
+
+    // 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
+    override suspend fun restore(activityId: Long): Result<Unit> = suspendRunCatching {
+        if (_photos.value.any { it.activityId == activityId }) return@suspendRunCatching
+        val photos = coroutineScope {
+            val track = async { recapRepository.getActivityTrack(activityId) }
+            val timelinePhotos = async { archiveDetailRepository.getPhotos(activityId) }
+            val photoById = timelinePhotos.await().getOrNull().orEmpty().associateBy { it.id }
+            track.await().getOrThrow().timelineMarkers.map { it.toPhoto(activityId, photoById[it.timelineId]) }
+        }
+        mutex.withLock {
+            if (_photos.value.any { it.activityId == activityId }) return@withLock
+            clearOthers(activityId)
+            _photos.value = photos
+        }
     }
 
     override suspend fun discardCaptureFile(file: File) = localDataSource.delete(file.path)
@@ -77,7 +94,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             photos.filterNot { it.id == photoId }
         }
         removed?.let { photo ->
-            removedFiles.update { it + photo.filePath }
+            photo.filePath?.let { path -> removedFiles.update { it + path } }
             photo.timelineId?.let { markRemoved(photo.activityId, it) }
         }
     }
@@ -145,6 +162,16 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         }
     }
 
+    // 이전 기록에서 남은 사진, 업로드 상태, 지울 사진 정리
+    private suspend fun clearOthers(activityId: Long) {
+        val others = _photos.value.map { it.activityId }.distinct().filter { it != activityId }
+        if (others.isEmpty()) return
+        localDataSource.deleteOthers(activityId)
+        others.forEach { timelinePhotoRepository.clearUploadState(it) }
+        removedTimelines.update { removed -> removed.filterTo(mutableSetOf()) { it.first == activityId } }
+        _photos.update { photos -> photos.filter { it.activityId == activityId } }
+    }
+
     private fun markRemoved(
         activityId: Long,
         timelineId: Long,
@@ -155,7 +182,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
 private fun WorkoutPhoto.toUpload() = TimelinePhotoUpload(
     clientId = id,
-    file = File(filePath),
+    file = File(checkNotNull(filePath) { "올리지 않은 사진은 기기 파일이 있음" }),
     capturedAtEpochMillis = takenAt.toEpochMilli(),
     title = title,
     trackPointIndex = point.pointIndex,
@@ -165,3 +192,28 @@ private fun WorkoutPhoto.toUpload() = TimelinePhotoUpload(
     pointIndex = point.pointIndex,
     status = TimelinePhotoStatus.SUCCESSFUL_CREATED,
 )
+
+// 기기 파일 없이 서버 주소로 표시, 경로 좌표는 마커 위치로
+private fun TimelineMarker.toPhoto(
+    activityId: Long,
+    timelinePhoto: ArchivePhoto?,
+): WorkoutPhoto {
+    val takenAt = timelinePhoto?.createdAt ?: Instant.EPOCH
+    return WorkoutPhoto(
+        id = "timeline-$timelineId",
+        activityId = activityId,
+        filePath = null,
+        point = TrackPoint(
+            pointIndex = pointIndex,
+            latitude = latitude,
+            longitude = longitude,
+            elevation = 0.0,
+            recordedAt = takenAt,
+        ),
+        takenAt = takenAt,
+        title = timelinePhoto?.location.orEmpty(),
+        timelineId = timelineId,
+        serverTitle = timelinePhoto?.location.orEmpty(),
+        serverImageUrl = timelinePhoto?.imageUrl ?: thumbnailUrl,
+    )
+}

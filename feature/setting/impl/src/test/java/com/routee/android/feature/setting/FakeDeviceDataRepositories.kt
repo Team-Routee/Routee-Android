@@ -89,6 +89,8 @@ internal class FakeWorkoutPhotoRepository : WorkoutPhotoRepository {
         takenAt: Instant,
     ): Result<WorkoutPhoto> = Result.failure(UnsupportedOperationException())
 
+    override suspend fun restore(activityId: Long): Result<Unit> = Result.success(Unit)
+
     override suspend fun discardCaptureFile(file: File) = Unit
 
     override fun updateTitle(
