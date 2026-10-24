@@ -43,8 +43,6 @@ internal class NicknameViewModel @AssistedInject constructor(
     private val _sideEffect = Channel<NicknameSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
 
-    private var isRegistering = false
-
     init {
         viewModelScope.launch {
             snapshotFlow { nicknameState.text.toString() to nicknameState.composition }
@@ -63,11 +61,11 @@ internal class NicknameViewModel @AssistedInject constructor(
     }
 
     fun onStartClick() {
-        if (isRegistering) return
+        if (_uiState.value.isRegistering) return
         val validation = nicknameValidation(nicknameState.text)
         _uiState.update { it.copy(validation = validation) }
         if (validation != RouteeTextFieldValidation.Valid) return
-        isRegistering = true
+        _uiState.update { it.copy(isRegistering = true) }
         viewModelScope.launch {
             authRepository.register(
                 nickname = nicknameState.text.trim().toString(),
@@ -90,7 +88,7 @@ internal class NicknameViewModel @AssistedInject constructor(
                         _sideEffect.send(NicknameSideEffect.ShowUnknownErrorToast)
                     }
                 }
-            isRegistering = false
+            _uiState.update { it.copy(isRegistering = false) }
         }
     }
 

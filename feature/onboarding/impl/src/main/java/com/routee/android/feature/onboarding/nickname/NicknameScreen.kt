@@ -1,5 +1,6 @@
 package com.routee.android.feature.onboarding.nickname
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.onboarding.R
 import com.routee.android.feature.onboarding.nickname.model.NicknameSideEffect
 import com.routee.android.feature.onboarding.nickname.model.NicknameUiState
@@ -76,6 +78,9 @@ internal fun NicknameRoute(
         }
     }
 
+    // 요청 중 뒤로가기로 나가면 서버 가입 뒤 로그인 정보 저장이 취소될 수 있음
+    BackHandler(enabled = uiState.isRegistering) {}
+
     NicknameScreen(
         uiState = uiState,
         nicknameState = viewModel.nicknameState,
@@ -83,6 +88,8 @@ internal fun NicknameRoute(
         onNicknameFocusChange = viewModel::onFocusChange,
         onStartClick = viewModel::onStartClick,
     )
+
+    if (uiState.isRegistering) RouteeLoadingOverlay()
 }
 
 @Composable
@@ -137,7 +144,10 @@ private fun NicknameScreen(
             }
             RouteeCtaPrimaryButton(
                 text = stringResource(R.string.onboarding_nickname_start_button),
-                onClick = onStartClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    onStartClick()
+                },
                 enabled = uiState.isStartEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
