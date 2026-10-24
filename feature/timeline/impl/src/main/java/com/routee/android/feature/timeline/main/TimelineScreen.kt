@@ -94,7 +94,7 @@ internal fun TimelineRoute(
     var isSaving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val messageState = LocalRouteeMessageState.current
-    val saveErrorText = stringResource(R.string.timeline_save_error_toast)
+    val networkErrorText = stringResource(R.string.timeline_network_error_toast)
 
     BackHandler {
         if (!isSaving) showExitDialog = true
@@ -112,6 +112,16 @@ internal fun TimelineRoute(
         viewModel.onTitleEditFinish()
         focusManager.clearFocus()
     }
+    fun deleteAndExit() {
+        if (isSaving) return
+        isSaving = true
+        scope.launch {
+            val result = suspendRunCatching { viewModel.deleteRecord().getOrThrow() }
+            isSaving = false
+            // TODO P1 기획: 삭제 성공 토스트 여부 (아카이브는 "기록이 삭제되었습니다.")
+            if (result.isSuccess) onExit() else messageState.showToast(text = networkErrorText)
+        }
+    }
     fun saveAndNavigate(destination: TimelineSaveDestination) {
         if (isSaving || showExitDialog) return
         isSaving = true
@@ -121,7 +131,7 @@ internal fun TimelineRoute(
             isSaving = false
             when (result) {
                 TimelineSaveResult.Success -> onSaveSuccess(destination)
-                TimelineSaveResult.Failed -> messageState.showToast(text = saveErrorText)
+                TimelineSaveResult.Failed -> messageState.showToast(text = networkErrorText)
             }
         }
     }
@@ -171,8 +181,10 @@ internal fun TimelineRoute(
             description = stringResource(R.string.timeline_exit_description),
             leftButtonText = stringResource(R.string.timeline_cancel),
             rightButtonText = stringResource(R.string.timeline_exit),
-            // TODO #145 머지 후 기록 삭제 API 호출 뒤 홈 (지금은 삭제 없이 홈)
-            onRightButtonClick = onExit,
+            onRightButtonClick = {
+                showExitDialog = false
+                deleteAndExit()
+            },
             onDismissRequest = { showExitDialog = false },
         )
     }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -28,6 +29,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
     private val galleryImageStore: GalleryImageStore,
     private val recordSaver: TimelineRecordSaver,
+    private val archiveDetailRepository: ArchiveDetailRepository,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -82,6 +84,9 @@ internal class TimelineViewModel @AssistedInject constructor(
     )
 
     suspend fun save(draft: TimelineDraft): TimelineSaveResult = recordSaver.save(activityId, draft)
+
+    suspend fun deleteRecord(): Result<Unit> =
+        archiveDetailRepository.deleteActivity(activityId).onFailure { Timber.e(it, "기록 삭제 실패") }
 
     @AssistedFactory
     interface Factory : NavKeyViewModelFactory<TimelineNavKey, TimelineViewModel>
