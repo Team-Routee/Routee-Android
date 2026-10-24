@@ -8,7 +8,9 @@ import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.remote.dto.request.ActivityTrackPointRequest
 import com.routee.android.core.data.workout.remote.dto.request.CompleteActivityRequest
 import com.routee.android.core.data.workout.remote.dto.request.CreateActivityRequest
+import com.routee.android.core.data.workout.remote.dto.request.RouteRequest
 import com.routee.android.core.data.workout.remote.dto.request.UpdateActivityStatusRequest
+import com.routee.android.core.data.workout.remote.dto.request.UpdateRoutesRequest
 import com.routee.android.core.data.workout.remote.service.WorkoutService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.util.ApiResponseHandler
@@ -54,6 +56,18 @@ internal class WorkoutRemoteRepositoryImpl @Inject constructor(
         )
     }.recoverCatching { error ->
         if (error !is ApiException.Conflict || error.serverCode != ACTIVITY_ALREADY_COMPLETED) throw error
+    }
+
+    override suspend fun updateRoutes(
+        activityId: Long,
+        names: List<String>,
+    ): Result<Unit> = apiResponseHandler.safeUnitApiCall {
+        workoutService.updateRoutes(
+            activityId = activityId,
+            request = UpdateRoutesRequest(
+                routes = names.mapIndexed { index, name -> RouteRequest(name = name, sequence = index + 1) },
+            ),
+        )
     }
 
     private fun WorkoutRecord.toCompleteRequest(

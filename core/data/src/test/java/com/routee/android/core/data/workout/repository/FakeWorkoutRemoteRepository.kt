@@ -30,4 +30,9 @@ internal class FakeWorkoutRemoteRepository(
         trackPoints: List<TrackPoint>,
         mapImageObjectKey: String,
     ): Result<Unit> = Result.success(Unit)
+
+    override suspend fun updateRoutes(
+        activityId: Long,
+        names: List<String>,
+    ): Result<Unit> = Result.success(Unit)
 }

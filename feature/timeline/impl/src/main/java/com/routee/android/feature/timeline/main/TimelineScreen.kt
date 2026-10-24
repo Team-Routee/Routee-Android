@@ -51,14 +51,15 @@ import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
-import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.component.textfield.RouteeRecordSummaryTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelinePhoto
@@ -66,8 +67,8 @@ import com.routee.android.feature.timeline.component.MyRouteEditor
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.component.TimelinePhotoSection
 import com.routee.android.feature.timeline.main.model.TimelineDraft
+import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineSaveDestination
-import com.routee.android.feature.timeline.main.model.TimelineSaveResult
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import java.time.Instant
 import java.time.ZoneId
@@ -80,25 +81,27 @@ private val SectionSpacing = 48.dp
 private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
 
-private enum class TimelineDialog { None, Exit, InvalidRoute, SaveFailed }
-
 @Composable
 internal fun TimelineRoute(
     viewModel: TimelineViewModel,
     onExit: () -> Unit,
     onSaveSuccess: (TimelineSaveDestination) -> Unit,
-    onSaveRecord: suspend (TimelineDraft) -> TimelineSaveResult,
+    onSaveRecord: suspend (TimelineDraft) -> TimelineRequestResult,
     modifier: Modifier = Modifier,
-    routePointCount: Int? = null,
     routeMap: (@Composable () -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var dialog by rememberSaveable(viewModel.activityId) { mutableStateOf(TimelineDialog.None) }
+    var showExitDialog by rememberSaveable(viewModel.activityId) { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val messageState = LocalRouteeMessageState.current
+    val networkErrorText = stringResource(R.string.timeline_network_error_toast)
+    val unknownErrorText = stringResource(R.string.timeline_unknown_error_toast)
+    val deleteNetworkErrorText = stringResource(R.string.timeline_delete_network_error_toast)
+    val deleteUnknownErrorText = stringResource(R.string.timeline_delete_unknown_error_toast)
 
     BackHandler {
-        if (!isSaving && dialog == TimelineDialog.None) dialog = TimelineDialog.Exit
+        if (!isSaving) showExitDialog = true
     }
 
     val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
@@ -113,21 +116,33 @@ internal fun TimelineRoute(
         viewModel.onTitleEditFinish()
         focusManager.clearFocus()
     }
-    fun saveAndNavigate(destination: TimelineSaveDestination) {
-        if (isSaving || dialog != TimelineDialog.None) return
-        if (routePointCount != null && routePointCount < 2) {
-            dialog = TimelineDialog.InvalidRoute
-            return
+    fun deleteAndExit() {
+        if (isSaving) return
+        isSaving = true
+        scope.launch {
+            val result = suspendRunCatching { viewModel.deleteRecord() }.getOrDefault(TimelineRequestResult.Failed)
+            isSaving = false
+            // TODO P1 기획: 삭제 성공 토스트 여부 (아카이브는 "기록이 삭제되었습니다.")
+            // 실패해도 나감 (기록은 남고 아카이브에서 삭제 가능)
+            when (result) {
+                TimelineRequestResult.Success -> Unit
+                TimelineRequestResult.NetworkFailed -> messageState.showToast(text = deleteNetworkErrorText)
+                TimelineRequestResult.Failed -> messageState.showToast(text = deleteUnknownErrorText)
+            }
+            onExit()
         }
+    }
+    fun saveAndNavigate(destination: TimelineSaveDestination) {
+        if (isSaving || showExitDialog) return
         isSaving = true
         scope.launch {
             val result = suspendRunCatching { onSaveRecord(viewModel.draft(defaultTitle)) }
-                .getOrDefault(TimelineSaveResult.Failed)
+                .getOrDefault(TimelineRequestResult.Failed)
             isSaving = false
             when (result) {
-                TimelineSaveResult.Success -> onSaveSuccess(destination)
-                TimelineSaveResult.InvalidRoute -> dialog = TimelineDialog.InvalidRoute
-                TimelineSaveResult.Failed -> dialog = TimelineDialog.SaveFailed
+                TimelineRequestResult.Success -> onSaveSuccess(destination)
+                TimelineRequestResult.NetworkFailed -> messageState.showToast(text = networkErrorText)
+                TimelineRequestResult.Failed -> messageState.showToast(text = unknownErrorText)
             }
         }
     }
@@ -137,7 +152,7 @@ internal fun TimelineRoute(
         titleState = viewModel.titleState,
         defaultTitle = defaultTitle,
         isTitleEditing = uiState.isTitleEditing,
-        onBackClick = { if (!isSaving) dialog = TimelineDialog.Exit },
+        onBackClick = { if (!isSaving) showExitDialog = true },
         onCompleteClick = {
             finishTitleEdit()
             saveAndNavigate(TimelineSaveDestination.Home)
@@ -171,30 +186,19 @@ internal fun TimelineRoute(
         },
     )
 
-    when (dialog) {
-        TimelineDialog.None -> Unit
+    if (isSaving) RouteeLoadingOverlay()
 
-        TimelineDialog.Exit -> RouteeTwoButtonDialog(
+    if (showExitDialog) {
+        RouteeTwoButtonDialog(
             title = stringResource(R.string.timeline_exit_title),
             description = stringResource(R.string.timeline_exit_description),
             leftButtonText = stringResource(R.string.timeline_cancel),
             rightButtonText = stringResource(R.string.timeline_exit),
-            onRightButtonClick = onExit,
-            onDismissRequest = { dialog = TimelineDialog.None },
-        )
-
-        TimelineDialog.InvalidRoute, TimelineDialog.SaveFailed -> RouteeOneButtonDialog(
-            title = stringResource(R.string.timeline_save_failed_title),
-            description = stringResource(
-                if (dialog == TimelineDialog.InvalidRoute) {
-                    R.string.timeline_invalid_route_description
-                } else {
-                    R.string.timeline_save_failed_description
-                },
-            ),
-            buttonText = stringResource(R.string.timeline_confirm),
-            onButtonClick = onExit,
-            onDismissRequest = {},
+            onRightButtonClick = {
+                showExitDialog = false
+                deleteAndExit()
+            },
+            onDismissRequest = { showExitDialog = false },
         )
     }
 }

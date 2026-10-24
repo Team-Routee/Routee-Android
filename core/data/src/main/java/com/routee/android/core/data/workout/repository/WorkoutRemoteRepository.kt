@@ -32,4 +32,14 @@ interface WorkoutRemoteRepository {
         trackPoints: List<TrackPoint>,
         mapImageObjectKey: String,
     ): Result<Unit>
+
+    /**
+     * 나의 루트를 이 목록으로 교체, 같은 목록이면 그대로
+     *
+     * @param names 지점 이름, 앞에서부터 순서 1
+     */
+    suspend fun updateRoutes(
+        activityId: Long,
+        names: List<String>,
+    ): Result<Unit>
 }

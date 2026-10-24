@@ -4,12 +4,15 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
+import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.main.model.TimelineDraft
+import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineUiState
+import com.routee.android.feature.timeline.main.model.toRequestFailure
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -26,6 +29,8 @@ private const val MAX_ROUTE_POINT_COUNT = 20
 internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
     private val galleryImageStore: GalleryImageStore,
+    private val recordSaver: TimelineRecordSaver,
+    private val archiveDetailRepository: ArchiveDetailRepository,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -75,8 +80,18 @@ internal class TimelineViewModel @AssistedInject constructor(
     }
 
     fun draft(defaultTitle: String) = TimelineDraft(
-        title = titleState.text.toString().trim().ifEmpty { defaultTitle },
+        title = titleState.text.toString().trim().takeIf { it.isNotEmpty() && it != defaultTitle },
         routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
+    )
+
+    suspend fun save(draft: TimelineDraft): TimelineRequestResult = recordSaver.save(activityId, draft)
+
+    suspend fun deleteRecord(): TimelineRequestResult = archiveDetailRepository.deleteActivity(activityId).fold(
+        onSuccess = { TimelineRequestResult.Success },
+        onFailure = {
+            Timber.e(it, "기록 삭제 실패")
+            it.toRequestFailure()
+        },
     )
 
     @AssistedFactory
