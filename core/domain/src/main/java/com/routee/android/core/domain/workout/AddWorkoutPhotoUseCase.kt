@@ -34,7 +34,7 @@ class AddWorkoutPhotoUseCase @Inject constructor(
         }
         photoRepository.addPhoto(record.activityId, original, point, clock.instant())
             .getOrElse { return AddWorkoutPhotoResult.Failed }
-        photoRepository.uploadPhotos(record.activityId)
+        photoRepository.syncPhotos(record.activityId)
         return AddWorkoutPhotoResult.Added
     }
 

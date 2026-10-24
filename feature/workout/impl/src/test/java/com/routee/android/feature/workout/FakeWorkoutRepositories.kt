@@ -159,6 +159,10 @@ internal class FakeWorkoutPhotoRepository(
     val discarded = mutableListOf<File>()
     var captureFileCount = 0
 
+    fun setPhotos(photos: List<WorkoutPhoto>) {
+        _photos.value = photos
+    }
+
     override suspend fun createCaptureFile(): Result<File> {
         captureFileCount++
         return Result.success(File("capture-$captureFileCount.jpg"))
@@ -185,7 +189,18 @@ internal class FakeWorkoutPhotoRepository(
         discarded += file
     }
 
-    override suspend fun uploadPhotos(activityId: Long): Int = missingCount
+    override fun updateTitle(
+        photoId: String,
+        title: String,
+    ) {
+        _photos.value = _photos.value.map { if (it.id == photoId) it.copy(title = title) else it }
+    }
+
+    override fun removePhoto(photoId: String) {
+        _photos.value = _photos.value.filterNot { it.id == photoId }
+    }
+
+    override suspend fun syncPhotos(activityId: Long): Int = missingCount
 
     override suspend fun clear(): Result<Unit> {
         _photos.value = emptyList()
@@ -239,6 +254,15 @@ internal fun record(status: WorkoutStatus = WorkoutStatus.ACTIVITY_IN_PROGRESS) 
     endedAt = null,
     mapImageObjectKey = null,
     mapImagePath = null,
+)
+
+internal fun photo(id: String) = WorkoutPhoto(
+    id = id,
+    activityId = 1,
+    filePath = "$id.jpg",
+    point = trackPoint(1),
+    takenAt = START,
+    title = "말바위",
 )
 
 internal fun trackPoint(index: Int) = TrackPoint(

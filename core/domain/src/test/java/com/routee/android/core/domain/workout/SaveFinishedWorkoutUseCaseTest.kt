@@ -62,7 +62,7 @@ class SaveFinishedWorkoutUseCaseTest {
         val result = saveFinishedWorkout(JPEG)
 
         assertEquals(WorkoutSaveResult.Saved, result)
-        assertEquals(listOf(7L), photos.uploadedActivityIds)
+        assertEquals(listOf(7L), photos.syncedActivityIds)
         assertTrue(photos.isCleared)
     }
 

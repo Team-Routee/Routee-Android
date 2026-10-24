@@ -28,7 +28,10 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos.asStateFlow()
 
+    // 서버에서 지울 사진 (activityId, timelineId)
+    private val removedTimelines = MutableStateFlow<Set<Pair<Long, Long>>>(emptySet())
     private val mutex = Mutex()
+    private val syncMutex = Mutex()
 
     override suspend fun createCaptureFile(): Result<File> = suspendRunCatching { localDataSource.createCaptureFile() }
 
@@ -46,6 +49,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             if (previous.any { it.activityId != activityId }) {
                 localDataSource.deleteOthers(activityId)
                 previous.map { it.activityId }.distinct().forEach { timelinePhotoRepository.clearUploadState(it) }
+                removedTimelines.update { removed -> removed.filterTo(mutableSetOf()) { it.first == activityId } }
                 _photos.value = listOf(photo)
             } else {
                 _photos.value = previous + photo
@@ -56,25 +60,82 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     override suspend fun discardCaptureFile(file: File) = localDataSource.delete(file.path)
 
-    override suspend fun uploadPhotos(activityId: Long): Int {
-        val pending = _photos.value.filter { it.activityId == activityId && it.timelineId == null }
-        if (pending.isEmpty()) return 0
-        val results = timelinePhotoRepository.uploadPhotos(activityId, pending.map { it.toUpload() })
-        val timelineIds = results.mapNotNull { upload ->
-            upload.result.getOrNull()?.let { upload.clientId to it }
-        }.toMap()
+    override fun updateTitle(
+        photoId: String,
+        title: String,
+    ) {
+        _photos.update { photos -> photos.map { if (it.id == photoId) it.copy(title = title) else it } }
+    }
+
+    override fun removePhoto(photoId: String) {
+        var removed: WorkoutPhoto? = null
         _photos.update { photos ->
-            photos.map { photo -> timelineIds[photo.id]?.let { photo.copy(timelineId = it) } ?: photo }
+            removed = photos.find { it.id == photoId }
+            photos.filterNot { it.id == photoId }
         }
-        return pending.size - timelineIds.size
+        removed?.let { photo -> photo.timelineId?.let { markRemoved(photo.activityId, it) } }
+    }
+
+    override suspend fun syncPhotos(activityId: Long): Int = syncMutex.withLock {
+        uploadPending(activityId)
+        updateTitles(activityId)
+        deleteRemoved(activityId)
+        _photos.value.count { it.activityId == activityId && it.timelineId == null }
     }
 
     override suspend fun clear(): Result<Unit> = suspendRunCatching {
         mutex.withLock {
             _photos.value.map { it.activityId }.distinct().forEach { timelinePhotoRepository.clearUploadState(it) }
             _photos.value = emptyList()
+            removedTimelines.value = emptySet()
             localDataSource.clear()
         }
+    }
+
+    private suspend fun uploadPending(activityId: Long) {
+        val pending = _photos.value.filter { it.activityId == activityId && it.timelineId == null }
+        if (pending.isEmpty()) return
+        val sentTitles = pending.associate { it.id to it.title }
+        val timelineIds = timelinePhotoRepository.uploadPhotos(activityId, pending.map { it.toUpload() })
+            .mapNotNull { upload -> upload.result.getOrNull()?.let { upload.clientId to it } }
+            .toMap()
+        _photos.update { photos ->
+            photos.map { photo ->
+                timelineIds[photo.id]?.let { photo.copy(timelineId = it, serverTitle = sentTitles[photo.id]) } ?: photo
+            }
+        }
+        // 올리는 동안 지운 사진은 서버에서도 지움
+        val remaining = _photos.value.map { it.id }.toSet()
+        timelineIds.filterKeys { it !in remaining }.values.forEach { markRemoved(activityId, it) }
+    }
+
+    // 서버는 빈 장소명으로 수정하지 않음
+    private suspend fun updateTitles(activityId: Long) {
+        _photos.value
+            .filter { it.activityId == activityId && it.title.isNotBlank() && it.title != it.serverTitle }
+            .forEach { photo ->
+                val timelineId = photo.timelineId ?: return@forEach
+                timelinePhotoRepository.updateTitle(activityId, timelineId, photo.title).onSuccess {
+                    _photos.update { photos ->
+                        photos.map { if (it.id == photo.id) it.copy(serverTitle = photo.title) else it }
+                    }
+                }
+            }
+    }
+
+    private suspend fun deleteRemoved(activityId: Long) {
+        removedTimelines.value.filter { it.first == activityId }.forEach { removed ->
+            timelinePhotoRepository.deletePhoto(activityId, removed.second).onSuccess {
+                removedTimelines.update { it - removed }
+            }
+        }
+    }
+
+    private fun markRemoved(
+        activityId: Long,
+        timelineId: Long,
+    ) {
+        removedTimelines.update { it + (activityId to timelineId) }
     }
 }
 

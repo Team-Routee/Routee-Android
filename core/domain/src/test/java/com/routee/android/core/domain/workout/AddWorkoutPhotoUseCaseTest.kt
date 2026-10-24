@@ -41,7 +41,7 @@ class AddWorkoutPhotoUseCaseTest {
         assertEquals(AddWorkoutPhotoResult.Added, result)
         assertEquals(3, photos.photos.value.single().point.pointIndex)
         assertEquals(NOW, photos.photos.value.single().takenAt)
-        assertEquals(listOf(7L), photos.uploadedActivityIds)
+        assertEquals(listOf(7L), photos.syncedActivityIds)
     }
 
     /**

@@ -28,8 +28,8 @@ class SaveFinishedWorkoutUseCase @Inject constructor(
             return WorkoutSaveResult.InvalidRoute
         }
         val objectKey = mapImage?.let { uploadMapImage(record, it) } ?: return WorkoutSaveResult.Failed
-        // 대표 사진은 완료 시점에 정해져서 완료 전에 다시 올림, 그래도 못 올린 사진은 빼고 저장
-        val missingPhotoCount = photoRepository.uploadPhotos(record.activityId)
+        // 대표 사진은 완료 시점에 정해져서 완료 전에 다시 올리고 장소명, 삭제도 반영. 그래도 못 올린 사진은 빼고 저장
+        val missingPhotoCount = photoRepository.syncPhotos(record.activityId)
         remoteRepository.completeWorkout(record, state.trackPoints, objectKey)
             .getOrElse { return WorkoutSaveResult.Failed }
         clearRecord()
