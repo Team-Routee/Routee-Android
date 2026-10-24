@@ -17,7 +17,11 @@ data class ArchiveDetail(
     val routes: List<RecapRoute>,
 )
 
-/** 촬영 시각 순으로 표시할 타임라인 사진 */
+/**
+ * 촬영 시각 순으로 표시할 타임라인 사진
+ *
+ * @param location 장소명. 없거나 공백이면 null
+ */
 data class ArchivePhoto(
     val id: Long,
     val location: String?,

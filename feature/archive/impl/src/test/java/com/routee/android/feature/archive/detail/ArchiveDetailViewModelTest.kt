@@ -199,6 +199,8 @@ class ArchiveDetailViewModelTest {
             activityIds += activityId
             return if (fail) Result.failure(IOException()) else Result.success(detail())
         }
+
+        override suspend fun getPhotos(activityId: Long): Result<List<ArchivePhoto>> = error("Unused")
     }
 
     companion object {
@@ -212,7 +214,7 @@ class ArchiveDetailViewModelTest {
                 listOf(TrackPoint(38.0, 127.0, 1.0, 2), TrackPoint(37.0, 127.0, 1.0, 1)),
                 listOf(TimelineMarker(5, "thumbnail", 37.0, 127.0, 1)),
             ),
-            listOf(ArchivePhoto(5, " ", "photo", Instant.parse("2026-03-12T03:00:00Z"))),
+            listOf(ArchivePhoto(5, null, "photo", Instant.parse("2026-03-12T03:00:00Z"))),
             listOf(RecapRoute(1, "창의문")),
         )
     }

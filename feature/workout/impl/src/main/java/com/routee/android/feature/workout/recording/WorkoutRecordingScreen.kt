@@ -59,6 +59,7 @@ import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
+import com.routee.android.feature.workout.component.finish.WorkoutSavingSkeleton
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
 import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
@@ -323,15 +324,31 @@ private fun WorkoutRecordingScreen(
                     onEndLongPress = onEndLongPress,
                 )
 
-                WorkoutMode.FINISHING -> RouteeLottie(
-                    resId = DesignSystemR.raw.lottie_workout_finish,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {},
-                    speed = FINISH_ANIMATION_SPEED,
-                    contentScale = ContentScale.Crop,
-                    onFinish = onFinishAnimationEnd,
-                )
+                WorkoutMode.FINISHING -> {
+                    // 로띠가 끝나도 저장 중이면 타임라인 모양 스켈레톤
+                    var isFinishAnimationDone by rememberSaveable { mutableStateOf(false) }
+                    if (isFinishAnimationDone) {
+                        WorkoutSavingSkeleton(
+                            distanceMeters = uiState.distanceMeters,
+                            durationSec = uiState.durationSec,
+                            maxElevationMeters = uiState.maxElevationMeters,
+                            hasPhotos = uiState.photoCount > 0,
+                        )
+                    } else {
+                        RouteeLottie(
+                            resId = DesignSystemR.raw.lottie_workout_finish,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(Unit) {},
+                            speed = FINISH_ANIMATION_SPEED,
+                            contentScale = ContentScale.Crop,
+                            onFinish = {
+                                isFinishAnimationDone = true
+                                onFinishAnimationEnd()
+                            },
+                        )
+                    }
+                }
             }
         }
         // 네이버 로고: 오른쪽 아래
