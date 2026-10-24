@@ -47,7 +47,7 @@ internal class ProfileRepositoryImpl @Inject constructor(
         return try {
             uploadProfileImage(imageFile).mapApiException(::mapMemberException)
         } finally {
-            withContext(Dispatchers.IO) { imageFile.delete() }
+            imageFile.delete()
         }
     }
 
