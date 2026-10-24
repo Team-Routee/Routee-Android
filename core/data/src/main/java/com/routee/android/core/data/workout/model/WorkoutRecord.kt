@@ -5,6 +5,9 @@ import java.time.Instant
 
 private const val MILLIS_PER_SECOND = 1_000
 
+/** 일시정지를 이보다 오래 두면 기록을 멈추고 복구 안내 */
+val WORKOUT_PAUSE_LIMIT: Duration = Duration.ofHours(2)
+
 /**
  * 기기에 저장된 운동 기록
  *
@@ -36,6 +39,13 @@ data class WorkoutRecord(
     val isTracking: Boolean
         get() = status == WorkoutStatus.ACTIVITY_IN_PROGRESS || status == WorkoutStatus.ACTIVITY_PAUSED
 
+    /** 일시정지 [WORKOUT_PAUSE_LIMIT]가 끝나는 시각, 일시정지가 아니면 null */
+    val pauseExpiresAt: Instant?
+        get() = pausedAt?.takeIf { status == WorkoutStatus.ACTIVITY_PAUSED }?.plus(WORKOUT_PAUSE_LIMIT)
+
+    /** [now]에 일시정지가 [WORKOUT_PAUSE_LIMIT]를 넘었으면 true */
+    fun isPauseExpiredAt(now: Instant): Boolean = pauseExpiresAt?.let { !now.isBefore(it) } ?: false
+
     /** [now]까지 운동 시간 (ms) = durationMillis + (now - resumedAt) */
     fun durationMillisAt(now: Instant): Long =
         durationMillis + (resumedAt?.let { Duration.between(it, now).toMillis().coerceAtLeast(0) } ?: 0)
@@ -60,14 +70,32 @@ data class WorkoutRecord(
         return copy(status = WorkoutStatus.ACTIVITY_IN_PROGRESS, resumedAt = now, pausedAt = null)
     }
 
-    /** 종료, 업로드 대기로 바꾸고 운동 시간 확정. 기록 중, 일시정지일 때만 */
-    fun finished(now: Instant): WorkoutRecord {
+    /**
+     * 종료, 업로드 대기로 바꾸고 운동 시간 확정. 기록 중, 일시정지일 때만
+     *
+     * @param endedAt 종료 시각, 복구의 종료 후 저장은 마지막 기록 시각
+     */
+    fun finished(
+        now: Instant,
+        endedAt: Instant = now,
+    ): WorkoutRecord {
         if (!isTracking) return this
         return copy(
             status = WorkoutStatus.PENDING_UPLOAD,
             durationMillis = durationMillisAt(now),
             resumedAt = null,
-            endedAt = now,
+            endedAt = endedAt,
+        )
+    }
+
+    /** 복구 안내에서 고를 때까지 일시정지로 둠, 꺼져 있던 시간은 뺌 (durationMillis = 마지막 기록 시각까지, pausedAt = now) */
+    fun recovered(now: Instant): WorkoutRecord {
+        if (!isTracking) return this
+        return copy(
+            status = WorkoutStatus.ACTIVITY_PAUSED,
+            durationMillis = durationMillisAt(lastRecordedAt),
+            resumedAt = null,
+            pausedAt = now,
         )
     }
 
