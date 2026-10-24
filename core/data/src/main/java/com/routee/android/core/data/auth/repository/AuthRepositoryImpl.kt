@@ -10,8 +10,10 @@ import com.routee.android.core.data.auth.remote.dto.request.AgreementsRequest
 import com.routee.android.core.data.auth.remote.dto.request.LoginRequest
 import com.routee.android.core.data.auth.remote.dto.request.LogoutRequest
 import com.routee.android.core.data.auth.remote.dto.request.RegisterRequest
+import com.routee.android.core.data.auth.remote.dto.request.WithdrawRequest
 import com.routee.android.core.data.auth.remote.service.AuthService
 import com.routee.android.core.data.auth.remote.service.LogoutService
+import com.routee.android.core.data.auth.remote.service.WithdrawService
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.session.AuthSessionManager
@@ -21,6 +23,7 @@ import javax.inject.Inject
 internal class AuthRepositoryImpl @Inject constructor(
     private val authService: AuthService,
     private val logoutService: LogoutService,
+    private val withdrawService: WithdrawService,
     private val tokenLocalDataSource: TokenLocalDataSource,
     private val authSessionManager: AuthSessionManager,
     private val apiResponseHandler: ApiResponseHandler,
@@ -75,11 +78,26 @@ internal class AuthRepositoryImpl @Inject constructor(
     ).mapApiException(::mapAuthException)
 
     override suspend fun logout(): Result<Unit> {
-        tokenLocalDataSource.getRefreshToken()?.let { refreshToken ->
+        suspendRunCatching { tokenLocalDataSource.getRefreshToken() }.getOrNull()?.let { refreshToken ->
             apiResponseHandler.safeUnitApiCall { logoutService.logout(LogoutRequest(refreshToken = refreshToken)) }
         }
         // TODO 기기 운동 기록 삭제
         return suspendRunCatching { authSessionManager.clearSession() }
+    }
+
+    override suspend fun withdraw(): Result<Unit> {
+        requestWithdraw().onFailure { return Result.failure(it) }
+        // TODO 기기 운동 기록 삭제
+        return suspendRunCatching { authSessionManager.clearSession() }
+    }
+
+    private suspend fun requestWithdraw(): Result<Unit> {
+        val refreshToken = suspendRunCatching { tokenLocalDataSource.getRefreshToken() }
+            .getOrElse { return Result.failure(it) }
+            ?: return Result.failure(IllegalStateException("Refresh token is missing"))
+        return apiResponseHandler.safeUnitApiCall {
+            withdrawService.withdraw(WithdrawRequest(refreshToken = refreshToken))
+        }.mapApiException(::mapAuthException)
     }
 
     private suspend fun executeLogin(

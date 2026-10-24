@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -54,6 +56,7 @@ fun RouteeRecordSummaryTextField(
     onEditClick: () -> Unit,
     onEditComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    defaultTitle: String = "",
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -67,7 +70,7 @@ fun RouteeRecordSummaryTextField(
             )
         } else {
             Text(
-                text = state.text.toString(),
+                text = state.text.toString().ifEmpty { defaultTitle },
                 style = RouteeTheme.typography.titleSb20,
                 color = RouteeTheme.colors.white,
                 modifier = Modifier.weight(1f),
@@ -105,7 +108,7 @@ private fun RecordTitleEditor(
     RouteeBasicTextField(
         state = state,
         textStyle = RouteeTheme.typography.titleSb20,
-        maxLength = RECORD_TITLE_MAX_LENGTH,
+        inputTransformation = InputTransformation.maxLength(RECORD_TITLE_MAX_LENGTH),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         onKeyboardAction = { focusManager.clearFocus() },
         modifier = modifier

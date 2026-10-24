@@ -12,4 +12,8 @@ dependencies {
 
     implementation(projects.feature.setting.api)
     implementation(projects.feature.onboarding.api)
+    implementation(libs.timber)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

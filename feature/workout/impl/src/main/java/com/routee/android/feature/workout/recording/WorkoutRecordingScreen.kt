@@ -50,6 +50,7 @@ import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
+import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -86,6 +87,7 @@ internal fun WorkoutRecordingRoute(
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
     val mapState = rememberRouteeMapState()
+    val scope = rememberCoroutineScope()
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -101,6 +103,11 @@ internal fun WorkoutRecordingRoute(
             is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
 
             WorkoutRecordingSideEffect.NavigateToHome -> onNavigateToHome()
+
+            is WorkoutRecordingSideEffect.MoveToLastLocation -> scope.launch {
+                mapState.moveTo(sideEffect.point, zoom = MY_LOCATION_ZOOM)
+                mapState.followMyLocation()
+            }
         }
     }
 

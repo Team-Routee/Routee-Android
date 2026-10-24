@@ -1,6 +1,7 @@
 package com.routee.android.feature.workout.recording
 
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
@@ -288,12 +289,36 @@ class WorkoutRecordingViewModelTest {
         viewModel.close()
     }
 
+    /**
+     * GIVEN: 기기에 마지막 위치가 있을 때
+     * WHEN: 기록 화면에 들어오면
+     * THEN: 그 위치에서 지도를 시작한다
+     */
+    @Test
+    fun `마지막 위치가 있으면 그 위치에서 지도를 시작한다`() = runTest {
+        val lastLocation = DeviceLocation(
+            latitude = 37.0,
+            longitude = 127.0,
+            altitude = null,
+            altitudeAccuracyMeters = null,
+            accuracyMeters = 5f,
+            time = START,
+        )
+
+        val viewModel =
+            viewModel(FakeWorkoutTrackingRepository(), location = FakeLocationRepository(lastLocation = lastLocation))
+
+        assertEquals(WorkoutRecordingSideEffect.MoveToLastLocation(MapPoint(37.0, 127.0)), viewModel.sideEffect.first())
+        viewModel.close()
+    }
+
     /** 1초마다 시간을 갱신하는 코루틴을 멈춤, 안 멈추면 runTest가 가상 시간을 끝없이 돌림 */
     private fun WorkoutRecordingViewModel.close() = viewModelScope.cancel()
 
     private fun viewModel(
         tracking: FakeWorkoutTrackingRepository,
         remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
+        location: FakeLocationRepository = FakeLocationRepository(),
     ) = WorkoutRecordingViewModel(
         trackingRepository = tracking,
         remoteRepository = remote,
@@ -303,7 +328,7 @@ class WorkoutRecordingViewModelTest {
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
         ),
-        locationRepository = FakeLocationRepository(),
+        locationRepository = location,
         clock = clock,
     )
 

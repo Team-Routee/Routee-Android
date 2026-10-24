@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="archive_title">아카이브</string>
+    <string name="archive_network_unavailable">네트워크 연결을 확인해주세요.</string>
+    <string name="archive_record_load_failed">기록을 불러오지 못했어요. 다시 시도해주세요.</string>
+
+    <!-- 기록 상세 -->
+    <string name="archive_detail_route_empty">기록된 루트가 없습니다</string>
+    <string name="archive_detail_delete">삭제</string>
+    <string name="archive_detail_delete_title">기록을 삭제하시겠습니까?</string>
+    <string name="archive_detail_delete_description">나가면 운동 기록이 삭제되고\n복구할 수 없습니다.</string>
+    <string name="archive_detail_cancel">취소</string>
+    <string name="archive_detail_delete_confirm">기록 삭제</string>
+    <string name="archive_detail_deleted">기록이 삭제되었습니다.</string>
+    <string name="archive_detail_update_failed">기록을 수정하지 못했어요. 다시 시도해주세요.</string>
+    <string name="archive_detail_delete_failed">기록을 삭제하지 못했어요. 다시 시도해주세요.</string>
+    <string name="archive_detail_default_title">%1$s 기록</string>
+
     <!-- 나의 루트 -->
     <string name="archive_route_point_item_title">나의 루트</string>
 

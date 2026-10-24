@@ -1,4 +1,4 @@
-package com.routee.android.feature.timeline.component
+package com.routee.android.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +13,9 @@ import androidx.compose.ui.unit.dp
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 
+/** 현재 사진 위치를 최대 다섯 개의 점으로 표시하는 인디케이터 */
 @Composable
-internal fun PaginationDots(
+fun RouteePaginationDots(
     pageCount: Int,
     currentPage: Int,
     modifier: Modifier = Modifier,
@@ -42,13 +43,13 @@ internal fun PaginationDots(
 
 @PreviewFontSizes
 @Composable
-private fun PaginationDotsPreview() {
+private fun RouteePaginationDotsPreview() {
     RouteeTheme {
         Column(verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing12)) {
-            PaginationDots(pageCount = 5, currentPage = 0)
-            PaginationDots(pageCount = 5, currentPage = 2)
-            PaginationDots(pageCount = 5, currentPage = 4)
-            PaginationDots(pageCount = 8, currentPage = 3)
+            RouteePaginationDots(pageCount = 5, currentPage = 0)
+            RouteePaginationDots(pageCount = 5, currentPage = 2)
+            RouteePaginationDots(pageCount = 5, currentPage = 4)
+            RouteePaginationDots(pageCount = 8, currentPage = 3)
         }
     }
 }
