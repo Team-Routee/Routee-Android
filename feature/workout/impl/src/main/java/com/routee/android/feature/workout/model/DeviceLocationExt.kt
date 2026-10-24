@@ -3,6 +3,7 @@ package com.routee.android.feature.workout.model
 import android.location.Location
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
+import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.map.model.MapPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onStart
@@ -19,6 +20,8 @@ internal fun LocationRepository.observeLocationsFromLast(): Flow<DeviceLocation>
     observeLocations().onStart { getLastLocation().getOrNull()?.let { emit(it) } }
 
 internal fun DeviceLocation.toMapPoint(): MapPoint = MapPoint(latitude, longitude)
+
+internal fun TrackPoint.toMapPoint(): MapPoint = MapPoint(latitude, longitude)
 
 // 내 위치에서 시작할 때 줌
 internal const val MY_LOCATION_ZOOM = 16.0

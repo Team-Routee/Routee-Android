@@ -6,6 +6,7 @@ import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.domain.workout.MAX_WORKOUT_PHOTO_COUNT
 import com.routee.android.core.map.model.MapPhoto
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.feature.workout.model.toMapPoint
 import java.io.File
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -56,7 +57,7 @@ internal data class WorkoutRecordingUiState(
 }
 
 internal fun WorkoutPhoto.toMapPhoto(): MapPhoto =
-    MapPhoto(id = id, imageUrl = imageUrl(), point = MapPoint(point.latitude, point.longitude))
+    MapPhoto(id = id, imageUrl = imageUrl(), point = point.toMapPoint())
 
 // 기기에 있는 사진 파일 주소 (file:)
 internal fun WorkoutPhoto.imageUrl(): String = File(filePath).toURI().toString()

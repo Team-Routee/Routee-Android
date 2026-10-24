@@ -15,7 +15,6 @@ import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
-import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.model.observeLocationsFromLast
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
@@ -261,7 +260,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         }
         val state = trackingRepository.state.value
         summary = state.record?.toSummary()
-        val route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList()
+        val route = state.trackPoints.map { it.toMapPoint() }.toImmutableList()
         _uiState.update { it.copy(captureRoute = route) }
     }
 
@@ -350,7 +349,7 @@ internal class WorkoutRecordingViewModel @Inject constructor(
                 distanceMeters = record.distanceMeters.roundToInt(),
                 durationSec = record.durationSecondsAt(clock.instant()),
                 maxElevationMeters = record.maxElevationMeters?.roundToInt() ?: 0,
-                route = state.trackPoints.map { point -> MapPoint(point.latitude, point.longitude) }.toImmutableList(),
+                route = state.trackPoints.map { it.toMapPoint() }.toImmutableList(),
             )
         }
     }
