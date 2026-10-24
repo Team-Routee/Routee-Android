@@ -23,4 +23,6 @@ internal sealed interface WorkoutRecordingSideEffect {
     data object ShowPhotoFailed : WorkoutRecordingSideEffect
 
     data object ShowPhotosMissing : WorkoutRecordingSideEffect
+
+    data class ShowPhotoDeleted(val photoId: String) : WorkoutRecordingSideEffect
 }

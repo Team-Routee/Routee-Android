@@ -20,9 +20,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +45,7 @@ import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
+import com.routee.android.core.designsystem.component.message.RouteeMessageResult
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
@@ -57,8 +60,10 @@ import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
+import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
+import com.routee.android.feature.workout.recording.model.OpenedPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -99,6 +104,8 @@ internal fun WorkoutRecordingRoute(
     val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
     val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
     val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
+    val photoDeletedText = stringResource(R.string.workout_recording_photo_deleted_snackbar)
+    val photoDeletedUndoText = stringResource(R.string.workout_recording_photo_deleted_undo)
     val mapState = rememberRouteeMapState()
     val scope = rememberCoroutineScope()
     // 카메라 앱이 떠 있는 동안 앱이 종료돼도 결과를 받게 저장
@@ -144,10 +151,20 @@ internal fun WorkoutRecordingRoute(
             WorkoutRecordingSideEffect.ShowPhotoFailed -> messageState.showToast(text = photoFailedText)
 
             WorkoutRecordingSideEffect.ShowPhotosMissing -> messageState.showToast(text = photosMissingText)
+
+            is WorkoutRecordingSideEffect.ShowPhotoDeleted -> scope.launch {
+                val result = messageState.showSnackbar(text = photoDeletedText, actionLabel = photoDeletedUndoText)
+                viewModel.onPhotoDeleteSnackbarClose(
+                    photoId = sideEffect.photoId,
+                    isUndone = result == RouteeMessageResult.ACTION_PERFORMED,
+                )
+            }
         }
     }
 
     RecordingBackHandler(mode = uiState.mode)
+    // 삭제 스낵바가 떠 있으면 뒤로가기 = [취소]
+    BackHandler(enabled = uiState.isPhotoDeletePending) { messageState.performAction() }
 
     uiState.captureRoute?.let { route ->
         LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureJpeg(route)) }
@@ -159,12 +176,21 @@ internal fun WorkoutRecordingRoute(
         myLocation = viewModel.myLocation,
         onStopClick = viewModel::onStopClick,
         onCameraClick = viewModel::onCameraClick,
+        onPhotoMarkerClick = viewModel::onPhotoMarkerClick,
         onCountdownFinish = viewModel::onCountdownFinish,
         onRestartClick = viewModel::onRestartClick,
         onEndClick = { messageState.showToast(text = endGuideText, duration = RouteeMessageDuration.BRIEF) },
         onEndLongPress = viewModel::onEndLongPress,
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
+
+    uiState.openedPhoto?.let { photo ->
+        OpenedPhotoDialog(
+            photo = photo,
+            onDeleteClick = viewModel::onPhotoDeleteClick,
+            onClose = viewModel::onPhotoDialogClose,
+        )
+    }
 
     uiState.saveFailure?.let { failure ->
         RouteeOneButtonDialog(
@@ -180,6 +206,23 @@ internal fun WorkoutRecordingRoute(
             buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
             onButtonClick = viewModel::onSaveFailureDialogConfirm,
             onDismissRequest = viewModel::onSaveFailureDialogConfirm,
+        )
+    }
+}
+
+@Composable
+private fun OpenedPhotoDialog(
+    photo: OpenedPhoto,
+    onDeleteClick: () -> Unit,
+    onClose: (title: String) -> Unit,
+) {
+    key(photo.id) {
+        val titleState = rememberTextFieldState(photo.title)
+        PhotoTimelineDialog(
+            imageUrl = photo.imageUrl,
+            locationState = titleState,
+            onDeleteClick = onDeleteClick,
+            onDismissRequest = { onClose(titleState.text.toString()) },
         )
     }
 }
@@ -213,6 +256,7 @@ private fun WorkoutRecordingScreen(
     myLocation: Flow<Location>?,
     onStopClick: () -> Unit,
     onCameraClick: () -> Unit,
+    onPhotoMarkerClick: (String) -> Unit,
     onCountdownFinish: () -> Unit,
     onRestartClick: () -> Unit,
     onEndClick: () -> Unit,
@@ -224,13 +268,13 @@ private fun WorkoutRecordingScreen(
     LaunchedEffect(mapState) { mapState.followMyLocation() }
     val photoMarkers = rememberPhotoMarkers(uiState.photos)
 
-    // TODO #116 사진 마커 탭 시 사진 타임라인 모달
     RouteeNaverMap(
         modifier = modifier.fillMaxSize(),
         state = mapState,
         myLocation = if (uiState.isMapOverlayVisible) myLocation else null,
         route = if (uiState.isMapOverlayVisible) uiState.route else persistentListOf(),
         markers = if (uiState.isMapOverlayVisible) photoMarkers else emptyList(),
+        onMarkerClick = onPhotoMarkerClick,
     ) {
         AnimatedContent(
             targetState = uiState.mode,
@@ -337,6 +381,7 @@ private fun WorkoutRecordingScreenPreview() {
             myLocation = null,
             onStopClick = {},
             onCameraClick = {},
+            onPhotoMarkerClick = {},
             onCountdownFinish = {},
             onRestartClick = {},
             onEndClick = {},

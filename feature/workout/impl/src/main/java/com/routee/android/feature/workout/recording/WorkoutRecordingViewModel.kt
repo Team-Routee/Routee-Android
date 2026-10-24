@@ -26,6 +26,7 @@ import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.recording.model.toMapPhoto
 import com.routee.android.feature.workout.recording.model.toMode
+import com.routee.android.feature.workout.recording.model.toOpenedPhoto
 import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
@@ -81,6 +82,9 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val saveResult = CompletableDeferred<WorkoutSaveResult>()
     private var isTakingPhoto = false
 
+    // 삭제 스낵바가 떠 있는 사진, 스낵바가 닫히면 삭제 확정
+    private val pendingDeletePhotoId = MutableStateFlow<String?>(null)
+
     init {
         moveToLastLocation()
         prepareRecording()
@@ -116,9 +120,9 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { trackingRepository.resume().onFailure { Timber.e(it, "다시 시작 실패") } }
     }
 
-    /** 카메라 원본을 쓸 파일을 만들어 기본 카메라 실행, 찍는 중이거나 20장이면 무시 */
+    /** 카메라 원본을 쓸 파일을 만들어 기본 카메라 실행, 찍는 중이거나 20장이거나 삭제 스낵바가 떠 있으면 무시 */
     fun onCameraClick() {
-        if (isTakingPhoto || !_uiState.value.isCameraEnabled) return
+        if (isTakingPhoto || !_uiState.value.isCameraEnabled || pendingDeletePhotoId.value != null) return
         isTakingPhoto = true
         viewModelScope.launch {
             photoRepository.createCaptureFile()
@@ -157,9 +161,51 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         }
     }
 
+    fun onPhotoMarkerClick(photoId: String) {
+        val photo = photoRepository.photos.value.find { it.id == photoId } ?: return
+        _uiState.update { it.copy(openedPhoto = photo.toOpenedPhoto()) }
+    }
+
+    /** 사진 모달 닫기, 장소명은 닫을 때 저장 */
+    fun onPhotoDialogClose(title: String) {
+        val photo = _uiState.value.openedPhoto ?: return
+        _uiState.update { it.copy(openedPhoto = null) }
+        if (title == photo.title) return
+        photoRepository.updateTitle(photo.id, title)
+        syncPhotos()
+    }
+
+    /** 사진 모달에서 삭제, 지도와 개수에서 바로 빼고 스낵바가 닫히면 확정 */
+    fun onPhotoDeleteClick() {
+        val photo = _uiState.value.openedPhoto ?: return
+        confirmPhotoDelete()
+        pendingDeletePhotoId.value = photo.id
+        _uiState.update { it.copy(openedPhoto = null, isPhotoDeletePending = true) }
+        _sideEffect.trySend(WorkoutRecordingSideEffect.ShowPhotoDeleted(photo.id))
+    }
+
+    /**
+     * 삭제 스낵바가 닫히면 확정하거나 되돌림
+     *
+     * @param isUndone [취소]나 뒤로가기로 닫았으면 true
+     */
+    fun onPhotoDeleteSnackbarClose(
+        photoId: String,
+        isUndone: Boolean,
+    ) {
+        if (pendingDeletePhotoId.value != photoId) return
+        if (isUndone) {
+            pendingDeletePhotoId.value = null
+            _uiState.update { it.copy(isPhotoDeletePending = false) }
+        } else {
+            confirmPhotoDelete()
+        }
+    }
+
     /** 종료, 마무리 애니메이션과 함께 기록을 업로드 대기로 바꾸고 지도 캡처 요청 */
     fun onEndLongPress() {
         if (_uiState.value.mode == WorkoutMode.FINISHING) return
+        confirmPhotoDelete()
         _uiState.update { it.copy(mode = WorkoutMode.FINISHING) }
         viewModelScope.launch { finishWorkout() }
     }
@@ -200,6 +246,11 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     fun onSaveFailureDialogConfirm() {
         _uiState.update { it.copy(saveFailure = null) }
         viewModelScope.launch { _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome) }
+    }
+
+    // 스낵바가 결과 없이 닫혀도 화면을 떠날 때 확정
+    override fun onCleared() {
+        confirmPhotoDelete()
     }
 
     private suspend fun finishWorkout() {
@@ -253,17 +304,33 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { trackingRepository.state.collect(::applyTracking) }
     }
 
-    // 이전 기록에서 남은 사진은 빼고 지금 기록 사진만
+    // 이전 기록에서 남은 사진, 삭제 스낵바가 떠 있는 사진은 빼고 지금 기록 사진만
     private fun observePhotos() {
         viewModelScope.launch {
             combine(
                 trackingRepository.state.map { it.record?.activityId }.distinctUntilChanged(),
                 photoRepository.photos,
-            ) { activityId, photos -> photos.filter { it.activityId == activityId } }
+                pendingDeletePhotoId,
+            ) { activityId, photos, pendingDeleteId ->
+                photos.filter { it.activityId == activityId && it.id != pendingDeleteId }
+            }
                 .collect { photos ->
                     _uiState.update { it.copy(photos = photos.map { photo -> photo.toMapPhoto() }.toImmutableList()) }
                 }
         }
+    }
+
+    private fun confirmPhotoDelete() {
+        val photoId = pendingDeletePhotoId.value ?: return
+        photoRepository.removePhoto(photoId)
+        pendingDeletePhotoId.value = null
+        _uiState.update { it.copy(isPhotoDeletePending = false) }
+        syncPhotos()
+    }
+
+    private fun syncPhotos() {
+        val activityId = trackingRepository.state.value.record?.activityId ?: return
+        viewModelScope.launch { photoRepository.syncPhotos(activityId) }
     }
 
     private fun updateDurationEverySecond() {
