@@ -5,6 +5,8 @@ import com.routee.android.core.designsystem.component.textfield.RouteeTextFieldV
 
 @Immutable
 internal data class ProfileEditUiState(
+    val isLoading: Boolean = true,
+    val isLoadFailed: Boolean = false,
     val savedNickname: String = "",
     val nickname: String = "",
     val savedProfileImageUrl: String? = null,
@@ -12,8 +14,8 @@ internal data class ProfileEditUiState(
     val validation: RouteeTextFieldValidation = RouteeTextFieldValidation.None,
     val isPhotoDialogVisible: Boolean = false,
 ) {
-    private val isNicknameChanged: Boolean get() = nickname != savedNickname
-    private val isProfileImageChanged: Boolean get() = profileImageUrl != savedProfileImageUrl
+    val isNicknameChanged: Boolean get() = nickname != savedNickname
+    val isProfileImageChanged: Boolean get() = profileImageUrl != savedProfileImageUrl
 
     val isSaveEnabled: Boolean
         get() = when {
