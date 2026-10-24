@@ -96,6 +96,7 @@ internal fun TimelineRoute(
     val scope = rememberCoroutineScope()
     val messageState = LocalRouteeMessageState.current
     val networkErrorText = stringResource(R.string.timeline_network_error_toast)
+    val deleteErrorText = stringResource(R.string.timeline_delete_error_toast)
 
     BackHandler {
         if (!isSaving) showExitDialog = true
@@ -117,10 +118,12 @@ internal fun TimelineRoute(
         if (isSaving) return
         isSaving = true
         scope.launch {
-            val result = suspendRunCatching { viewModel.deleteRecord().getOrThrow() }
+            val isDeleted = suspendRunCatching { viewModel.deleteRecord().getOrThrow() }.isSuccess
             isSaving = false
             // TODO P1 기획: 삭제 성공 토스트 여부 (아카이브는 "기록이 삭제되었습니다.")
-            if (result.isSuccess) onExit() else messageState.showToast(text = networkErrorText)
+            // 실패해도 나감 (기록은 남고 아카이브에서 삭제 가능)
+            if (!isDeleted) messageState.showToast(text = deleteErrorText)
+            onExit()
         }
     }
     fun saveAndNavigate(destination: TimelineSaveDestination) {
