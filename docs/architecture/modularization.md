@@ -41,6 +41,7 @@ dependencies {
 | Component used in 2+ features | `core/designsystem/.../component/` |
 | Screen-level UI used in 2+ features (loading, error) | `core/ui/.../<name>/` |
 | Modifier extension | `core/designsystem/.../extension/ModifierExt.kt` |
+| Skeleton (`Modifier.skeleton`) | `core/designsystem/.../component/skeleton/` |
 | Feature strings | `feature/<x>/impl/src/main/res/values/strings.xml` |
 | Repository, DTO, model | `core/data/.../<domain>/` |
 | Room DAO, entity | `core/database/.../dao/`, `entity/` |
