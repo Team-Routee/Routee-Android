@@ -123,12 +123,15 @@ internal class TimelineViewModel @AssistedInject constructor(
             // TODO P1 기획: 사진 목록 조회 실패 안내 (지금은 사진 섹션, 나의 루트 초기 목록 없이 진행)
             archiveDetailRepository.getPhotos(activityId)
                 .onSuccess(::showPhotos)
-                .onFailure { Timber.e(it, "사진 조회 실패") }
+                .onFailure { error ->
+                    Timber.e(error, "사진 조회 실패")
+                    _uiState.update { it.copy(photos = UiState.Failure(error)) }
+                }
         }
     }
 
     private fun showPhotos(photos: List<ArchivePhoto>) {
-        _uiState.update { it.copy(photos = photos) }
+        _uiState.update { it.copy(photos = UiState.Success(photos)) }
         if (points.isNotEmpty()) return
         photos.mapNotNull(ArchivePhoto::location)
             .take(MAX_ROUTE_POINT_COUNT)

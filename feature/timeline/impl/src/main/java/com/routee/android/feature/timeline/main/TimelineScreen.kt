@@ -46,7 +46,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.common.util.suspendRunCatching
-import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
@@ -61,6 +60,7 @@ import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
+import com.routee.android.core.ui.UiState
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.timeline.R
@@ -123,6 +123,8 @@ internal fun TimelineRoute(
     }
     val defaultTitle = stringResource(R.string.timeline_default_record_title, recordDate)
     val focusManager = LocalFocusManager.current
+    val photos = uiState.photos
+    val hasPhotoSection = photos is UiState.Loading || (photos as? UiState.Success)?.data?.isNotEmpty() == true
     fun finishTitleEdit() {
         viewModel.onTitleEditFinish()
         focusManager.clearFocus()
@@ -159,7 +161,6 @@ internal fun TimelineRoute(
     }
     TimelineScreen(
         uiState = uiState,
-        photos = uiState.photos,
         titleState = viewModel.titleState,
         defaultTitle = defaultTitle,
         isTitleEditing = uiState.isTitleEditing,
@@ -176,11 +177,21 @@ internal fun TimelineRoute(
             saveAndNavigate(TimelineSaveDestination.RecordEdit)
         },
         modifier = modifier,
-        savedPhotoIndex = gallerySave.savedPhotoIndex,
-        onPhotoSaveClick = { index, photo ->
-            gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
-        },
         routeMap = { TimelineRouteMap(track = uiState.track) },
+        photoSection = if (hasPhotoSection) {
+            {
+                TimelinePhotoSection(
+                    photos = photos,
+                    recordDate = recordDate,
+                    onSaveClick = { index, photo ->
+                        gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
+                    },
+                    savedPhotoIndex = gallerySave.savedPhotoIndex,
+                )
+            }
+        } else {
+            null
+        },
         myRoute = {
             MyRouteEditor(
                 points = viewModel.points,
@@ -193,6 +204,7 @@ internal fun TimelineRoute(
                     focusManager.clearFocus()
                     viewModel.onAddPoint()
                 },
+                isLoading = photos is UiState.Loading,
             )
         },
     )
@@ -217,7 +229,6 @@ internal fun TimelineRoute(
 @Composable
 private fun TimelineScreen(
     uiState: TimelineUiState,
-    photos: List<ArchivePhoto>,
     titleState: TextFieldState,
     defaultTitle: String,
     isTitleEditing: Boolean,
@@ -227,10 +238,9 @@ private fun TimelineScreen(
     onTitleEditFinish: () -> Unit,
     onOutsideClick: () -> Unit,
     onRecordEditClick: () -> Unit,
-    onPhotoSaveClick: (Int, ArchivePhoto) -> Unit,
     modifier: Modifier = Modifier,
-    savedPhotoIndex: Int = -1,
     routeMap: (@Composable () -> Unit)? = null,
+    photoSection: (@Composable () -> Unit)? = null,
     myRoute: (@Composable () -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
@@ -286,17 +296,11 @@ private fun TimelineScreen(
                         routeMap()
                     }
                 }
-                if (photos.isNotEmpty() || myRoute != null) {
+                if (photoSection != null || myRoute != null) {
                     Spacer(Modifier.height(SectionTopSpacing))
                 }
-                if (photos.isNotEmpty()) {
-                    TimelinePhotoSection(
-                        photos = photos,
-                        onSaveClick = onPhotoSaveClick,
-                        savedPhotoIndex = savedPhotoIndex,
-                    )
-                }
-                if (photos.isNotEmpty() && myRoute != null) {
+                photoSection?.invoke()
+                if (photoSection != null && myRoute != null) {
                     Spacer(Modifier.height(SectionSpacing))
                 }
                 if (myRoute != null) {
@@ -334,7 +338,6 @@ private fun TimelineScreenPreview() {
                 duration = "03:20",
                 maxElevation = "2132",
             ),
-            photos = emptyList(),
             titleState = rememberTextFieldState("2026.07.18 기록"),
             defaultTitle = "2026.07.18 기록",
             isTitleEditing = isTitleEditing,
@@ -344,7 +347,6 @@ private fun TimelineScreenPreview() {
             onTitleEditFinish = { isTitleEditing = false },
             onOutsideClick = {},
             onRecordEditClick = {},
-            onPhotoSaveClick = { _, _ -> },
             myRoute = {
                 MyRouteEditor(
                     points = points,

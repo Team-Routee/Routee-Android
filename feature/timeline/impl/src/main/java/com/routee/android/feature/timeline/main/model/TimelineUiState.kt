@@ -11,5 +11,5 @@ internal data class TimelineUiState(
     val maxElevation: String,
     val isTitleEditing: Boolean = false,
     val track: UiState<TimelineTrack> = UiState.Loading,
-    val photos: List<ArchivePhoto> = emptyList(),
+    val photos: UiState<List<ArchivePhoto>> = UiState.Loading,
 )

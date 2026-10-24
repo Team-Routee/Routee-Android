@@ -61,6 +61,7 @@ import androidx.compose.ui.zIndex
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeRouteMarker
 import com.routee.android.core.designsystem.component.RouteeSecondaryButton
+import com.routee.android.core.designsystem.component.skeleton.skeleton
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
@@ -75,6 +76,7 @@ private val RouteRowSpacing = 12.dp
 private const val MAX_POINT_COUNT = 20
 private const val MAX_POINT_NAME_LENGTH = 16
 private const val ROUTE_ANIMATION_DURATION_MS = 160
+private const val SKELETON_ROW_COUNT = 3
 
 internal data class RoutePoint(
     val id: Long,
@@ -88,6 +90,7 @@ internal fun MyRouteEditor(
     onRemovePoint: (Int) -> Unit,
     onAddPoint: () -> Unit,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
 ) {
     val currentOnMovePoint by rememberUpdatedState(onMovePoint)
     val currentOnRemovePoint by rememberUpdatedState(onRemovePoint)
@@ -107,6 +110,7 @@ internal fun MyRouteEditor(
         MyRouteHeader(
             currentCount = points.size,
         )
+        if (isLoading) RouteSkeletonList()
         Column {
             points.forEachIndexed { index, point ->
                 key(point.id) {
@@ -295,24 +299,11 @@ private fun RoutePointItem(
         horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .width(RouteLeadingWidth)
-                .height(RouteRowMinHeight),
-            contentAlignment = Alignment.TopCenter,
-        ) {
+        RouteLeading(hasNext = index < pointCount - 1) {
             RouteeRouteMarker(
                 number = index + 1,
                 modifier = dragGesture.padding(top = RouteeTheme.spacing.Spacing10),
             )
-            if (index < pointCount - 1) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .size(width = 1.dp, height = 6.dp)
-                        .background(RouteeTheme.colors.grey400),
-                )
-            }
         }
         Row(
             modifier = Modifier
@@ -351,6 +342,56 @@ private fun RoutePointItem(
                 contentDescription = stringResource(R.string.timeline_route_remove_point_a11y, index + 1),
                 modifier = Modifier
                     .clickable(role = Role.Button, onClick = onRemovePoint),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RouteSkeletonList() {
+    Column {
+        repeat(SKELETON_ROW_COUNT) { index ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RouteLeading(hasNext = index < SKELETON_ROW_COUNT - 1) {
+                    RouteeRouteMarker(
+                        number = index + 1,
+                        modifier = Modifier.padding(top = RouteeTheme.spacing.Spacing10),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(RouteRowMinHeight)
+                        .skeleton(RoundedCornerShape(RouteeTheme.radius.Radius12)),
+                )
+            }
+            if (index < SKELETON_ROW_COUNT - 1) RouteConnector()
+        }
+    }
+}
+
+@Composable
+private fun RouteLeading(
+    hasNext: Boolean,
+    marker: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .width(RouteLeadingWidth)
+            .height(RouteRowMinHeight),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        marker()
+        if (hasNext) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .size(width = 1.dp, height = 6.dp)
+                    .background(RouteeTheme.colors.grey400),
             )
         }
     }

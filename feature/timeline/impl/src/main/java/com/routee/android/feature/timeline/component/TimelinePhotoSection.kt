@@ -8,6 +8,7 @@ import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
 import com.routee.android.core.designsystem.component.RouteeTimelinePhoto
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.UiState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -16,23 +17,23 @@ private val PhotoDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 @Composable
 internal fun TimelinePhotoSection(
-    photos: List<ArchivePhoto>,
+    photos: UiState<List<ArchivePhoto>>,
+    recordDate: String,
     onSaveClick: (Int, ArchivePhoto) -> Unit,
     modifier: Modifier = Modifier,
     savedPhotoIndex: Int = -1,
 ) {
-    val firstPhoto = photos.firstOrNull() ?: return
-    val date = remember(firstPhoto.createdAt) {
-        firstPhoto.createdAt
-            .atZone(ZoneId.systemDefault())
-            .format(PhotoDateFormatter)
+    val loaded = (photos as? UiState.Success)?.data.orEmpty()
+    val date = remember(loaded, recordDate) {
+        loaded.firstOrNull()?.createdAt?.atZone(ZoneId.systemDefault())?.format(PhotoDateFormatter) ?: recordDate
     }
-    val items = remember(photos) { photos.map { RouteeTimelinePhoto(it.imageUrl, it.location) } }
+    val items = remember(loaded) { loaded.map { RouteeTimelinePhoto(it.imageUrl, it.location) } }
     RouteePhotoTimelineSection(
         photos = items,
         date = date,
-        onSaveClick = { index -> onSaveClick(index, photos[index]) },
+        onSaveClick = { index -> onSaveClick(index, loaded[index]) },
         savedPhotoIndex = savedPhotoIndex,
+        isLoading = photos is UiState.Loading,
         modifier = modifier,
     )
 }
@@ -42,7 +43,8 @@ internal fun TimelinePhotoSection(
 private fun TimelinePhotoSectionPreview() {
     RouteeTheme {
         TimelinePhotoSection(
-            photos = listOf(ArchivePhoto(0, "창의문", "", Instant.ofEpochMilli(1_782_825_200_000))),
+            photos = UiState.Success(listOf(ArchivePhoto(0, "창의문", "", Instant.ofEpochMilli(1_782_825_200_000)))),
+            recordDate = "2026.07.18",
             onSaveClick = { _, _ -> },
         )
     }
@@ -54,7 +56,8 @@ private fun TimelinePhotoSectionMultiplePreview() {
     RouteeTheme {
         val photo = ArchivePhoto(0, "창의문", "", Instant.ofEpochMilli(1_782_825_200_000))
         TimelinePhotoSection(
-            photos = List(6) { index -> if (index == 0) photo else photo.copy(location = null) },
+            photos = UiState.Success(List(6) { index -> if (index == 0) photo else photo.copy(location = null) }),
+            recordDate = "2026.07.18",
             onSaveClick = { _, _ -> },
         )
     }
