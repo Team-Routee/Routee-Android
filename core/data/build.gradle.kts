@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.androidx.core.location.altitude)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.coil)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

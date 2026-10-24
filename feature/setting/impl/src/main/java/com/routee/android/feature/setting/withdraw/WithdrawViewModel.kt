@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.domain.auth.ClearDeviceDataUseCase
 import com.routee.android.feature.setting.withdraw.model.WithdrawSideEffect
 import com.routee.android.feature.setting.withdraw.model.WithdrawUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,7 @@ import timber.log.Timber
 @HiltViewModel
 internal class WithdrawViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val clearDeviceData: ClearDeviceDataUseCase,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WithdrawUiState())
     val uiState: StateFlow<WithdrawUiState> = _uiState.asStateFlow()
@@ -38,7 +40,10 @@ internal class WithdrawViewModel @Inject constructor(
         isWithdrawing = true
         viewModelScope.launch {
             authRepository.withdraw()
-                .onSuccess { _sideEffect.send(WithdrawSideEffect.NavigateToLogin) }
+                .onSuccess {
+                    clearDeviceData().onFailure { Timber.e(it, "기기 데이터 삭제 실패") }
+                    _sideEffect.send(WithdrawSideEffect.NavigateToLogin)
+                }
                 .onFailure { e ->
                     if (e is AuthException.NetworkUnavailable) {
                         _sideEffect.send(WithdrawSideEffect.ShowNetworkErrorToast)
