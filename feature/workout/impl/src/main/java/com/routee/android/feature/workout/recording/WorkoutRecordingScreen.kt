@@ -1,10 +1,13 @@
 package com.routee.android.feature.workout.recording
 
+import android.content.ActivityNotFoundException
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -17,12 +20,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,24 +40,30 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routee.android.core.data.upload.UPLOAD_JPEG_QUALITY
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
+import com.routee.android.core.designsystem.component.message.RouteeMessageResult
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteeMapState
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.map.model.MapPhoto
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.core.map.rememberPhotoMarkers
 import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
+import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
+import com.routee.android.feature.workout.recording.model.OpenedPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -58,7 +71,9 @@ import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.tracking.WorkoutTrackingService
 import java.io.ByteArrayOutputStream
+import java.io.File
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -70,7 +85,6 @@ import timber.log.Timber
 private const val COUNTDOWN_FADE_OUT_MILLIS = 300
 private const val FINISH_ANIMATION_SPEED = 1.5f
 private const val MAP_CAPTURE_TIMEOUT_MILLIS = 10_000L
-private const val MAP_CAPTURE_JPEG_QUALITY = 80
 private val MAP_CAPTURE_PADDING = 48.dp
 
 @Composable
@@ -86,8 +100,19 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
+    val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
+    val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
+    val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
+    val photoDeletedText = stringResource(R.string.workout_recording_photo_deleted_snackbar)
+    val photoDeletedUndoText = stringResource(R.string.workout_recording_photo_deleted_undo)
     val mapState = rememberRouteeMapState()
     val scope = rememberCoroutineScope()
+    // 카메라 앱이 떠 있는 동안 앱이 종료돼도 결과를 받게 저장
+    var photoFilePath by rememberSaveable { mutableStateOf<String?>(null) }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
+        photoFilePath?.let { viewModel.onPhotoTaken(it, isSaved) }
+        photoFilePath = null
+    }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -108,10 +133,39 @@ internal fun WorkoutRecordingRoute(
                 mapState.moveTo(sideEffect.point, zoom = MY_LOCATION_ZOOM)
                 mapState.followMyLocation()
             }
+
+            // TODO P1 기획: 기본 카메라는 카메라 권한이 필요 없어 권한 확인 없이 실행
+            is WorkoutRecordingSideEffect.TakePhoto -> try {
+                photoFilePath = sideEffect.filePath
+                takePhoto.launch(WorkoutPhotoFileProvider.uriFor(context, File(sideEffect.filePath)))
+            } catch (e: ActivityNotFoundException) {
+                Timber.w(e, "기본 카메라 없음")
+                photoFilePath = null
+                viewModel.onCameraUnavailable(sideEffect.filePath)
+            }
+
+            WorkoutRecordingSideEffect.ShowPhotoNoLocation -> messageState.showToast(text = photoNoLocationText)
+
+            WorkoutRecordingSideEffect.ShowPhotoFailed -> messageState.showToast(text = photoFailedText)
+
+            WorkoutRecordingSideEffect.ShowPhotosMissing -> messageState.showToast(text = photosMissingText)
+
+            // 화면이 다시 만들어져 스낵바가 취소돼도 삭제 확정
+            is WorkoutRecordingSideEffect.ShowPhotoDeleted -> scope.launch {
+                var isUndone = false
+                try {
+                    val result = messageState.showSnackbar(text = photoDeletedText, actionLabel = photoDeletedUndoText)
+                    isUndone = result == RouteeMessageResult.ACTION_PERFORMED
+                } finally {
+                    viewModel.onPhotoDeleteSnackbarClose(photoId = sideEffect.photoId, isUndone = isUndone)
+                }
+            }
         }
     }
 
     RecordingBackHandler(mode = uiState.mode)
+    // 삭제 스낵바가 떠 있으면 뒤로가기 = [취소]
+    BackHandler(enabled = uiState.isPhotoDeletePending) { messageState.performAction() }
 
     uiState.captureRoute?.let { route ->
         LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureJpeg(route)) }
@@ -122,14 +176,32 @@ internal fun WorkoutRecordingRoute(
         mapState = mapState,
         myLocation = viewModel.myLocation,
         onStopClick = viewModel::onStopClick,
-        // TODO 카메라 권한 확인 후 촬영
-        onCameraClick = {},
+        onCameraClick = viewModel::onCameraClick,
+        onPhotoMarkerClick = viewModel::onPhotoMarkerClick,
         onCountdownFinish = viewModel::onCountdownFinish,
         onRestartClick = viewModel::onRestartClick,
         onEndClick = { messageState.showToast(text = endGuideText, duration = RouteeMessageDuration.BRIEF) },
         onEndLongPress = viewModel::onEndLongPress,
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
+
+    uiState.openedPhoto?.let { photo ->
+        OpenedPhotoDialog(
+            photo = photo,
+            onDeleteClick = viewModel::onPhotoDeleteClick,
+            onClose = viewModel::onPhotoDialogClose,
+        )
+    }
+
+    if (uiState.isCameraUnavailable) {
+        RouteeOneButtonDialog(
+            title = stringResource(R.string.workout_recording_camera_unavailable_title),
+            description = stringResource(R.string.workout_recording_camera_unavailable_description),
+            buttonText = stringResource(R.string.workout_recording_camera_unavailable_confirm),
+            onButtonClick = viewModel::onCameraUnavailableDialogConfirm,
+            onDismissRequest = viewModel::onCameraUnavailableDialogConfirm,
+        )
+    }
 
     uiState.saveFailure?.let { failure ->
         RouteeOneButtonDialog(
@@ -149,6 +221,23 @@ internal fun WorkoutRecordingRoute(
     }
 }
 
+@Composable
+private fun OpenedPhotoDialog(
+    photo: OpenedPhoto,
+    onDeleteClick: () -> Unit,
+    onClose: (title: String) -> Unit,
+) {
+    key(photo.id) {
+        val titleState = rememberTextFieldState(photo.title)
+        PhotoTimelineDialog(
+            imageUrl = photo.imageUrl,
+            locationState = titleState,
+            onDeleteClick = onDeleteClick,
+            onDismissRequest = { onClose(titleState.text.toString()) },
+        )
+    }
+}
+
 // 경로 전체를 담은 지도 캡처 JPEG, 실패하면 null
 private suspend fun RouteeMapState.captureJpeg(route: List<MapPoint>): ByteArray? = try {
     withTimeoutOrNull(MAP_CAPTURE_TIMEOUT_MILLIS) {
@@ -156,7 +245,7 @@ private suspend fun RouteeMapState.captureJpeg(route: List<MapPoint>): ByteArray
         try {
             withContext(Dispatchers.Default) {
                 ByteArrayOutputStream().use { output ->
-                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, MAP_CAPTURE_JPEG_QUALITY, output))
+                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, UPLOAD_JPEG_QUALITY, output))
                     output.toByteArray()
                 }
             }
@@ -178,6 +267,7 @@ private fun WorkoutRecordingScreen(
     myLocation: Flow<Location>?,
     onStopClick: () -> Unit,
     onCameraClick: () -> Unit,
+    onPhotoMarkerClick: (String) -> Unit,
     onCountdownFinish: () -> Unit,
     onRestartClick: () -> Unit,
     onEndClick: () -> Unit,
@@ -187,13 +277,15 @@ private fun WorkoutRecordingScreen(
 ) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(mapState) { mapState.followMyLocation() }
+    val photoMarkers = rememberPhotoMarkers(uiState.photos)
 
-    // TODO 사진 마커 연결
     RouteeNaverMap(
         modifier = modifier.fillMaxSize(),
         state = mapState,
         myLocation = if (uiState.isMapOverlayVisible) myLocation else null,
         route = if (uiState.isMapOverlayVisible) uiState.route else persistentListOf(),
+        markers = if (uiState.isMapOverlayVisible) photoMarkers else emptyList(),
+        onMarkerClick = onPhotoMarkerClick,
     ) {
         AnimatedContent(
             targetState = uiState.mode,
@@ -295,11 +387,12 @@ private fun WorkoutRecordingScreenPreview() {
                 durationSec = 12_000,
                 maxElevationMeters = 2132,
                 mode = WorkoutMode.RECORDING,
-                photoCount = 20,
+                photos = List(20) { MapPhoto(id = "$it", imageUrl = "", point = MapPoint(0.0, 0.0)) }.toImmutableList(),
             ),
             myLocation = null,
             onStopClick = {},
             onCameraClick = {},
+            onPhotoMarkerClick = {},
             onCountdownFinish = {},
             onRestartClick = {},
             onEndClick = {},

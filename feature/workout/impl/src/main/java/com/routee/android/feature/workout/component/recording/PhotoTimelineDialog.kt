@@ -62,7 +62,7 @@ private val PhotoTimelineDialogPadding = PaddingValues(
  *
  * 사진과 장소명을 보여주고, 장소명은 바로 고칠 수 있다. 입력값은 [locationState]에 바로 반영되고, 저장은 [onDismissRequest]에서 한다
  *
- * @param onDismissRequest X, 딤 영역, 뒤로가기 시 호출
+ * @param onDismissRequest X, 뒤로가기 시 호출. 딤 탭으로는 닫히지 않음
  */
 @Composable
 internal fun PhotoTimelineDialog(
@@ -76,6 +76,7 @@ internal fun PhotoTimelineDialog(
         onDismissRequest = onDismissRequest,
         contentPadding = PhotoTimelineDialogPadding,
         modifier = modifier,
+        dismissOnDimClick = false,
     ) {
         PhotoTimelineContent(
             imageUrl = imageUrl,

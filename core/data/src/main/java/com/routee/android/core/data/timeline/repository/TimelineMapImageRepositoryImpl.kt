@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.timeline.remote.service.TimelineMapImageService
 import com.routee.android.core.data.upload.PresignedImageUploader
+import com.routee.android.core.data.upload.UPLOAD_JPEG_QUALITY
 import com.routee.android.core.data.upload.remote.dto.request.ImageUrlRequest
 import com.routee.android.core.network.util.ApiResponseHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,7 +25,7 @@ internal class TimelineMapImageRepositoryImpl @Inject constructor(
             File.createTempFile("routee_map_", ".jpg", context.cacheDir).also { file ->
                 try {
                     file.outputStream().use { output ->
-                        check(bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output))
+                        check(bitmap.compress(Bitmap.CompressFormat.JPEG, UPLOAD_JPEG_QUALITY, output))
                     }
                 } catch (error: Exception) {
                     file.delete()

@@ -14,4 +14,15 @@ internal sealed interface WorkoutRecordingSideEffect {
     data object NavigateToHome : WorkoutRecordingSideEffect
 
     data class MoveToLastLocation(val point: MapPoint) : WorkoutRecordingSideEffect
+
+    // 카메라 원본을 [filePath]에 쓰도록 기본 카메라 실행
+    data class TakePhoto(val filePath: String) : WorkoutRecordingSideEffect
+
+    data object ShowPhotoNoLocation : WorkoutRecordingSideEffect
+
+    data object ShowPhotoFailed : WorkoutRecordingSideEffect
+
+    data object ShowPhotosMissing : WorkoutRecordingSideEffect
+
+    data class ShowPhotoDeleted(val photoId: String) : WorkoutRecordingSideEffect
 }

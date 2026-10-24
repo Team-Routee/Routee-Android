@@ -18,12 +18,12 @@ import com.routee.android.core.designsystem.component.message.routeeMessageAncho
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.domain.workout.MAX_WORKOUT_PHOTO_COUNT
 import com.routee.android.core.ui.format.formatDistanceKm
 import com.routee.android.core.ui.format.formatDurationClock
 import com.routee.android.feature.workout.component.main.MyLocationButton
 import com.routee.android.feature.workout.component.main.WorkoutStopButton
 import com.routee.android.feature.workout.component.main.WorkoutTopGradient
-import com.routee.android.feature.workout.recording.model.MAX_PHOTO_COUNT
 
 private val MetricTopSpacing = 24.dp
 private val ControlBottomSpacing = 28.dp
@@ -94,7 +94,7 @@ internal fun WorkoutRecordingContent(
             ) {
                 WorkoutStopButton(isStopped = false, onClick = onStopClick)
                 CameraButton(
-                    count = "$photoCount/$MAX_PHOTO_COUNT",
+                    count = "$photoCount/$MAX_WORKOUT_PHOTO_COUNT",
                     onClick = onCameraClick,
                     enabled = isCameraEnabled,
                 )

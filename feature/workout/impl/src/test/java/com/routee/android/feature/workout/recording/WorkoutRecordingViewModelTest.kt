@@ -4,22 +4,27 @@ import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
+import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.FakeLocationRepository
 import com.routee.android.feature.workout.FakeMapImageRepository
+import com.routee.android.feature.workout.FakeWorkoutPhotoRepository
 import com.routee.android.feature.workout.FakeWorkoutRecordRepository
 import com.routee.android.feature.workout.FakeWorkoutRemoteRepository
 import com.routee.android.feature.workout.FakeWorkoutTrackingRepository
 import com.routee.android.feature.workout.MainDispatcherRule
 import com.routee.android.feature.workout.START
 import com.routee.android.feature.workout.TestClock
+import com.routee.android.feature.workout.photo
 import com.routee.android.feature.workout.record
+import com.routee.android.feature.workout.recording.model.OpenedPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.trackPoint
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.dropWhile
@@ -312,6 +317,191 @@ class WorkoutRecordingViewModelTest {
         viewModel.close()
     }
 
+    /**
+     * GIVEN: 기록 중일 때
+     * WHEN: 카메라 버튼을 두 번 빠르게 누르면
+     * THEN: 촬영 파일을 한 번만 만들어 카메라를 한 번만 연다
+     */
+    @Test
+    fun `카메라를 두 번 눌러도 한 번만 연다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository()
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.sideEffect.first()
+
+        viewModel.onCameraClick()
+        viewModel.onCameraClick()
+
+        assertEquals(WorkoutRecordingSideEffect.TakePhoto("capture-1.jpg"), viewModel.sideEffect.first())
+        assertEquals(1, photos.captureFileCount)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 경로 좌표가 있는 기록 중일 때
+     * WHEN: 사진을 찍으면
+     * THEN: 사진 개수와 지도 마커에 마지막 경로 좌표로 반영한다
+     */
+    @Test
+    fun `사진을 찍으면 개수와 마커가 늘어난다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record()).apply {
+            setState(WorkoutTrackingState(record = record(), trackPoints = listOf(trackPoint(1), trackPoint(2))))
+        }
+        val viewModel = viewModel(tracking)
+
+        viewModel.onPhotoTaken("capture-1.jpg", isSaved = true)
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.photoCount)
+        assertEquals(MapPoint(39.0, 127.0), state.photos.single().point)
+        assertEquals(File("capture-1.jpg").toURI().toString(), state.photos.single().imageUrl)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 카메라를 연 뒤
+     * WHEN: 찍지 않고 돌아오면
+     * THEN: 카메라 원본 파일을 지우고 사진은 늘지 않는다
+     */
+    @Test
+    fun `촬영을 취소하면 원본 파일을 지운다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository()
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+
+        viewModel.onPhotoTaken("capture-1.jpg", isSaved = false)
+
+        assertEquals(listOf(File("capture-1.jpg")), photos.discarded)
+        assertEquals(0, viewModel.uiState.value.photoCount)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 기본 카메라 앱이 없을 때
+     * WHEN: 카메라를 열지 못하면
+     * THEN: 원본 파일을 지우고 안내 모달을 띄우고, 확인을 누르면 닫는다
+     */
+    @Test
+    fun `카메라 앱이 없으면 안내 모달을 띄운다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository()
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+
+        viewModel.onCameraUnavailable("capture-1.jpg")
+        assertTrue(viewModel.uiState.value.isCameraUnavailable)
+        assertEquals(listOf(File("capture-1.jpg")), photos.discarded)
+
+        viewModel.onCameraUnavailableDialogConfirm()
+        assertFalse(viewModel.uiState.value.isCameraUnavailable)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 종료 때 다시 올려도 사진 1장이 실패할 때
+     * WHEN: 마무리 애니메이션이 끝나면
+     * THEN: 빠진 사진을 알리고 타임라인으로 간다
+     */
+    @Test
+    fun `빠진 사진이 있으면 알리고 타임라인으로 간다`() = runTest {
+        val viewModel = viewModel(pausedWithPoints(2), photos = FakeWorkoutPhotoRepository(missingCount = 1))
+        viewModel.onEndLongPress()
+
+        viewModel.onMapCaptured(byteArrayOf(1))
+        viewModel.onFinishAnimationEnd()
+
+        withTimeout(EFFECT_TIMEOUT_MILLIS) {
+            viewModel.sideEffect.dropWhile { it != WorkoutRecordingSideEffect.ShowPhotosMissing }.first()
+        }
+        assertTrue(viewModel.sideEffect.first() is WorkoutRecordingSideEffect.NavigateToTimeline)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 사진이 있는 기록 중일 때
+     * WHEN: 사진 마커를 탭하고 장소명을 바꿔 닫으면
+     * THEN: 모달을 열었다 닫고 바뀐 장소명을 저장한다
+     */
+    @Test
+    fun `모달을 닫을 때 바뀐 장소명을 저장한다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"))) }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+
+        viewModel.onPhotoMarkerClick("a")
+        assertEquals(
+            OpenedPhoto(id = "a", imageUrl = File("a.jpg").toURI().toString(), title = "말바위"),
+            viewModel.uiState.value.openedPhoto,
+        )
+
+        viewModel.onPhotoDialogClose("말바위 전망대")
+        assertNull(viewModel.uiState.value.openedPhoto)
+        assertEquals("말바위 전망대", photos.photos.value.single().title)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 사진 2장이 있는 기록 중일 때
+     * WHEN: 모달에서 삭제하고 스낵바가 시간이 지나 닫히면
+     * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 삭제를 확정한다
+     */
+    @Test
+    fun `삭제하면 바로 빼고 스낵바가 닫히면 확정한다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"), photo("b"))) }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+
+        viewModel.onPhotoDeleteClick()
+
+        assertEquals(1, viewModel.uiState.value.photoCount)
+        assertTrue(viewModel.uiState.value.isPhotoDeletePending)
+        assertEquals(2, photos.photos.value.size)
+        assertEquals(
+            WorkoutRecordingSideEffect.ShowPhotoDeleted("a"),
+            withTimeout(EFFECT_TIMEOUT_MILLIS) {
+                viewModel.sideEffect.dropWhile { it !is WorkoutRecordingSideEffect.ShowPhotoDeleted }.first()
+            },
+        )
+
+        viewModel.onPhotoDeleteSnackbarClose("a", isUndone = false)
+
+        assertEquals(listOf("b"), photos.photos.value.map { it.id })
+        assertFalse(viewModel.uiState.value.isPhotoDeletePending)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 사진을 삭제해 스낵바가 떠 있을 때
+     * WHEN: [취소]를 누르면
+     * THEN: 사진과 개수를 되돌린다
+     */
+    @Test
+    fun `삭제를 취소하면 사진을 되돌린다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"))) }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+        viewModel.onPhotoDeleteClick()
+
+        viewModel.onPhotoDeleteSnackbarClose("a", isUndone = true)
+
+        assertEquals(1, viewModel.uiState.value.photoCount)
+        assertEquals(1, photos.photos.value.size)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 사진을 삭제해 스낵바가 떠 있을 때
+     * WHEN: 카메라 버튼을 누르면
+     * THEN: 카메라를 열지 않는다
+     */
+    @Test
+    fun `삭제 스낵바가 떠 있으면 카메라를 열지 않는다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"))) }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+        viewModel.onPhotoDeleteClick()
+
+        viewModel.onCameraClick()
+
+        assertEquals(0, photos.captureFileCount)
+        viewModel.close()
+    }
+
     /** 1초마다 시간을 갱신하는 코루틴을 멈춤, 안 멈추면 runTest가 가상 시간을 끝없이 돌림 */
     private fun WorkoutRecordingViewModel.close() = viewModelScope.cancel()
 
@@ -319,6 +509,7 @@ class WorkoutRecordingViewModelTest {
         tracking: FakeWorkoutTrackingRepository,
         remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
         location: FakeLocationRepository = FakeLocationRepository(),
+        photos: FakeWorkoutPhotoRepository = FakeWorkoutPhotoRepository(),
     ) = WorkoutRecordingViewModel(
         trackingRepository = tracking,
         remoteRepository = remote,
@@ -327,7 +518,15 @@ class WorkoutRecordingViewModelTest {
             recordRepository = FakeWorkoutRecordRepository(),
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
+            photoRepository = photos,
         ),
+        addWorkoutPhoto = AddWorkoutPhotoUseCase(
+            trackingRepository = tracking,
+            photoRepository = photos,
+            locationRepository = location,
+            clock = clock,
+        ),
+        photoRepository = photos,
         locationRepository = location,
         clock = clock,
     )

@@ -29,7 +29,8 @@ class SaveFinishedWorkoutUseCaseTest {
     private val records = FakeRecordRepository()
     private val mapImages = FakeMapImageRepository()
     private val remote = FakeRemoteRepository()
-    private val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, records, mapImages, remote)
+    private val photos = FakeWorkoutPhotoRepository()
+    private val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, records, mapImages, remote, photos)
 
     /**
      * GIVEN: 경로 좌표가 2개 이상인 종료한 기록일 때
@@ -47,6 +48,40 @@ class SaveFinishedWorkoutUseCaseTest {
         assertEquals("map-key", records.saved?.mapImageObjectKey)
         assertEquals("map-key", remote.completedKey)
         assertTrue(tracking.isCleared)
+    }
+
+    /**
+     * GIVEN: 찍을 때 못 올린 사진이 있는 종료한 기록일 때
+     * WHEN: 저장하면
+     * THEN: 완료 전에 사진을 다시 올리고, 저장 후 기기 사진을 지운다
+     */
+    @Test
+    fun `저장하면 못 올린 사진을 다시 올리고 기기 사진을 지운다`() = runTest {
+        tracking.state(points = 2)
+
+        val result = saveFinishedWorkout(JPEG)
+
+        assertEquals(WorkoutSaveResult.Saved, result)
+        assertEquals(listOf(7L), photos.syncedActivityIds)
+        assertTrue(photos.isCleared)
+    }
+
+    /**
+     * GIVEN: 다시 올려도 사진 1장이 실패할 때
+     * WHEN: 저장하면
+     * THEN: 그 사진만 빼고 완료하고 빠진 사진이 있다고 알린다
+     */
+    @Test
+    fun `다시 올려도 실패한 사진은 빼고 저장한다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository(missingCount = 1)
+        val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, records, mapImages, remote, photos)
+        tracking.state(points = 2)
+
+        val result = saveFinishedWorkout(JPEG)
+
+        assertEquals(WorkoutSaveResult.PhotosMissing, result)
+        assertEquals("map-key", remote.completedKey)
+        assertTrue(photos.isCleared)
     }
 
     /**
@@ -96,6 +131,7 @@ class SaveFinishedWorkoutUseCaseTest {
         assertEquals(WorkoutSaveResult.Failed, result)
         assertNull(remote.completedKey)
         assertFalse(tracking.isCleared)
+        assertFalse(photos.isCleared)
     }
 
     /**
