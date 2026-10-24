@@ -1,5 +1,6 @@
 package com.routee.android.feature.archive.detail
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,14 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,20 +29,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.LocalResultEventBus
+import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteePhotoTimelineSection
 import com.routee.android.core.designsystem.component.RouteeTimelinePhoto
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
+import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.textfield.RouteeRecordSummaryTextField
+import com.routee.android.core.designsystem.extension.clearFocus
+import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteePhotoRouteMap
 import com.routee.android.core.network.exception.ApiException
+import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.UiState
 import com.routee.android.core.ui.error.RouteeErrorScreen
 import com.routee.android.core.ui.error.RouteeErrorType
@@ -44,10 +60,14 @@ import com.routee.android.core.ui.loading.LocalRouteeLoadingState
 import com.routee.android.core.ui.loading.RouteeLoadingHost
 import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.loading.RouteeLoadingState
+import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.archive.R
 import com.routee.android.feature.archive.component.RoutePointItem
 import com.routee.android.feature.archive.detail.model.ArchiveDetailRecord
+import com.routee.android.feature.archive.detail.model.ArchiveDetailSideEffect
 import com.routee.android.feature.archive.detail.model.ArchiveDetailUiState
+import com.routee.android.feature.archive.detail.model.ArchiveRecordChanged
+import java.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
@@ -57,16 +77,84 @@ internal fun ArchiveDetailRoute(
     onHomeClick: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val resultEventBus = LocalResultEventBus.current
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val record = (uiState.record as? UiState.Success)?.data
+    val titleState = rememberTextFieldState()
+    val focusManager = LocalFocusManager.current
+    val messageState = LocalRouteeMessageState.current
+    val gallerySave = rememberGalleryPhotoSaveState(viewModel::savePhoto)
+    val isSaving = uiState.isSaving
+    val defaultTitle = stringResource(R.string.archive_detail_default_title, record?.date.orEmpty())
+    val updateFailed = stringResource(R.string.archive_detail_update_failed)
+    val deleteFailed = stringResource(R.string.archive_detail_delete_failed)
+    val deleted = stringResource(R.string.archive_detail_deleted)
+    LaunchedEffect(record?.title) {
+        if (!viewModel.uiState.value.isTitleEditing) {
+            titleState.setTextAndPlaceCursorAtEnd(record?.title.orEmpty())
+        }
+    }
 
+    viewModel.sideEffect.CollectSideEffect { effect ->
+        when (effect) {
+            ArchiveDetailSideEffect.RecordChanged -> resultEventBus.sendResult(ArchiveRecordChanged)
+
+            ArchiveDetailSideEffect.NavigateBack -> onBackClick()
+
+            ArchiveDetailSideEffect.Deleted -> {
+                resultEventBus.sendResult(ArchiveRecordChanged)
+                messageState.showToast(deleted)
+                onBackClick()
+            }
+
+            ArchiveDetailSideEffect.TitleSaveFailed -> {
+                titleState.setTextAndPlaceCursorAtEnd(record?.title.orEmpty())
+                messageState.showToast(updateFailed)
+            }
+
+            ArchiveDetailSideEffect.DeleteFailed -> messageState.showToast(deleteFailed)
+        }
+    }
+
+    fun finishTitleEdit(action: (String) -> Unit) {
+        val title = titleState.text.toString().trim().ifEmpty { defaultTitle }
+        titleState.setTextAndPlaceCursorAtEnd(title)
+        action(title)
+        focusManager.clearFocus()
+    }
+
+    BackHandler(enabled = isSaving || uiState.isTitleEditing) {
+        if (!isSaving) finishTitleEdit(viewModel::onTitleEditFinish)
+    }
     ArchiveDetailScreen(
         uiState = uiState,
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        onBackClick = onBackClick,
+        onBackClick = { finishTitleEdit(viewModel::onBackClick) },
+        titleState = titleState,
+        savedPhotoIndex = gallerySave.savedPhotoIndex,
+        onPhotoSaveClick = { index ->
+            record?.photos?.getOrNull(index)?.let { photo ->
+                gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
+            }
+        },
+        onEditTitleClick = { viewModel.onTitleEditingChange(true) },
+        onTitleEditFinish = { finishTitleEdit(viewModel::onTitleEditFinish) },
+        onDeleteClick = { finishTitleEdit(viewModel::onDeleteClick) },
         onHomeClick = onHomeClick,
         onRetryClick = viewModel::onRetryClick,
     )
+    if (isSaving) RouteeLoadingOverlay()
+    if (uiState.isDeleteDialogVisible) {
+        RouteeTwoButtonDialog(
+            title = stringResource(R.string.archive_detail_delete_title),
+            description = stringResource(R.string.archive_detail_delete_description),
+            leftButtonText = stringResource(R.string.archive_detail_cancel),
+            rightButtonText = stringResource(R.string.archive_detail_delete_confirm),
+            onDismissRequest = { viewModel.onDeleteDialogChange(false) },
+            onRightButtonClick = viewModel::onDeleteConfirm,
+        )
+    }
 }
 
 @Composable
@@ -78,6 +166,12 @@ private fun ArchiveDetailScreen(
     modifier: Modifier = Modifier,
     onHomeClick: () -> Unit = onBackClick,
     onRetryClick: () -> Unit = {},
+    titleState: TextFieldState? = null,
+    onEditTitleClick: () -> Unit = {},
+    onTitleEditFinish: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
+    savedPhotoIndex: Int = -1,
+    onPhotoSaveClick: (Int) -> Unit = {},
 ) {
     when (val record = uiState.record) {
         UiState.Empty, is UiState.Failure -> RouteeErrorScreen(
@@ -95,13 +189,29 @@ private fun ArchiveDetailScreen(
 
         else -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                RouteePageNavBar(onBackClick = onBackClick)
+                RouteePageNavBar(onBackClick = onBackClick, actions = {
+                    if (record is UiState.Success) {
+                        Text(
+                            text = stringResource(R.string.archive_detail_delete),
+                            style = RouteeTheme.typography.labelSb18,
+                            color = RouteeTheme.colors.statusError,
+                            modifier = Modifier.noRippleClickable(role = Role.Button, onClick = onDeleteClick)
+                                .padding(RouteeTheme.spacing.Spacing16),
+                        )
+                    }
+                })
                 if (record is UiState.Success) {
                     ArchiveDetailContent(
                         record = record.data,
                         expanded = expanded,
                         onExpandedChange = onExpandedChange,
-                        modifier = Modifier.weight(1f),
+                        titleState = titleState ?: rememberTextFieldState(record.data.title),
+                        savedPhotoIndex = savedPhotoIndex,
+                        onPhotoSaveClick = onPhotoSaveClick,
+                        isTitleEditing = uiState.isTitleEditing,
+                        onEditTitleClick = onEditTitleClick,
+                        onTitleEditFinish = onTitleEditFinish,
+                        modifier = Modifier.weight(1f).imePadding(),
                     )
                 } else {
                     RouteeLoadingOverlay()
@@ -116,22 +226,27 @@ private fun ArchiveDetailContent(
     record: ArchiveDetailRecord,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    titleState: TextFieldState,
+    isTitleEditing: Boolean,
+    onEditTitleClick: () -> Unit,
+    onTitleEditFinish: () -> Unit,
+    savedPhotoIndex: Int,
+    onPhotoSaveClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    val focusManager = LocalFocusManager.current
+    Column(modifier = modifier.verticalScroll(rememberScrollState()).clearFocus(focusManager, onTitleEditFinish)) {
         Column(
             modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
             verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8),
         ) {
-            Box(Modifier.fillMaxWidth().heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
-                Text(
-                    text = record.title,
-                    style = RouteeTheme.typography.titleSb20,
-                    color = RouteeTheme.colors.white,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            RouteeRecordSummaryTextField(
+                state = titleState,
+                defaultTitle = record.title,
+                isEditing = isTitleEditing,
+                onEditClick = onEditTitleClick,
+                onEditComplete = onTitleEditFinish,
+            )
             RouteeWorkoutMetricCard(
                 distance = record.distance,
                 duration = record.duration,
@@ -142,7 +257,14 @@ private fun ArchiveDetailContent(
         }
         if (record.photos.isNotEmpty()) {
             Spacer(Modifier.height(52.dp))
-            RouteePhotoTimelineSection(photos = record.photos, date = record.date)
+            RouteePhotoTimelineSection(
+                photos = remember(record.photos) {
+                    record.photos.map { RouteeTimelinePhoto(it.imageUrl, it.location) }
+                },
+                date = record.date,
+                savedPhotoIndex = savedPhotoIndex,
+                onSaveClick = onPhotoSaveClick,
+            )
         }
         if (record.routeNames.isNotEmpty()) {
             Spacer(Modifier.height(if (record.photos.isEmpty()) 52.dp else 48.dp))
@@ -183,7 +305,10 @@ private fun ArchiveDetailScreenPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문"), RouteeTimelinePhoto(null, null)),
+                        photos = persistentListOf(
+                            ArchivePhoto(1L, "창의문", "", Instant.EPOCH),
+                            ArchivePhoto(2L, null, "", Instant.EPOCH),
+                        ),
                         routeNames = persistentListOf("창의문", "청운대", "말바위", "백숙 먹으러 가는 중"),
                     ),
                 ),
@@ -260,7 +385,7 @@ private fun ArchiveDetailScreenWithoutRoutesPreview() {
                         distance = "15.53",
                         duration = "03:20",
                         maxElevation = "2132",
-                        photos = persistentListOf(RouteeTimelinePhoto(null, "창의문")),
+                        photos = persistentListOf(ArchivePhoto(1L, "창의문", "", Instant.EPOCH)),
                     ),
                 ),
             ),

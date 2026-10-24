@@ -9,17 +9,23 @@ import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.network.exception.ApiException
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.archive.component.RecordSheetItem
 import com.routee.android.feature.archive.model.ArchiveSideEffect
 import com.routee.android.feature.archive.model.ArchiveUiState
 import com.routee.android.feature.archive.model.archiveContent
 import com.routee.android.feature.archive.model.toArchiveProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -44,6 +50,7 @@ internal class ArchiveViewModel @Inject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
     private var member: MemberSummary? = null
     private var loadJob: Job? = null
+    private var recordsJob: Job? = null
 
     init {
         loadSummary()
@@ -59,6 +66,71 @@ internal class ArchiveViewModel @Inject constructor(
 
     fun onRetryClick() = loadSummary()
 
+    fun onRecordChanged() {
+        member = null
+        loadSummary()
+    }
+
+    fun onDateClick(date: LocalDate) = loadRecords(date)
+
+    fun onRecordClick(activityId: Long) {
+        val date = _uiState.value.selectedDate ?: return
+        if (!_uiState.value.isLoadingRecords) loadRecords(date, activityId)
+    }
+
+    fun onRecordSheetDismiss() {
+        recordsJob?.cancel()
+        _uiState.update { it.copy(selectedDate = null, records = persistentListOf(), isLoadingRecords = false) }
+    }
+
+    private fun loadRecords(date: LocalDate, activityId: Long? = null) {
+        recordsJob?.cancel()
+        _uiState.update {
+            it.copy(
+                selectedDate = date,
+                records = if (it.selectedDate == date) it.records else persistentListOf(),
+                isLoadingRecords = true,
+            )
+        }
+        recordsJob = viewModelScope.launch {
+            val result = archiveRepository.getDailyRecords(date)
+            currentCoroutineContext().ensureActive()
+            result
+                .onSuccess { records ->
+                    _uiState.update { it.copy(isLoadingRecords = false, isOffline = false) }
+                    if (records.isEmpty()) {
+                        loadSummary()
+                        return@onSuccess
+                    }
+                    val selected = if (activityId == null) {
+                        records.singleOrNull()
+                    } else {
+                        records.find { it.activityId == activityId }
+                    }
+                    if (selected != null) {
+                        _uiState.update { it.copy(selectedDate = null, records = persistentListOf()) }
+                        _sideEffect.send(ArchiveSideEffect.NavigateToDetail(selected.activityId))
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                records = records.map { record ->
+                                    RecordSheetItem(record.activityId, record.title, record.thumbnailUrl)
+                                }.toImmutableList(),
+                            )
+                        }
+                    }
+                }
+                .onFailure { error ->
+                    Timber.e(error)
+                    val offline = error is ApiException.NetworkConnection
+                    _uiState.update { it.copy(isLoadingRecords = false, isOffline = offline) }
+                    _sideEffect.send(
+                        if (offline) ArchiveSideEffect.NetworkUnavailable else ArchiveSideEffect.RecordLoadFailed,
+                    )
+                }
+        }
+    }
+
     private fun moveMonth(month: YearMonth) {
         savedStateHandle["selectedMonth"] = month.toString()
         _uiState.update { it.copy(selectedMonth = month) }
@@ -66,6 +138,7 @@ internal class ArchiveViewModel @Inject constructor(
     }
 
     private fun loadSummary() {
+        onRecordSheetDismiss()
         loadJob?.cancel()
         val month = _uiState.value.selectedMonth
         _uiState.update { it.copy(isRefreshing = true) }

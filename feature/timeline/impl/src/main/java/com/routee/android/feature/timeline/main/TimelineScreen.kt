@@ -54,6 +54,7 @@ import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
+import com.routee.android.core.designsystem.component.textfield.RouteeRecordSummaryTextField
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
@@ -74,12 +75,10 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 
 private val RecordDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
-private val EditIconTouchSize = 44.dp
 private val SectionTopSpacing = 52.dp
 private val SectionSpacing = 48.dp
 private val CtaTopSpacing = 40.dp
 private val BottomSpacing = 28.dp
-private const val MAX_TITLE_LENGTH = 16
 
 private enum class TimelineDialog { None, Exit, InvalidRoute, SaveFailed }
 
@@ -145,7 +144,6 @@ internal fun TimelineRoute(
         },
         onEditTitleClick = { viewModel.onEditTitleClick(defaultTitle) },
         onTitleEditFinish = ::finishTitleEdit,
-        onTitleFocusLoss = viewModel::onTitleEditFinish,
         onOutsideClick = { finishTitleEdit() },
         onRecordEditClick = {
             finishTitleEdit()
@@ -212,7 +210,6 @@ private fun TimelineScreen(
     onCompleteClick: () -> Unit,
     onEditTitleClick: () -> Unit,
     onTitleEditFinish: () -> Unit,
-    onTitleFocusLoss: () -> Unit,
     onOutsideClick: () -> Unit,
     onRecordEditClick: () -> Unit,
     onPhotoSaveClick: (Int, TimelinePhoto) -> Unit,
@@ -255,13 +252,12 @@ private fun TimelineScreen(
                         .fillMaxWidth()
                         .padding(horizontal = RouteeTheme.spacing.Spacing16),
                 ) {
-                    TimelineTitleRow(
-                        titleState = titleState,
+                    RouteeRecordSummaryTextField(
+                        state = titleState,
                         defaultTitle = defaultTitle,
                         isEditing = isTitleEditing,
                         onEditClick = onEditTitleClick,
-                        onEditFinish = onTitleEditFinish,
-                        onFocusLoss = onTitleFocusLoss,
+                        onEditComplete = onTitleEditFinish,
                     )
                     Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
                     RouteeWorkoutMetricCard(
@@ -307,64 +303,6 @@ private fun TimelineScreen(
     }
 }
 
-@Composable
-private fun TimelineTitleRow(
-    titleState: TextFieldState,
-    defaultTitle: String,
-    isEditing: Boolean,
-    onEditClick: () -> Unit,
-    onEditFinish: () -> Unit,
-    onFocusLoss: () -> Unit,
-) {
-    var hadFocus by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (isEditing) {
-            val focusRequester = remember { FocusRequester() }
-            LaunchedEffect(focusRequester) { focusRequester.requestFocus() }
-            RouteeBasicTextField(
-                state = titleState,
-                textStyle = RouteeTheme.typography.titleSb20,
-                maxLength = MAX_TITLE_LENGTH,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                onKeyboardAction = { onEditFinish() },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            hadFocus = true
-                        } else if (hadFocus) {
-                            hadFocus = false
-                            onFocusLoss()
-                        }
-                    },
-            )
-        } else {
-            Text(
-                text = titleState.text.toString().ifEmpty { defaultTitle },
-                style = RouteeTheme.typography.titleSb20,
-                color = RouteeTheme.colors.white,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Image(
-            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_edit_sm_line_white),
-            contentDescription = stringResource(R.string.timeline_edit_title),
-            modifier = Modifier
-                .size(EditIconTouchSize)
-                .noRippleClickable(onClick = onEditClick)
-                .semantics { role = Role.Button }
-                .padding(RouteeTheme.spacing.Spacing10),
-        )
-    }
-}
-
 @PreviewDeviceSizes
 @Composable
 private fun TimelineScreenPreview() {
@@ -389,7 +327,6 @@ private fun TimelineScreenPreview() {
             onCompleteClick = {},
             onEditTitleClick = { isTitleEditing = true },
             onTitleEditFinish = { isTitleEditing = false },
-            onTitleFocusLoss = { isTitleEditing = false },
             onOutsideClick = {},
             onRecordEditClick = {},
             onPhotoSaveClick = { _, _ -> },
