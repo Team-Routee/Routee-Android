@@ -5,8 +5,6 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import com.routee.android.core.data.photo.GalleryImageStore
-import com.routee.android.core.data.recap.repository.RecapRepository
-import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.timeline.api.TimelineNavKey
 import com.routee.android.feature.timeline.component.RoutePoint
@@ -29,8 +27,7 @@ private const val MAX_ROUTE_POINT_COUNT = 20
 internal class TimelineViewModel @AssistedInject constructor(
     @Assisted private val key: TimelineNavKey,
     private val galleryImageStore: GalleryImageStore,
-    private val workoutRemoteRepository: WorkoutRemoteRepository,
-    private val recapRepository: RecapRepository,
+    private val recordSaver: TimelineRecordSaver,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -84,19 +81,7 @@ internal class TimelineViewModel @AssistedInject constructor(
         routePoints = points.map { it.name.text.toString().trim() }.filter(String::isNotEmpty),
     )
 
-    suspend fun save(draft: TimelineDraft): TimelineSaveResult {
-        if (draft.routePoints.isNotEmpty()) {
-            workoutRemoteRepository.updateRoutes(activityId, draft.routePoints)
-                .onFailure { Timber.e(it, "루트 저장 실패") }
-                .getOrElse { return TimelineSaveResult.Failed }
-        }
-        draft.title?.let { title ->
-            recapRepository.updateRecapTitle(activityId, title)
-                .onFailure { Timber.e(it, "제목 수정 실패") }
-                .getOrElse { return TimelineSaveResult.Failed }
-        }
-        return TimelineSaveResult.Success
-    }
+    suspend fun save(draft: TimelineDraft): TimelineSaveResult = recordSaver.save(activityId, draft)
 
     @AssistedFactory
     interface Factory : NavKeyViewModelFactory<TimelineNavKey, TimelineViewModel>
