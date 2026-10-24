@@ -150,12 +150,15 @@ internal fun WorkoutRecordingRoute(
 
             WorkoutRecordingSideEffect.ShowPhotosMissing -> messageState.showToast(text = photosMissingText)
 
+            // 화면이 다시 만들어져 스낵바가 취소돼도 삭제 확정
             is WorkoutRecordingSideEffect.ShowPhotoDeleted -> scope.launch {
-                val result = messageState.showSnackbar(text = photoDeletedText, actionLabel = photoDeletedUndoText)
-                viewModel.onPhotoDeleteSnackbarClose(
-                    photoId = sideEffect.photoId,
-                    isUndone = result == RouteeMessageResult.ACTION_PERFORMED,
-                )
+                var isUndone = false
+                try {
+                    val result = messageState.showSnackbar(text = photoDeletedText, actionLabel = photoDeletedUndoText)
+                    isUndone = result == RouteeMessageResult.ACTION_PERFORMED
+                } finally {
+                    viewModel.onPhotoDeleteSnackbarClose(photoId = sideEffect.photoId, isUndone = isUndone)
+                }
             }
         }
     }
