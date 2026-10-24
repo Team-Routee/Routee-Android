@@ -13,5 +13,15 @@
             android:name=".tracking.WorkoutTrackingService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <provider
+            android:name=".recording.WorkoutPhotoFileProvider"
+            android:authorities="${applicationId}.workout.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/workout_file_paths" />
+        </provider>
     </application>
 </manifest>
