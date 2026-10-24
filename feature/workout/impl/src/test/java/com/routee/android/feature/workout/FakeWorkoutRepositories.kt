@@ -76,8 +76,14 @@ internal class FakeWorkoutTrackingRepository(
         return Result.success(Unit)
     }
 
-    override suspend fun finish(): Result<Unit> {
-        _state.value = _state.value.copy(record = _state.value.record?.finished(START))
+    override suspend fun recover(): Result<Unit> {
+        val record = _state.value.record ?: savedRecord?.takeIf { it.isTracking } ?: return Result.success(Unit)
+        _state.value = _state.value.copy(record = record.recovered(START))
+        return Result.success(Unit)
+    }
+
+    override suspend fun finish(endedAt: Instant?): Result<Unit> {
+        _state.value = _state.value.copy(record = _state.value.record?.finished(START, endedAt ?: START))
         return Result.success(Unit)
     }
 

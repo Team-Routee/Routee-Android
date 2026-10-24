@@ -59,9 +59,26 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun finish(): Result<Unit> = mutex.withLock {
+    override suspend fun recover(): Result<Unit> = mutex.withLock {
+        suspendRunCatching {
+            val current = _state.value
+            val saved = current.record ?: recordRepository.getRecord().getOrThrow() ?: return@suspendRunCatching
+            if (!saved.isTracking) return@suspendRunCatching
+            val record = saved.recovered(clock.instant())
+            recordRepository.saveRecord(record).getOrThrow()
+            val trackPoints = if (current.record != null) {
+                current.trackPoints
+            } else {
+                recordRepository.getTrackPoints(record.activityId).getOrThrow()
+            }
+            _state.value = WorkoutTrackingState(record = record, trackPoints = trackPoints)
+        }
+    }
+
+    override suspend fun finish(endedAt: Instant?): Result<Unit> = mutex.withLock {
         val record = _state.value.record ?: return@withLock Result.failure(IllegalStateException(NO_RECORD))
-        val finished = record.finished(clock.instant())
+        val now = clock.instant()
+        val finished = record.finished(now, endedAt ?: now)
         if (finished == record) return@withLock Result.success(Unit)
         recordRepository.saveRecord(finished).onSuccess { _state.value = _state.value.copy(record = finished) }
     }

@@ -160,6 +160,41 @@ class WorkoutTrackingRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 기기에 기록 중으로 남은 기록이 있을 때
+     * WHEN: 복구로 불러오면
+     * THEN: 경로 좌표와 함께 일시정지로 불러오고 기기에도 저장한다
+     */
+    @Test
+    fun `복구하면 남은 기록을 일시정지로 불러온다`() = runTest {
+        recordRepository.startRecord(record())
+        recordRepository.saveTrackPoint(record(), point(1))
+        clock.now = START.plusSeconds(3_600)
+
+        repository.recover()
+
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, repository.state.value.record?.status)
+        assertEquals(listOf(1), repository.state.value.trackPoints.map { it.pointIndex })
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, recordRepository.getRecord().getOrThrow()?.status)
+    }
+
+    /**
+     * GIVEN: 복구한 기록일 때
+     * WHEN: 마지막 기록 시각으로 종료하면
+     * THEN: 그 시각으로 업로드 대기가 된다
+     */
+    @Test
+    fun `종료 시각을 정해 종료한다`() = runTest {
+        recordRepository.startRecord(record())
+        clock.now = START.plusSeconds(3_600)
+        repository.recover()
+
+        repository.finish(endedAt = START)
+
+        assertEquals(START, repository.state.value.record?.endedAt)
+        assertEquals(WorkoutStatus.PENDING_UPLOAD, recordRepository.getRecord().getOrThrow()?.status)
+    }
+
+    /**
      * GIVEN: 일시정지한 기록일 때
      * WHEN: 경로 좌표를 더하면
      * THEN: 더하지 않는다

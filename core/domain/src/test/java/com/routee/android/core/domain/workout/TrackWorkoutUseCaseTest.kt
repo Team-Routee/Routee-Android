@@ -173,7 +173,9 @@ class TrackWorkoutUseCaseTest {
             return Result.success(Unit)
         }
 
-        override suspend fun finish(): Result<Unit> = Result.success(Unit)
+        override suspend fun recover(): Result<Unit> = Result.success(Unit)
+
+        override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
         override suspend fun clear(): Result<Unit> = Result.success(Unit)
 
