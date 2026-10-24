@@ -1,5 +1,6 @@
 package com.routee.android.feature.setting.withdraw
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,6 +45,7 @@ import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.CollectSideEffect
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.feature.setting.R
 import com.routee.android.feature.setting.component.contact.tryOpenContactEmail
 import com.routee.android.feature.setting.component.contact.tryOpenKakaoChannel
@@ -80,6 +82,9 @@ internal fun WithdrawRoute(
         }
     }
 
+    // 요청 중 뒤로가기로 나가면 서버 탈퇴 뒤 기기 정리가 취소될 수 있음
+    BackHandler(enabled = uiState.isWithdrawing) {}
+
     WithdrawScreen(
         uiState = uiState,
         onBackClick = onBackClick,
@@ -88,6 +93,8 @@ internal fun WithdrawRoute(
         onAgreeChange = viewModel::onAgreeChange,
         onWithdrawClick = viewModel::onWithdrawClick,
     )
+
+    if (uiState.isWithdrawing) RouteeLoadingOverlay()
 }
 
 @Composable
@@ -145,7 +152,7 @@ private fun WithdrawScreen(
                 RouteeCtaPrimaryButton(
                     text = stringResource(R.string.setting_withdraw_button),
                     onClick = onWithdrawClick,
-                    enabled = uiState.isAgreed,
+                    enabled = uiState.isAgreed && !uiState.isWithdrawing,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
