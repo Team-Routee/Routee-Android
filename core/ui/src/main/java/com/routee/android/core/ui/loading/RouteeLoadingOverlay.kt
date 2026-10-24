@@ -46,7 +46,7 @@ private val AnimationAlignment = BiasAlignment(
 /**
  * 전역 로딩 표시 요청
  *
- * 데이터를 불러오는 동안에만 호출한다. 호출한 화면을 벗어나면 함께 내려간다. 화면은 앱 루트의 [RouteeLoadingHost]가 그린다
+ * 데이터를 조회, 처리하는 동안에만 호출한다. 호출한 화면을 벗어나면 함께 내려간다. 화면은 앱 루트의 [RouteeLoadingHost]가 그린다
  */
 @Composable
 fun RouteeLoadingOverlay() {
