@@ -3,6 +3,7 @@ package com.routee.android.core.data.timeline.repository
 import com.routee.android.core.data.timeline.model.TimelinePhotoStatus
 import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.remote.dto.request.CreateTimelineRequest
+import com.routee.android.core.data.timeline.remote.dto.request.UpdateTimelineTitleRequest
 import com.routee.android.core.data.timeline.remote.dto.response.TimelineCreateResponse
 import com.routee.android.core.data.timeline.remote.service.TimelinePhotoService
 import com.routee.android.core.data.upload.PresignedImageUploader
@@ -148,6 +149,17 @@ class TimelinePhotoRepositoryImplTest {
             }
             return response(TimelineCreateResponse(requestCount.toLong()))
         }
+
+        override suspend fun updateTitle(
+            activityId: Long,
+            timelineId: Long,
+            request: UpdateTimelineTitleRequest,
+        ) = Unit
+
+        override suspend fun deleteTimeline(
+            activityId: Long,
+            timelineId: Long,
+        ) = Unit
 
         private fun <T> response(data: T) = BaseResponse(status = 200, code = "SUCCESS", message = "OK", data = data)
     }
