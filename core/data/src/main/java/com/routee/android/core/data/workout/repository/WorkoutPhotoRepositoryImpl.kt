@@ -119,9 +119,10 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     private suspend fun uploadPending(activityId: Long) {
         val pending = _photos.value.filter { it.activityId == activityId && it.timelineId == null }
-        if (pending.isEmpty()) return
+        val uploads = pending.mapNotNull { it.toUpload() }
+        if (uploads.isEmpty()) return
         val sentTitles = pending.associate { it.id to it.title }
-        val timelineIds = timelinePhotoRepository.uploadPhotos(activityId, pending.map { it.toUpload() })
+        val timelineIds = timelinePhotoRepository.uploadPhotos(activityId, uploads)
             .mapNotNull { upload -> upload.result.getOrNull()?.let { upload.clientId to it } }
             .toMap()
         _photos.update { photos ->
@@ -180,18 +181,22 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     }
 }
 
-private fun WorkoutPhoto.toUpload() = TimelinePhotoUpload(
-    clientId = id,
-    file = File(checkNotNull(filePath) { "올리지 않은 사진은 기기 파일이 있음" }),
-    capturedAtEpochMillis = takenAt.toEpochMilli(),
-    title = title,
-    trackPointIndex = point.pointIndex,
-    longitude = point.longitude,
-    latitude = point.latitude,
-    elevation = point.elevation.toServerElevation(),
-    pointIndex = point.pointIndex,
-    status = TimelinePhotoStatus.SUCCESSFUL_CREATED,
-)
+// 기기 파일이 없으면 올릴 수 없어 null
+private fun WorkoutPhoto.toUpload(): TimelinePhotoUpload? {
+    val path = filePath ?: return null
+    return TimelinePhotoUpload(
+        clientId = id,
+        file = File(path),
+        capturedAtEpochMillis = takenAt.toEpochMilli(),
+        title = title,
+        trackPointIndex = point.pointIndex,
+        longitude = point.longitude,
+        latitude = point.latitude,
+        elevation = point.elevation.toServerElevation(),
+        pointIndex = point.pointIndex,
+        status = TimelinePhotoStatus.SUCCESSFUL_CREATED,
+    )
+}
 
 // 기기 파일 없이 서버 주소로 표시, 경로 좌표는 마커 위치로
 private fun TimelineMarker.toPhoto(
