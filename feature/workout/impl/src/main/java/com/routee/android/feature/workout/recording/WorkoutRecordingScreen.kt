@@ -1,10 +1,13 @@
 package com.routee.android.feature.workout.recording
 
+import android.content.ActivityNotFoundException
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -21,8 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +49,9 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.RouteeMapState
 import com.routee.android.core.map.RouteeNaverMap
 import com.routee.android.core.map.mapLogoAbove
+import com.routee.android.core.map.model.MapPhoto
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.core.map.rememberPhotoMarkers
 import com.routee.android.core.map.rememberRouteeMapState
 import com.routee.android.core.ui.CollectSideEffect
 import com.routee.android.core.ui.lottie.RouteeLottie
@@ -59,7 +66,9 @@ import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.tracking.WorkoutTrackingService
 import java.io.ByteArrayOutputStream
+import java.io.File
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -86,8 +95,18 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
+    val cameraUnavailableText = stringResource(R.string.workout_recording_camera_unavailable_toast)
+    val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
+    val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
+    val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
     val mapState = rememberRouteeMapState()
     val scope = rememberCoroutineScope()
+    // 카메라 앱이 떠 있는 동안 앱이 종료돼도 결과를 받게 저장
+    var photoFilePath by rememberSaveable { mutableStateOf<String?>(null) }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { isSaved ->
+        photoFilePath?.let { viewModel.onPhotoTaken(it, isSaved) }
+        photoFilePath = null
+    }
 
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
@@ -108,6 +127,23 @@ internal fun WorkoutRecordingRoute(
                 mapState.moveTo(sideEffect.point, zoom = MY_LOCATION_ZOOM)
                 mapState.followMyLocation()
             }
+
+            // TODO P1 기획: 기본 카메라는 카메라 권한이 필요 없어 권한 확인 없이 실행
+            is WorkoutRecordingSideEffect.TakePhoto -> try {
+                photoFilePath = sideEffect.filePath
+                takePhoto.launch(WorkoutPhotoFileProvider.uriFor(context, File(sideEffect.filePath)))
+            } catch (e: ActivityNotFoundException) {
+                Timber.w(e, "기본 카메라 없음")
+                photoFilePath = null
+                viewModel.onPhotoTaken(sideEffect.filePath, isSaved = false)
+                messageState.showToast(text = cameraUnavailableText)
+            }
+
+            WorkoutRecordingSideEffect.ShowPhotoNoLocation -> messageState.showToast(text = photoNoLocationText)
+
+            WorkoutRecordingSideEffect.ShowPhotoFailed -> messageState.showToast(text = photoFailedText)
+
+            WorkoutRecordingSideEffect.ShowPhotosMissing -> messageState.showToast(text = photosMissingText)
         }
     }
 
@@ -122,8 +158,7 @@ internal fun WorkoutRecordingRoute(
         mapState = mapState,
         myLocation = viewModel.myLocation,
         onStopClick = viewModel::onStopClick,
-        // TODO 카메라 권한 확인 후 촬영
-        onCameraClick = {},
+        onCameraClick = viewModel::onCameraClick,
         onCountdownFinish = viewModel::onCountdownFinish,
         onRestartClick = viewModel::onRestartClick,
         onEndClick = { messageState.showToast(text = endGuideText, duration = RouteeMessageDuration.BRIEF) },
@@ -187,13 +222,15 @@ private fun WorkoutRecordingScreen(
 ) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(mapState) { mapState.followMyLocation() }
+    val photoMarkers = rememberPhotoMarkers(uiState.photos)
 
-    // TODO 사진 마커 연결
+    // TODO #116 사진 마커 탭 시 사진 타임라인 모달
     RouteeNaverMap(
         modifier = modifier.fillMaxSize(),
         state = mapState,
         myLocation = if (uiState.isMapOverlayVisible) myLocation else null,
         route = if (uiState.isMapOverlayVisible) uiState.route else persistentListOf(),
+        markers = if (uiState.isMapOverlayVisible) photoMarkers else emptyList(),
     ) {
         AnimatedContent(
             targetState = uiState.mode,
@@ -295,7 +332,7 @@ private fun WorkoutRecordingScreenPreview() {
                 durationSec = 12_000,
                 maxElevationMeters = 2132,
                 mode = WorkoutMode.RECORDING,
-                photoCount = 20,
+                photos = List(20) { MapPhoto(id = "$it", imageUrl = "", point = MapPoint(0.0, 0.0)) }.toImmutableList(),
             ),
             myLocation = null,
             onStopClick = {},

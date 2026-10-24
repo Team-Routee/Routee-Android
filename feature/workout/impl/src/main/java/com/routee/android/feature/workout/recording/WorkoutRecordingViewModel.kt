@@ -8,8 +8,11 @@ import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
+import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
+import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
+import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.map.model.MapPoint
@@ -21,9 +24,11 @@ import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEf
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
+import com.routee.android.feature.workout.recording.model.toMapPhoto
 import com.routee.android.feature.workout.recording.model.toMode
 import com.routee.android.feature.workout.recording.model.toSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.File
 import java.time.Clock
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -39,6 +44,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -52,10 +59,11 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
+    private val addWorkoutPhoto: AddWorkoutPhotoUseCase,
+    private val photoRepository: WorkoutPhotoRepository,
     private val locationRepository: LocationRepository,
     private val clock: Clock,
 ) : ViewModel() {
-    // TODO 사진 개수 연결
     private val _uiState = MutableStateFlow(WorkoutRecordingUiState())
     val uiState: StateFlow<WorkoutRecordingUiState> = _uiState.asStateFlow()
 
@@ -71,11 +79,13 @@ internal class WorkoutRecordingViewModel @Inject constructor(
     private var preparing: Job? = null
     private var summary: WorkoutSummary? = null
     private val saveResult = CompletableDeferred<WorkoutSaveResult>()
+    private var isTakingPhoto = false
 
     init {
         moveToLastLocation()
         prepareRecording()
         observeTracking()
+        observePhotos()
         updateDurationEverySecond()
     }
 
@@ -106,6 +116,47 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         viewModelScope.launch { trackingRepository.resume().onFailure { Timber.e(it, "다시 시작 실패") } }
     }
 
+    /** 카메라 원본을 쓸 파일을 만들어 기본 카메라 실행, 찍는 중이거나 20장이면 무시 */
+    fun onCameraClick() {
+        if (isTakingPhoto || !_uiState.value.isCameraEnabled) return
+        isTakingPhoto = true
+        viewModelScope.launch {
+            photoRepository.createCaptureFile()
+                .onSuccess { _sideEffect.send(WorkoutRecordingSideEffect.TakePhoto(it.path)) }
+                .onFailure {
+                    Timber.e(it, "촬영 파일 생성 실패")
+                    isTakingPhoto = false
+                    _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoFailed)
+                }
+        }
+    }
+
+    /**
+     * 카메라가 끝나면 사진 추가
+     *
+     * @param isSaved 카메라가 사진을 저장했으면 true, 취소했거나 카메라를 열지 못했으면 false
+     */
+    fun onPhotoTaken(
+        filePath: String,
+        isSaved: Boolean,
+    ) {
+        isTakingPhoto = false
+        viewModelScope.launch {
+            // 카메라가 떠 있는 동안 앱이 종료됐으면 기기 기록 복원을 기다림
+            preparing?.join()
+            val file = File(filePath)
+            if (!isSaved) {
+                photoRepository.discardCaptureFile(file)
+                return@launch
+            }
+            when (addWorkoutPhoto(file)) {
+                AddWorkoutPhotoResult.Added -> Unit
+                AddWorkoutPhotoResult.NoLocation -> _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoNoLocation)
+                AddWorkoutPhotoResult.Failed -> _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoFailed)
+            }
+        }
+    }
+
     /** 종료, 마무리 애니메이션과 함께 기록을 업로드 대기로 바꾸고 지도 캡처 요청 */
     fun onEndLongPress() {
         if (_uiState.value.mode == WorkoutMode.FINISHING) return
@@ -128,6 +179,12 @@ internal class WorkoutRecordingViewModel @Inject constructor(
             when {
                 result == WorkoutSaveResult.Saved && summary != null ->
                     _sideEffect.send(WorkoutRecordingSideEffect.NavigateToTimeline(summary))
+
+                result == WorkoutSaveResult.PhotosMissing && summary != null -> {
+                    Timber.w("종료 때 다시 올려도 빠진 사진이 있음")
+                    _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotosMissing)
+                    _sideEffect.send(WorkoutRecordingSideEffect.NavigateToTimeline(summary))
+                }
 
                 result == WorkoutSaveResult.InvalidRoute ->
                     _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.INVALID_ROUTE) }
@@ -194,6 +251,19 @@ internal class WorkoutRecordingViewModel @Inject constructor(
 
     private fun observeTracking() {
         viewModelScope.launch { trackingRepository.state.collect(::applyTracking) }
+    }
+
+    // 이전 기록에서 남은 사진은 빼고 지금 기록 사진만
+    private fun observePhotos() {
+        viewModelScope.launch {
+            combine(
+                trackingRepository.state.map { it.record?.activityId }.distinctUntilChanged(),
+                photoRepository.photos,
+            ) { activityId, photos -> photos.filter { it.activityId == activityId } }
+                .collect { photos ->
+                    _uiState.update { it.copy(photos = photos.map { photo -> photo.toMapPhoto() }.toImmutableList()) }
+                }
+        }
     }
 
     private fun updateDurationEverySecond() {
