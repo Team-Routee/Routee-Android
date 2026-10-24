@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalFocusManager
@@ -121,17 +122,18 @@ internal fun DialogActionButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isDestructive: Boolean = false,
+    contentColor: Color = RouteeTheme.colors.white,
+    containerColor: Color = RouteeTheme.colors.white10,
 ) {
     Text(
         text = text,
         style = RouteeTheme.typography.labelSb16,
-        color = if (isDestructive) RouteeTheme.colors.statusError else RouteeTheme.colors.white,
+        color = contentColor,
         textAlign = TextAlign.Center,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
-            .background(color = RouteeTheme.colors.white10, shape = RoundedCornerShape(RouteeTheme.radius.Full))
+            .background(color = containerColor, shape = RoundedCornerShape(RouteeTheme.radius.Full))
             .noRippleClickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = RouteeTheme.spacing.Spacing16, vertical = RouteeTheme.spacing.Spacing12),
     )

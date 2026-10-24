@@ -60,5 +60,5 @@ internal data class WorkoutRecordingUiState(
 internal fun WorkoutPhoto.toMapPhoto(): MapPhoto =
     MapPhoto(id = id, imageUrl = imageUrl(), point = point.toMapPoint())
 
-// 기기에 있는 사진 파일 주소 (file:)
-internal fun WorkoutPhoto.imageUrl(): String = File(filePath).toURI().toString()
+// 기기 파일이 있으면 file: 주소, 서버에서 불러온 사진은 서버 주소
+internal fun WorkoutPhoto.imageUrl(): String = filePath?.let { File(it).toURI().toString() } ?: serverImageUrl.orEmpty()

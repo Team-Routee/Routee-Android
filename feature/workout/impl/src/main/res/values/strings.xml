@@ -16,11 +16,21 @@
     <string name="workout_main_metric_duration">시간</string>
     <string name="workout_main_metric_max_elevation">최고 고도</string>
 
+    <!-- 운동 메인 복구 모달 -->
+    <string name="workout_main_recovery_title">이전 기록을 이어갈까요?</string>
+    <string name="workout_main_recovery_recorded_until">%1$s 까지 기록</string>
+    <string name="workout_main_recovery_save">종료 후 저장</string>
+    <string name="workout_main_recovery_continue">이어서 기록</string>
+    <string name="workout_main_recovery_saved_toast">기록을 저장했어요.</string>
+    <string name="workout_main_recovery_save_failed_toast">기록을 저장하는 중에 문제가 생겼어요.</string>
+
     <!-- 운동 중 -->
     <!-- TODO P1 기획: 시작 실패 안내 방식과 문구 -->
     <string name="workout_recording_start_error_toast">네트워크 연결을 확인해주세요.</string>
     <!-- TODO P1 기획: 이전 기록 복원 실패 문구 -->
     <string name="workout_recording_restore_error_toast">이전 기록을 불러오지 못했어요.</string>
+    <!-- TODO P1 기획: 다시 시작(복구 포함) 기기 저장 실패 문구 -->
+    <string name="workout_recording_resume_error_toast">기록을 다시 시작하지 못했어요.\n다시 시작을 눌러 주세요.</string>
     <string name="workout_recording_save_failure_title">기록 등록 실패</string>
     <!-- TODO P1 기획: 실패해도 기기에 남겨 다음 실행 때 다시 보내는데 "다시 기록해주세요" 문구 확인 -->
     <string name="workout_recording_save_failure_network_description">인터넷 연결이 불안정해서\n기록이 등록되지 않았어요.\n연결이 안정되면 다시 기록해주세요.</string>

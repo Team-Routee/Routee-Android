@@ -9,6 +9,7 @@ import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.FakeWorkoutPhotoRepository
 import java.io.IOException
 import java.time.Instant
@@ -23,7 +24,7 @@ class ClearDeviceDataUseCaseTest {
     private val records = FakeRecordRepository()
     private val photos = FakeWorkoutPhotoRepository()
     private val imageCache = FakeImageCacheRepository()
-    private val clearDeviceData = ClearDeviceDataUseCase(tracking, records, photos, imageCache)
+    private val clearDeviceData = ClearDeviceDataUseCase(DiscardWorkoutUseCase(tracking, records, photos), imageCache)
 
     /**
      * GIVEN: 기기에 운동 기록, 사진, 이미지 캐시가 있을 때
@@ -75,7 +76,9 @@ class ClearDeviceDataUseCaseTest {
 
         override suspend fun restore(): Result<Unit> = Result.success(Unit)
 
-        override suspend fun finish(): Result<Unit> = Result.success(Unit)
+        override suspend fun recover(): Result<Unit> = Result.success(Unit)
+
+        override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
         override suspend fun clear(): Result<Unit> {
             isCleared = true

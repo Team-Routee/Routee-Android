@@ -35,8 +35,15 @@ interface WorkoutTrackingRepository {
     /** 진행 중인 기록이 없으면 기기에 저장된 기록을 이어감, 꺼져 있던 시간은 뺌 */
     suspend fun restore(): Result<Unit>
 
-    /** 종료, 기기 기록을 업로드 대기로 바꿈. 이후 위치 기록 서비스가 멈춤 */
-    suspend fun finish(): Result<Unit>
+    /** 앱이 꺼졌다 켜졌거나 일시정지가 길어 멈춘 기록을 일시정지로 불러옴, 꺼져 있던 시간은 뺌. 이어서 기록은 [resume], 종료 후 저장은 [finish] */
+    suspend fun recover(): Result<Unit>
+
+    /**
+     * 종료, 기기 기록을 업로드 대기로 바꿈. 이후 위치 기록 서비스가 멈춤
+     *
+     * @param endedAt 종료 시각, null 이면 지금
+     */
+    suspend fun finish(endedAt: Instant? = null): Result<Unit>
 
     /** 저장을 마쳤거나 저장할 수 없는 기록 삭제, 상태 비움 */
     suspend fun clear(): Result<Unit>

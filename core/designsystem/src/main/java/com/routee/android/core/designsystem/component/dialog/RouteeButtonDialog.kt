@@ -127,7 +127,7 @@ private fun ColumnScope.TwoButtonDialogContent(
             text = rightButtonText,
             onClick = onRightButtonClick,
             modifier = Modifier.weight(1f),
-            isDestructive = true,
+            contentColor = RouteeTheme.colors.statusError,
         )
     }
 }

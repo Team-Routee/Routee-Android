@@ -33,3 +33,9 @@ fun formatDurationHourMinute(durationSec: Int): String =
         durationSec / SECONDS_PER_HOUR,
         durationSec % SECONDS_PER_HOUR / SECONDS_PER_MINUTE,
     )
+
+/**
+ * 운동 시간 h m 표기, 앞자리 0 없음 (예: 4800 → "1h 20m")
+ */
+fun formatDurationHourMinuteShort(durationSec: Int): String =
+    "${durationSec / SECONDS_PER_HOUR}h ${durationSec % SECONDS_PER_HOUR / SECONDS_PER_MINUTE}m"

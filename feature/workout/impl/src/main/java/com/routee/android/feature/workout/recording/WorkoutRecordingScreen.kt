@@ -1,7 +1,6 @@
 package com.routee.android.feature.workout.recording
 
 import android.content.ActivityNotFoundException
-import android.graphics.Bitmap
 import android.location.Location
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
@@ -37,10 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.routee.android.core.data.upload.UPLOAD_JPEG_QUALITY
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
@@ -64,6 +60,7 @@ import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
 import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
+import com.routee.android.feature.workout.model.captureRouteJpeg
 import com.routee.android.feature.workout.recording.model.OpenedPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
@@ -71,29 +68,22 @@ import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiStat
 import com.routee.android.feature.workout.recording.model.WorkoutSaveFailure
 import com.routee.android.feature.workout.recording.model.WorkoutSummary
 import com.routee.android.feature.workout.tracking.WorkoutTrackingService
-import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 private const val COUNTDOWN_FADE_OUT_MILLIS = 300
 private const val FINISH_ANIMATION_SPEED = 1.5f
-private const val MAP_CAPTURE_TIMEOUT_MILLIS = 10_000L
-private val MAP_CAPTURE_PADDING = 48.dp
 
 @Composable
 internal fun WorkoutRecordingRoute(
+    viewModel: WorkoutRecordingViewModel,
     onStartFail: () -> Unit,
     onNavigateToTimeline: (WorkoutSummary) -> Unit,
     onNavigateToHome: () -> Unit,
-    viewModel: WorkoutRecordingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -101,6 +91,7 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
+    val resumeErrorText = stringResource(R.string.workout_recording_resume_error_toast)
     val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
     val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
     val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
@@ -125,6 +116,8 @@ internal fun WorkoutRecordingRoute(
             }
 
             WorkoutRecordingSideEffect.ShowRestoreFailed -> messageState.showToast(text = restoreErrorText)
+
+            WorkoutRecordingSideEffect.ShowResumeFailed -> messageState.showToast(text = resumeErrorText)
 
             is WorkoutRecordingSideEffect.NavigateToTimeline -> onNavigateToTimeline(sideEffect.summary)
 
@@ -169,7 +162,7 @@ internal fun WorkoutRecordingRoute(
     BackHandler(enabled = uiState.isPhotoDeletePending) { messageState.performAction() }
 
     uiState.captureRoute?.let { route ->
-        LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureJpeg(route)) }
+        LaunchedEffect(route) { viewModel.onMapCaptured(mapState.captureRouteJpeg(route)) }
     }
 
     WorkoutRecordingScreen(
@@ -237,28 +230,6 @@ private fun OpenedPhotoDialog(
             onDismissRequest = { onClose(titleState.text.toString()) },
         )
     }
-}
-
-// 경로 전체를 담은 지도 캡처 JPEG, 실패하면 null
-private suspend fun RouteeMapState.captureJpeg(route: List<MapPoint>): ByteArray? = try {
-    withTimeoutOrNull(MAP_CAPTURE_TIMEOUT_MILLIS) {
-        val bitmap = captureRoute(route, padding = MAP_CAPTURE_PADDING)
-        try {
-            withContext(Dispatchers.Default) {
-                ByteArrayOutputStream().use { output ->
-                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, UPLOAD_JPEG_QUALITY, output))
-                    output.toByteArray()
-                }
-            }
-        } finally {
-            bitmap.recycle()
-        }
-    }
-} catch (e: CancellationException) {
-    throw e
-} catch (e: Exception) {
-    Timber.e(e, "지도 캡처 실패")
-    null
 }
 
 @Composable

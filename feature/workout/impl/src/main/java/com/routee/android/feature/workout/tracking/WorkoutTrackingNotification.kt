@@ -86,7 +86,7 @@ internal object WorkoutTrackingNotification {
         WorkoutTrackingService.actionIntent(context, content.action),
     )
 
-    // TODO 기록 중이면 운동 중 화면, 일시정지 중이면 정지 화면으로 이동
+    // 앱 열기. 기록 화면(운동 중, 정지)이나 복구 모달은 운동 메인이 기록 상태로 정함
     private fun launchIntent(context: Context): PendingIntent? {
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP

@@ -32,11 +32,11 @@ internal val START: Instant = Instant.ofEpochMilli(1_000_000)
 internal class FakeWorkoutTrackingRepository(
     record: WorkoutRecord? = null,
     private val savedRecord: WorkoutRecord? = null,
-    private val restoreError: Throwable? = null,
+    private val savedTrackPoints: List<TrackPoint> = emptyList(),
+    private val resumeError: Throwable? = null,
 ) : WorkoutTrackingRepository {
     private val _state = MutableStateFlow(WorkoutTrackingState(record = record))
     override val state: StateFlow<WorkoutTrackingState> = _state
-    var isRestored = false
     var isCleared = false
     var startedRecord: WorkoutRecord? = null
 
@@ -61,23 +61,28 @@ internal class FakeWorkoutTrackingRepository(
     }
 
     override suspend fun resume(): Result<Unit> {
+        resumeError?.let { return Result.failure(it) }
         _state.value = _state.value.copy(record = _state.value.record?.resumed(START))
         return Result.success(Unit)
     }
 
     override suspend fun addTrackPoint(location: DeviceLocation): Result<Unit> = Result.success(Unit)
 
-    override suspend fun restore(): Result<Unit> {
-        isRestored = true
-        restoreError?.let { return Result.failure(it) }
-        if (_state.value.record == null && savedRecord?.isTracking == true) {
-            _state.value = WorkoutTrackingState(record = savedRecord)
+    override suspend fun restore(): Result<Unit> = Result.success(Unit)
+
+    override suspend fun recover(): Result<Unit> {
+        val current = _state.value
+        val record = current.record
+        if (record != null) {
+            _state.value = current.copy(record = record.recovered(START))
+        } else if (savedRecord?.isTracking == true) {
+            _state.value = WorkoutTrackingState(record = savedRecord.recovered(START), trackPoints = savedTrackPoints)
         }
         return Result.success(Unit)
     }
 
-    override suspend fun finish(): Result<Unit> {
-        _state.value = _state.value.copy(record = _state.value.record?.finished(START))
+    override suspend fun finish(endedAt: Instant?): Result<Unit> {
+        _state.value = _state.value.copy(record = _state.value.record?.finished(START, endedAt ?: START))
         return Result.success(Unit)
     }
 
@@ -115,8 +120,14 @@ internal class FakeWorkoutRemoteRepository(
     ): Result<Unit> = Result.success(Unit)
 }
 
-internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
-    override suspend fun getRecord(): Result<WorkoutRecord?> = Result.success(null)
+internal class FakeWorkoutRecordRepository(
+    private val record: WorkoutRecord? = null,
+    private val getError: Throwable? = null,
+) : WorkoutRecordRepository {
+    var isCleared = false
+
+    override suspend fun getRecord(): Result<WorkoutRecord?> =
+        getError?.let { Result.failure(it) } ?: Result.success(record)
 
     override suspend fun startRecord(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
 
@@ -136,7 +147,10 @@ internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
 
     override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
 
-    override suspend fun clearRecords(): Result<Unit> = Result.success(Unit)
+    override suspend fun clearRecords(): Result<Unit> {
+        isCleared = true
+        return Result.success(Unit)
+    }
 }
 
 internal class FakeMapImageRepository : TimelineMapImageRepository {
@@ -153,11 +167,13 @@ internal class FakeMapImageRepository : TimelineMapImageRepository {
 
 internal class FakeWorkoutPhotoRepository(
     private val missingCount: Int = 0,
+    private val serverPhotos: List<WorkoutPhoto> = emptyList(),
 ) : WorkoutPhotoRepository {
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos
     val discarded = mutableListOf<File>()
     var captureFileCount = 0
+    val restoredActivityIds = mutableListOf<Long>()
 
     fun setPhotos(photos: List<WorkoutPhoto>) {
         _photos.value = photos
@@ -183,6 +199,12 @@ internal class FakeWorkoutPhotoRepository(
         )
         _photos.value += photo
         return Result.success(photo)
+    }
+
+    override suspend fun restore(activityId: Long): Result<Unit> {
+        restoredActivityIds += activityId
+        if (_photos.value.none { it.activityId == activityId }) _photos.value = serverPhotos
+        return Result.success(Unit)
     }
 
     override suspend fun discardCaptureFile(file: File) {

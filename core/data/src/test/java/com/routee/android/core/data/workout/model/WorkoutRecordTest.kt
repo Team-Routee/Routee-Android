@@ -2,7 +2,9 @@ package com.routee.android.core.data.workout.model
 
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WorkoutRecordTest {
@@ -141,6 +143,51 @@ class WorkoutRecordTest {
         val finished = record().finished(START.plusSeconds(90))
 
         assertEquals(finished, finished.finished(START.plusSeconds(300)))
+    }
+
+    /**
+     * GIVEN: 기록 중에 앱이 꺼졌다가 한참 뒤 다시 켜졌을 때
+     * WHEN: 복구 안내를 위해 불러오면
+     * THEN: 일시정지로 두고 운동 시간은 마지막 기록 시각까지만 센다
+     */
+    @Test
+    fun `복구하면 일시정지로 두고 마지막 기록 시각까지 센다`() {
+        val stopped = record().copy(lastRecordedAt = START.plusSeconds(60))
+
+        val recovered = stopped.recovered(START.plusSeconds(3_600))
+
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, recovered.status)
+        assertEquals(60_000L, recovered.durationMillisAt(START.plusSeconds(7_200)))
+        assertEquals(START.plusSeconds(3_600), recovered.pausedAt)
+    }
+
+    /**
+     * GIVEN: 일시정지한 기록일 때
+     * WHEN: 2시간이 되기 직전과 2시간이 된 때
+     * THEN: 2시간이 되어야 일시정지가 끝났다고 본다
+     */
+    @Test
+    fun `일시정지 2시간이 되면 끝났다고 본다`() {
+        val paused = record().paused(START.plusSeconds(60))
+
+        assertFalse(paused.isPauseExpiredAt(START.plusSeconds(60).plus(WORKOUT_PAUSE_LIMIT).minusMillis(1)))
+        assertTrue(paused.isPauseExpiredAt(START.plusSeconds(60).plus(WORKOUT_PAUSE_LIMIT)))
+        assertFalse(record().isPauseExpiredAt(START.plus(WORKOUT_PAUSE_LIMIT)))
+    }
+
+    /**
+     * GIVEN: 복구한 기록일 때
+     * WHEN: 마지막 기록 시각으로 종료하면
+     * THEN: 종료 시각은 마지막 기록 시각, 운동 시간은 그대로다
+     */
+    @Test
+    fun `종료 시각을 따로 정해 종료할 수 있다`() {
+        val recovered = record().copy(lastRecordedAt = START.plusSeconds(60)).recovered(START.plusSeconds(3_600))
+
+        val finished = recovered.finished(START.plusSeconds(3_700), endedAt = recovered.lastRecordedAt)
+
+        assertEquals(START.plusSeconds(60), finished.endedAt)
+        assertEquals(60_000L, finished.durationMillis)
     }
 
     /**
