@@ -3,6 +3,8 @@ package com.routee.android.core.data.di
 import com.routee.android.core.data.member.remote.service.MemberService
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.member.repository.MemberRepositoryImpl
+import com.routee.android.core.data.member.repository.ProfileRepository
+import com.routee.android.core.data.member.repository.ProfileRepositoryImpl
 import com.routee.android.core.network.di.Auth
 import dagger.Binds
 import dagger.Module
@@ -19,6 +21,10 @@ internal abstract class MemberModule {
     @Binds
     @Singleton
     abstract fun bindMemberRepository(memberRepositoryImpl: MemberRepositoryImpl): MemberRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProfileRepository(profileRepositoryImpl: ProfileRepositoryImpl): ProfileRepository
 
     companion object {
         @Provides
