@@ -160,6 +160,16 @@ internal class WorkoutRecordingViewModel @Inject constructor(
         }
     }
 
+    /** 기본 카메라 앱이 없어 열지 못함, 원본 파일을 지우고 안내 모달 */
+    fun onCameraUnavailable(filePath: String) {
+        _uiState.update { it.copy(isCameraUnavailable = true) }
+        onPhotoTaken(filePath, isSaved = false)
+    }
+
+    fun onCameraUnavailableDialogConfirm() {
+        _uiState.update { it.copy(isCameraUnavailable = false) }
+    }
+
     fun onPhotoMarkerClick(photoId: String) {
         val photo = photoRepository.photos.value.find { it.id == photoId } ?: return
         _uiState.update { it.copy(openedPhoto = photo.toOpenedPhoto()) }

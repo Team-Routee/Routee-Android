@@ -100,7 +100,6 @@ internal fun WorkoutRecordingRoute(
     val endGuideText = stringResource(R.string.workout_pause_end_guide_toast)
     val startErrorText = stringResource(R.string.workout_recording_start_error_toast)
     val restoreErrorText = stringResource(R.string.workout_recording_restore_error_toast)
-    val cameraUnavailableText = stringResource(R.string.workout_recording_camera_unavailable_toast)
     val photoNoLocationText = stringResource(R.string.workout_recording_photo_no_location_toast)
     val photoFailedText = stringResource(R.string.workout_recording_photo_failed_toast)
     val photosMissingText = stringResource(R.string.workout_recording_photos_missing_toast)
@@ -142,8 +141,7 @@ internal fun WorkoutRecordingRoute(
             } catch (e: ActivityNotFoundException) {
                 Timber.w(e, "기본 카메라 없음")
                 photoFilePath = null
-                viewModel.onPhotoTaken(sideEffect.filePath, isSaved = false)
-                messageState.showToast(text = cameraUnavailableText)
+                viewModel.onCameraUnavailable(sideEffect.filePath)
             }
 
             WorkoutRecordingSideEffect.ShowPhotoNoLocation -> messageState.showToast(text = photoNoLocationText)
@@ -189,6 +187,16 @@ internal fun WorkoutRecordingRoute(
             photo = photo,
             onDeleteClick = viewModel::onPhotoDeleteClick,
             onClose = viewModel::onPhotoDialogClose,
+        )
+    }
+
+    if (uiState.isCameraUnavailable) {
+        RouteeOneButtonDialog(
+            title = stringResource(R.string.workout_recording_camera_unavailable_title),
+            description = stringResource(R.string.workout_recording_camera_unavailable_description),
+            buttonText = stringResource(R.string.workout_recording_camera_unavailable_confirm),
+            onButtonClick = viewModel::onCameraUnavailableDialogConfirm,
+            onDismissRequest = viewModel::onCameraUnavailableDialogConfirm,
         )
     }
 

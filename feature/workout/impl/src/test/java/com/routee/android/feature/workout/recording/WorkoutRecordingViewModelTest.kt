@@ -375,6 +375,25 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 기본 카메라 앱이 없을 때
+     * WHEN: 카메라를 열지 못하면
+     * THEN: 원본 파일을 지우고 안내 모달을 띄우고, 확인을 누르면 닫는다
+     */
+    @Test
+    fun `카메라 앱이 없으면 안내 모달을 띄운다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository()
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+
+        viewModel.onCameraUnavailable("capture-1.jpg")
+        assertTrue(viewModel.uiState.value.isCameraUnavailable)
+        assertEquals(listOf(File("capture-1.jpg")), photos.discarded)
+
+        viewModel.onCameraUnavailableDialogConfirm()
+        assertFalse(viewModel.uiState.value.isCameraUnavailable)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 종료 때 다시 올려도 사진 1장이 실패할 때
      * WHEN: 마무리 애니메이션이 끝나면
      * THEN: 빠진 사진을 알리고 타임라인으로 간다
