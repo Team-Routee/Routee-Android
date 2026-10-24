@@ -4,6 +4,7 @@ import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.model.TimelinePhotoUploadResult
 import com.routee.android.core.data.timeline.remote.dto.request.CreateTimelineRequest
 import com.routee.android.core.data.timeline.remote.dto.request.TimelineLocationRequest
+import com.routee.android.core.data.timeline.remote.dto.request.UpdateTimelineTitleRequest
 import com.routee.android.core.data.timeline.remote.service.TimelinePhotoService
 import com.routee.android.core.data.upload.PresignedImageUploader
 import com.routee.android.core.data.upload.remote.dto.request.ImageUrlRequest
@@ -58,6 +59,14 @@ internal class TimelinePhotoRepositoryImpl @Inject constructor(
         result.getOrNull()?.let { timelineId -> stateMutex.withLock { registered[key] = timelineId } }
         return TimelinePhotoUploadResult(photo.clientId, result)
     }
+
+    override suspend fun updateTitle(activityId: Long, timelineId: Long, title: String): Result<Unit> =
+        apiResponseHandler.safeUnitApiCall {
+            service.updateTitle(activityId, timelineId, UpdateTimelineTitleRequest(title))
+        }
+
+    override suspend fun deletePhoto(activityId: Long, timelineId: Long): Result<Unit> =
+        apiResponseHandler.safeUnitApiCall { service.deleteTimeline(activityId, timelineId) }
 
     override suspend fun clearUploadState(activityId: Long) = batchMutex.withLock {
         stateMutex.withLock {
