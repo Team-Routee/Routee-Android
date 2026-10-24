@@ -7,6 +7,8 @@ import com.routee.android.core.data.timeline.remote.service.TimelineMapImageServ
 import com.routee.android.core.data.upload.PresignedImageUploader
 import com.routee.android.core.data.upload.UPLOAD_JPEG_QUALITY
 import com.routee.android.core.data.upload.remote.dto.request.ImageUrlRequest
+import com.routee.android.core.data.workout.exception.mapWorkoutException
+import com.routee.android.core.network.extension.mapApiException
 import com.routee.android.core.network.util.ApiResponseHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -46,7 +48,7 @@ internal class TimelineMapImageRepositoryImpl @Inject constructor(
     private suspend fun uploadFile(activityId: Long, imageFile: File): Result<String> {
         val url = apiResponseHandler.safeApiCall {
             service.createMapImageUrl(activityId, ImageUrlRequest(imageFile.name))
-        }.getOrElse { return Result.failure(it) }
+        }.mapApiException(::mapWorkoutException).getOrElse { return Result.failure(it) }
 
         return apiResponseHandler.safeUnitApiCall {
             uploader.upload(url.presignedUrl, imageFile)
