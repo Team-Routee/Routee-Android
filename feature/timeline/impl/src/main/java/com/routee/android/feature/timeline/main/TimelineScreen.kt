@@ -59,6 +59,7 @@ import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteeTheme
+import com.routee.android.core.ui.loading.RouteeLoadingOverlay
 import com.routee.android.core.ui.photo.rememberGalleryPhotoSaveState
 import com.routee.android.feature.timeline.R
 import com.routee.android.feature.timeline.api.TimelinePhoto
@@ -174,6 +175,8 @@ internal fun TimelineRoute(
             )
         },
     )
+
+    if (isSaving) RouteeLoadingOverlay()
 
     if (showExitDialog) {
         RouteeTwoButtonDialog(
