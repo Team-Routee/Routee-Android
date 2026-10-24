@@ -28,7 +28,11 @@ fun EntryProviderScope<NavKey>.settingEntries(navigator: RouteeNavigator) {
         ContactRoute(onBackClick = navigator::navigateBack)
     }
     entry<ProfileEditNavKey> {
-        ProfileEditRoute(onBackClick = navigator::navigateBack)
+        ProfileEditRoute(
+            onBackClick = navigator::navigateBack,
+            onHomeClick = navigator::navigateToHome,
+            onNavigateToImageCrop = { imageUri -> navigator.navigateTo(ProfileImageCropNavKey(imageUri)) },
+        )
     }
     entry<ProfileImageCropNavKey> { key ->
         ProfileImageCropRoute(
