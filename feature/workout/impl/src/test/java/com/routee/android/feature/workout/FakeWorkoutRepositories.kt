@@ -8,10 +8,12 @@ import com.routee.android.core.data.permission.repository.PermissionRepository
 import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
+import com.routee.android.core.data.workout.model.WorkoutPhoto
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
+import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
 import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
@@ -147,6 +149,48 @@ internal class FakeMapImageRepository : TimelineMapImageRepository {
         activityId: Long,
         imageFile: File,
     ): Result<String> = Result.success("map-key")
+}
+
+internal class FakeWorkoutPhotoRepository(
+    private val missingCount: Int = 0,
+) : WorkoutPhotoRepository {
+    private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
+    override val photos: StateFlow<List<WorkoutPhoto>> = _photos
+    val discarded = mutableListOf<File>()
+    var captureFileCount = 0
+
+    override suspend fun createCaptureFile(): Result<File> {
+        captureFileCount++
+        return Result.success(File("capture-$captureFileCount.jpg"))
+    }
+
+    override suspend fun addPhoto(
+        activityId: Long,
+        original: File,
+        point: TrackPoint,
+        takenAt: Instant,
+    ): Result<WorkoutPhoto> {
+        val photo = WorkoutPhoto(
+            id = "photo-${_photos.value.size + 1}",
+            activityId = activityId,
+            filePath = original.path,
+            point = point,
+            takenAt = takenAt,
+        )
+        _photos.value += photo
+        return Result.success(photo)
+    }
+
+    override suspend fun discardCaptureFile(file: File) {
+        discarded += file
+    }
+
+    override suspend fun uploadPhotos(activityId: Long): Int = missingCount
+
+    override suspend fun clear(): Result<Unit> {
+        _photos.value = emptyList()
+        return Result.success(Unit)
+    }
 }
 
 internal class FakeLocationRepository(

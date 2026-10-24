@@ -8,6 +8,7 @@ import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.FakeLocationRepository
 import com.routee.android.feature.workout.FakeMapImageRepository
+import com.routee.android.feature.workout.FakeWorkoutPhotoRepository
 import com.routee.android.feature.workout.FakeWorkoutRecordRepository
 import com.routee.android.feature.workout.FakeWorkoutRemoteRepository
 import com.routee.android.feature.workout.FakeWorkoutTrackingRepository
@@ -327,6 +328,7 @@ class WorkoutRecordingViewModelTest {
             recordRepository = FakeWorkoutRecordRepository(),
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
+            photoRepository = FakeWorkoutPhotoRepository(),
         ),
         locationRepository = location,
         clock = clock,
