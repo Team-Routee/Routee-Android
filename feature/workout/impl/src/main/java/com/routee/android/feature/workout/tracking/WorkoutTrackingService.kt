@@ -43,6 +43,9 @@ internal class WorkoutTrackingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var trackingJob: Job? = null
 
+    // 일시정지, 다시 시작으로 다시 불려도 마지막 요청 기준으로 멈춤
+    private var lastStartId = 0
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -50,6 +53,7 @@ internal class WorkoutTrackingService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
+        lastStartId = startId
         if (!startForeground()) {
             stopSelf()
             return START_NOT_STICKY
@@ -71,7 +75,7 @@ internal class WorkoutTrackingService : Service() {
                     onTrackPointFailure = { Timber.e(it, "경로 좌표 저장 실패, 기록 계속") },
                 ).onFailure { Timber.e(it, "운동 기록 실패, 서비스 종료") }
                 trackingJob = null
-                stopSelfResult(startId)
+                stopSelfResult(lastStartId)
             }
             scope.launch { updateNotification() }
         }
@@ -80,6 +84,8 @@ internal class WorkoutTrackingService : Service() {
 
     override fun onDestroy() {
         scope.cancel()
+        // 멈추기 직전에 다시 올린 알림이 남지 않게 지움
+        NotificationManagerCompat.from(this).cancel(WorkoutTrackingNotification.ID)
         super.onDestroy()
     }
 
@@ -103,6 +109,8 @@ internal class WorkoutTrackingService : Service() {
             }
         }
         trackingRepository.state.combine(minuteTicks) { state, _ -> state.record }.collect { record ->
+            // 종료하면 서비스가 멈추니 알림을 다시 올리지 않음
+            if (record?.isTracking != true) return@collect
             val isDenied = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
