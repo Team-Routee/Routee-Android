@@ -26,9 +26,8 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.model.MapMarker
 import com.routee.android.core.map.model.MapPhoto
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -38,7 +37,7 @@ internal val PhotoMarkerSize = 42.dp
 private val PhotoMarkerBorder = 3.dp
 private const val MAX_CONCURRENT_LOADS = 3
 
-/** 사진 썸네일 마커 목록, 이미지를 불러오지 못한 사진은 빠짐 */
+/** 사진 썸네일 마커 목록, 불러온 사진부터 하나씩 추가. 이미지를 불러오지 못한 사진은 빠짐 */
 @Composable
 fun rememberPhotoMarkers(photos: List<MapPhoto>): List<MapMarker> {
     val context = LocalContext.current
@@ -51,15 +50,19 @@ fun rememberPhotoMarkers(photos: List<MapPhoto>): List<MapMarker> {
             value = emptyList()
             return@produceState
         }
+        // 지운 사진 마커는 바로 빼고, 이미 그린 마커는 다시 불러오지 않음
+        val photoIds = photos.mapTo(HashSet()) { it.id }
+        value = value.filter { it.id in photoIds }
+        val loadedIds = value.mapTo(HashSet()) { it.id }
         val size = with(density) { PhotoMarkerSize.roundToPx() }
         val border = with(density) { PhotoMarkerBorder.toPx() }
         val radius = with(density) { radiusDp.toPx() }
         val loader = SingletonImageLoader.get(context)
         val semaphore = Semaphore(MAX_CONCURRENT_LOADS)
-        value = coroutineScope {
-            photos.map { photo ->
-                async {
-                    semaphore.withPermit {
+        coroutineScope {
+            photos.filterNot { it.id in loadedIds }.forEach { photo ->
+                launch {
+                    val marker = semaphore.withPermit {
                         val result = loader.execute(
                             ImageRequest.Builder(context)
                                 .data(photo.imageUrl)
@@ -75,8 +78,9 @@ fun rememberPhotoMarkers(photos: List<MapPhoto>): List<MapMarker> {
                             size = PhotoMarkerSize,
                         )
                     }
+                    if (marker != null) value = value + marker
                 }
-            }.awaitAll().filterNotNull()
+            }
         }
     }
     return markers
