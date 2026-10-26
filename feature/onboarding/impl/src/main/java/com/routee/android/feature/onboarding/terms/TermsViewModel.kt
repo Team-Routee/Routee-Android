@@ -12,6 +12,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,8 @@ internal class TermsViewModel @AssistedInject constructor(
 
     private val _sideEffect = Channel<TermsSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
+
+    private var isNavigatingBack = false
 
     fun onAllCheckedChange(checked: Boolean) {
         _uiState.update { it.copy(checkedItems = if (checked) TermsItem.entries.toSet() else emptySet()) }
@@ -58,10 +61,12 @@ internal class TermsViewModel @AssistedInject constructor(
     }
 
     fun onBackClick() {
-        viewModelScope.launch {
+        if (isNavigatingBack) return
+        isNavigatingBack = true
+        viewModelScope.launch(NonCancellable) {
             googleLoginManager.clearCredential().onFailure { e -> Timber.w(e) }
-            _sideEffect.send(TermsSideEffect.NavigateBack)
         }
+        viewModelScope.launch { _sideEffect.send(TermsSideEffect.NavigateBack) }
     }
 
     @AssistedFactory
