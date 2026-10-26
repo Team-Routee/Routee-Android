@@ -38,4 +38,22 @@ class ValidateNicknameUseCaseTest {
         assertEquals(NicknameValidation.INVALID, validateNickname("관악산  날다람쥐"))
         assertEquals(NicknameValidation.INVALID, validateNickname(" 날다람쥐"))
     }
+
+    @Test
+    fun `조합 중인 완성 글자는 포함해서 검사`() {
+        assertEquals(NicknameValidation.VALID, validateNickname("관악", composing = 1..1))
+        assertEquals(NicknameValidation.INVALID, validateNickname("가".repeat(13), composing = 12..12))
+    }
+
+    @Test
+    fun `조합 중인 자모는 빼고 검사`() {
+        assertEquals(NicknameValidation.VALID, validateNickname("관악산ㄴ", composing = 3..3))
+        assertEquals(NicknameValidation.VALID, validateNickname("관악산 ㄴ", composing = 4..4))
+        assertEquals(NicknameValidation.EMPTY, validateNickname("ㄱ", composing = 0..0))
+    }
+
+    @Test
+    fun `조합이 끝난 자모는 INVALID`() {
+        assertEquals(NicknameValidation.INVALID, validateNickname("관악산ㄴ"))
+    }
 }
