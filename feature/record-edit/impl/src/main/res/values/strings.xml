@@ -15,8 +15,7 @@
     <string name="record_edit_editor_dialog_cancel">취소</string>
     <string name="record_edit_editor_dialog_confirm">확인</string>
     <string name="record_edit_editor_reset_a11y">편집 초기화</string>
-    <string name="record_edit_editor_reset_dialog_title">편집 내용을 초기화하시겠습니까?</string>
-    <string name="record_edit_editor_reset_dialog_description">초기화 시 변경 사항이 저장되지 않습니다.</string>
+    <string name="record_edit_editor_reset_dialog_title">편집을 초기화하시겠습니까?</string>
     <string name="record_edit_editor_sticker_delete_a11y">스티커 삭제</string>
     <string name="record_edit_editor_network_error_toast">네트워크 연결을 확인해주세요.</string>
     <string name="record_edit_editor_no_route_toast">불러올 루트가 없습니다.</string>
