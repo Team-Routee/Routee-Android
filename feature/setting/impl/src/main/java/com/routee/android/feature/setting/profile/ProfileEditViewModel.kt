@@ -19,7 +19,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -165,21 +164,29 @@ internal class ProfileEditViewModel @Inject constructor(
     private fun observeNickname() {
         viewModelScope.launch {
             snapshotFlow { nicknameState.text.toString() to nicknameState.composition }
-                .filter { (_, composition) -> composition == null }
-                .collect { (text, _) -> onNicknameChange(text) }
+                .collect { (text, composition) ->
+                    onNicknameChange(text, composition?.let { it.min until it.max })
+                }
         }
     }
 
-    private fun onNicknameChange(text: CharSequence) {
+    private fun onNicknameChange(
+        text: CharSequence,
+        composing: IntRange? = null,
+    ) {
         val nickname = text.trimEnd().toString()
         _uiState.update {
-            it.copy(nickname = nickname, validation = nicknameValidation(nickname, it.savedNickname))
+            it.copy(nickname = nickname, validation = nicknameValidation(text, composing, it.savedNickname))
         }
     }
 
-    private fun nicknameValidation(nickname: String, savedNickname: String): RouteeTextFieldValidation {
-        if (nickname == savedNickname) return RouteeTextFieldValidation.None
-        return when (validateNickname(nickname)) {
+    private fun nicknameValidation(
+        text: CharSequence,
+        composing: IntRange?,
+        savedNickname: String,
+    ): RouteeTextFieldValidation {
+        if (text.trimEnd().toString() == savedNickname) return RouteeTextFieldValidation.None
+        return when (validateNickname(text, composing)) {
             NicknameValidation.EMPTY -> RouteeTextFieldValidation.None
             NicknameValidation.VALID -> RouteeTextFieldValidation.Valid
             NicknameValidation.INVALID -> RouteeTextFieldValidation.Invalid
