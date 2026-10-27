@@ -6,6 +6,7 @@ import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.model.RecapRoute
 import com.routee.android.core.data.recap.model.TrackPoint
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeConnectivityRepository
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
@@ -37,6 +38,7 @@ class RecapEditorViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val recapRepository = FakeRecapRepository()
+    private val connectivityRepository = FakeConnectivityRepository()
     private val viewModel by lazy { createViewModel() }
     private val state get() = viewModel.uiState.value
 
@@ -228,6 +230,25 @@ class RecapEditorViewModelTest {
         assertFalse(state.isCompleteAnimationVisible)
     }
 
+    /**
+     * GIVEN: 네트워크가 끊긴 상태에서
+     * WHEN: 완료를 누르면
+     * THEN: 네트워크 토스트만 띄우고 캡처하지 않으며, 다시 연결되면 완료할 수 있다
+     */
+    @Test
+    fun `네트워크가 끊기면 완료 대신 네트워크 토스트를 띄운다`() = runTest {
+        connectivityRepository.connected = false
+
+        viewModel.onCompleteClick()
+
+        assertEquals(RecapEditorSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+
+        connectivityRepository.connected = true
+        viewModel.onCompleteClick()
+
+        assertEquals(RecapEditorSideEffect.CaptureRecap, viewModel.sideEffect.first())
+    }
+
     @Test
     fun `편집 데이터를 불러오면 루트는 순번대로, 경로는 좌표 기록 순서대로 보여준다`() {
         recapRepository.resource = RecapResource(
@@ -277,6 +298,7 @@ class RecapEditorViewModelTest {
         RecapEditorNavKey(activityId = 1L),
         FakeRecapImageStore(),
         recapRepository,
+        connectivityRepository,
     )
 
     private fun trackPoint(

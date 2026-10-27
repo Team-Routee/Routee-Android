@@ -4,7 +4,10 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
+import com.routee.android.core.data.member.exception.MemberException
 import com.routee.android.core.data.member.repository.MemberRepository
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.ui.UiState
@@ -33,6 +36,7 @@ import timber.log.Timber
 internal class RecordEditMainViewModel @Inject constructor(
     private val recapRepository: RecapRepository,
     private val memberRepository: MemberRepository,
+    private val connectivityRepository: ConnectivityRepository,
 ) : ViewModel() {
     val titleEditingState = TextFieldState()
 
@@ -66,7 +70,13 @@ internal class RecordEditMainViewModel @Inject constructor(
 
     fun onRecapClick(activityId: Long) {
         completeTitleEdit()
-        viewModelScope.launch { _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId)) }
+        viewModelScope.launch {
+            if (!connectivityRepository.isConnected()) {
+                _sideEffect.send(RecordEditMainSideEffect.ShowNetworkErrorToast)
+                return@launch
+            }
+            _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId))
+        }
     }
 
     fun onEditTitleClick(activityId: Long) {
@@ -129,6 +139,7 @@ internal class RecordEditMainViewModel @Inject constructor(
         val month = _uiState.value.selectedMonth
         _uiState.update { it.copy(recaps = UiState.Loading) }
         loadJob = viewModelScope.launch {
+            if (!connectivityRepository.isConnected()) return@launch onNetworkUnavailable()
             val joinedMonthResult = async { getJoinedMonth() }
             val recapsResult = recapRepository.getMonthlyRecaps(month)
 
@@ -142,7 +153,16 @@ internal class RecordEditMainViewModel @Inject constructor(
 
     private fun onLoadRecapsFailure(throwable: Throwable) {
         Timber.e(throwable)
-        _uiState.update { it.copy(recaps = UiState.Failure(throwable)) }
+        if (throwable is RecapException.NetworkUnavailable || throwable is MemberException.NetworkUnavailable) {
+            onNetworkUnavailable()
+        } else {
+            _uiState.update { it.copy(recaps = UiState.Failure(throwable)) }
+        }
+    }
+
+    private fun onNetworkUnavailable() {
+        _uiState.update { it.copy(recaps = UiState.Empty) }
+        viewModelScope.launch { _sideEffect.send(RecordEditMainSideEffect.ShowNetworkErrorToast) }
     }
 
     private suspend fun getJoinedMonth(): Result<YearMonth> {

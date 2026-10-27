@@ -1,0 +1,7 @@
+package com.routee.android.core.data.connectivity.repository
+
+/** 기기 네트워크 연결 상태. API를 부르지 않는 동작 전에 오프라인인지 확인할 때 사용 */
+interface ConnectivityRepository {
+    /** 인터넷이 되는 네트워크에 연결되어 있는지 */
+    fun isConnected(): Boolean
+}
