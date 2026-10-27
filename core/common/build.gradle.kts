@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.routee.android.library)
+    alias(libs.plugins.routee.hilt)
 }
 
 android {

@@ -23,7 +23,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,9 +45,9 @@ internal class NicknameViewModel @AssistedInject constructor(
     init {
         viewModelScope.launch {
             snapshotFlow { nicknameState.text.toString() to nicknameState.composition }
-                .filter { (_, composition) -> composition == null }
-                .collect { (text, _) ->
-                    _uiState.update { it.copy(validation = nicknameValidation(text)) }
+                .collect { (text, composition) ->
+                    val composing = composition?.let { it.min until it.max }
+                    _uiState.update { it.copy(validation = nicknameValidation(text, composing)) }
                 }
         }
     }
@@ -92,7 +91,10 @@ internal class NicknameViewModel @AssistedInject constructor(
         }
     }
 
-    private fun nicknameValidation(text: CharSequence): RouteeTextFieldValidation = when (validateNickname(text)) {
+    private fun nicknameValidation(
+        text: CharSequence,
+        composing: IntRange? = null,
+    ): RouteeTextFieldValidation = when (validateNickname(text, composing)) {
         NicknameValidation.EMPTY -> RouteeTextFieldValidation.None
         NicknameValidation.VALID -> RouteeTextFieldValidation.Valid
         NicknameValidation.INVALID -> RouteeTextFieldValidation.Invalid

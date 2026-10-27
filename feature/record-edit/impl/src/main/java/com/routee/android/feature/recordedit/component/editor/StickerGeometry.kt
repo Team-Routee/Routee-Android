@@ -3,7 +3,6 @@ package com.routee.android.feature.recordedit.component.editor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import kotlin.math.abs
 
 /**
  * 크기 조절 핸들 위치. 오른쪽 위는 삭제 버튼
@@ -29,6 +28,8 @@ internal object StickerGeometry {
 
     /**
      * 비율을 유지한 채 [handle] 반대쪽 모서리를 고정하고 크기를 바꾼다
+     *
+     * [drag]를 고정 모서리에서 핸들로 향하는 대각선에 투영한 만큼 커지거나 작아진다
      */
     fun resize(
         start: Rect,
@@ -38,10 +39,12 @@ internal object StickerGeometry {
     ): Rect {
         val isStart = handle != StickerHandle.BOTTOM_END
         val isTop = handle == StickerHandle.TOP_START
-        val widthScale = (start.width + if (isStart) -drag.x else drag.x) / start.width
-        val heightScale = (start.height + if (isTop) -drag.y else drag.y) / start.height
-        val scale = (if (abs(widthScale - 1) > abs(heightScale - 1)) widthScale else heightScale)
-            .coerceAtLeast(MIN_SCALE)
+        val diagonal = Offset(
+            x = if (isStart) -start.width else start.width,
+            y = if (isTop) -start.height else start.height,
+        )
+        val projection = (drag.x * diagonal.x + drag.y * diagonal.y) / diagonal.getDistanceSquared()
+        val scale = (1 + projection).coerceAtLeast(MIN_SCALE)
         val size = start.size * scale
         val topLeft = Offset(
             x = if (isStart) start.right - size.width else start.left,

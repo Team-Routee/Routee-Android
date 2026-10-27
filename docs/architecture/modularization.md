@@ -3,7 +3,7 @@
 | Module | Contains |
 | --- | --- |
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
-| `core:common` | Kotlin utilities (`suspendRunCatching`) |
+| `core:common` | Kotlin utilities (`suspendRunCatching`), `@ApplicationScope` CoroutineScope |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
 | `core:domain` | UseCases shared by features (`ValidateNicknameUseCase`). May use `core:data` ([domain-layer](domain-layer.md)) |
 | `core:map` | `RouteeNaverMap`, `RouteeMapState`, `MapPoint`. Naver Map SDK stays inside (`implementation`). Only features that show a map depend on it |
