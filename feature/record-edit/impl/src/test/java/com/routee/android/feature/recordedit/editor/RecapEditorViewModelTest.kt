@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -242,6 +243,7 @@ class RecapEditorViewModelTest {
         viewModel.onCompleteClick()
 
         assertEquals(RecapEditorSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+        assertNull(withTimeoutOrNull(1_000) { viewModel.sideEffect.first() })
 
         connectivityRepository.connected = true
         viewModel.onCompleteClick()

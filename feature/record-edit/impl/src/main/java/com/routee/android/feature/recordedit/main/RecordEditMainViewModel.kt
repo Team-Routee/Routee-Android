@@ -69,12 +69,12 @@ internal class RecordEditMainViewModel @Inject constructor(
     }
 
     fun onRecapClick(activityId: Long) {
-        completeTitleEdit()
         viewModelScope.launch {
             if (!connectivityRepository.isConnected()) {
                 _sideEffect.send(RecordEditMainSideEffect.ShowNetworkErrorToast)
                 return@launch
             }
+            completeTitleEdit()
             _sideEffect.send(RecordEditMainSideEffect.NavigateToEditor(activityId))
         }
     }
