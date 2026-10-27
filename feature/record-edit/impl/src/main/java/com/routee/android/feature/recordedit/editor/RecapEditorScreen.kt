@@ -214,7 +214,6 @@ private fun RecapEditorScreen(
     if (uiState.isResetDialogVisible) {
         RouteeTwoButtonDialog(
             title = stringResource(R.string.record_edit_editor_reset_dialog_title),
-            description = stringResource(R.string.record_edit_editor_reset_dialog_description),
             leftButtonText = stringResource(R.string.record_edit_editor_dialog_cancel),
             rightButtonText = stringResource(R.string.record_edit_editor_dialog_confirm),
             onRightButtonClick = onResetConfirm,
