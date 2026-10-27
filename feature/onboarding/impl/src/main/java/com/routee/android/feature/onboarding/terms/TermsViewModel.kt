@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @HiltViewModel(assistedFactory = TermsViewModel.Factory::class)
 internal class TermsViewModel @AssistedInject constructor(
@@ -30,6 +29,8 @@ internal class TermsViewModel @AssistedInject constructor(
 
     private val _sideEffect = Channel<TermsSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
+
+    private var isNavigatingBack = false
 
     fun onAllCheckedChange(checked: Boolean) {
         _uiState.update { it.copy(checkedItems = if (checked) TermsItem.entries.toSet() else emptySet()) }
@@ -58,10 +59,10 @@ internal class TermsViewModel @AssistedInject constructor(
     }
 
     fun onBackClick() {
-        viewModelScope.launch {
-            googleLoginManager.clearCredential().onFailure { e -> Timber.w(e) }
-            _sideEffect.send(TermsSideEffect.NavigateBack)
-        }
+        if (isNavigatingBack) return
+        isNavigatingBack = true
+        googleLoginManager.clearCredentialInBackground()
+        viewModelScope.launch { _sideEffect.send(TermsSideEffect.NavigateBack) }
     }
 
     @AssistedFactory
