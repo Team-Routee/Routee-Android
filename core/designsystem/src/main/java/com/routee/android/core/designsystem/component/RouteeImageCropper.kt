@@ -192,8 +192,8 @@ fun RouteeImageCropper(
 }
 
 /**
- * 두 손가락 핀치를 자르기 영역 왼쪽 위 모서리 드래그로 바꿔 [cropImageView]에 전달한다.
- * 벌리면 영역이 커지고 오므리면 작아지며, 손을 떼면 라이브러리 자동 확대·축소가 사진 배율을 맞춘다
+ * 두 손가락 핀치를 자르기 영역 왼쪽 위·오른쪽 아래 모서리 드래그로 바꿔 [cropImageView]에 전달한다.
+ * 가운데를 기준으로 벌리면 영역이 커지고 오므리면 작아지며, 손을 떼면 라이브러리 자동 확대·축소가 사진 배율을 맞춘다
  */
 private class PinchCropImageLayout(context: Context) : FrameLayout(context) {
     val cropImageView = CropImageView(context)
@@ -212,16 +212,16 @@ private class PinchCropImageLayout(context: Context) : FrameLayout(context) {
                 pinchStartRect = rect
                 pinchScale = 1f
                 pinchDownTime = SystemClock.uptimeMillis()
-                lastCorner = PointF(rect.left, rect.top)
-                dispatchCornerDrag(MotionEvent.ACTION_DOWN, lastCorner)
                 return true
             }
 
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 val rect = pinchStartRect ?: return false
                 pinchScale = (pinchScale * detector.scaleFactor).coerceIn(MIN_PINCH_SCALE, MAX_PINCH_SCALE)
-                lastCorner = PointF(rect.right - rect.width() * pinchScale, rect.bottom - rect.height() * pinchScale)
-                dispatchCornerDrag(MotionEvent.ACTION_MOVE, lastCorner)
+                val dx = rect.width() * (pinchScale - 1) / 2
+                val dy = rect.height() * (pinchScale - 1) / 2
+                dragCorner(to = PointF(rect.left - dx, rect.top - dy)) { PointF(it.left, it.top) }
+                dragCorner(to = PointF(rect.right + dx, rect.bottom + dy)) { PointF(it.right, it.bottom) }
                 return true
             }
 
@@ -257,6 +257,16 @@ private class PinchCropImageLayout(context: Context) : FrameLayout(context) {
         if (pinchStartRect == null) return
         dispatchCornerDrag(MotionEvent.ACTION_UP, lastCorner)
         pinchStartRect = null
+    }
+
+    private fun dragCorner(
+        to: PointF,
+        corner: (RectF) -> PointF,
+    ) {
+        val rect = cropImageView.cropWindowRect ?: return
+        dispatchCornerDrag(MotionEvent.ACTION_DOWN, corner(rect))
+        dispatchCornerDrag(MotionEvent.ACTION_MOVE, to)
+        lastCorner = to
     }
 
     private fun dispatchCornerDrag(
