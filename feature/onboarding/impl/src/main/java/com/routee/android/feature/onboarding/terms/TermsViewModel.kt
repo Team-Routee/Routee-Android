@@ -12,14 +12,12 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @HiltViewModel(assistedFactory = TermsViewModel.Factory::class)
 internal class TermsViewModel @AssistedInject constructor(
@@ -63,9 +61,7 @@ internal class TermsViewModel @AssistedInject constructor(
     fun onBackClick() {
         if (isNavigatingBack) return
         isNavigatingBack = true
-        viewModelScope.launch(NonCancellable) {
-            googleLoginManager.clearCredential().onFailure { e -> Timber.w(e) }
-        }
+        googleLoginManager.clearCredentialInBackground()
         viewModelScope.launch { _sideEffect.send(TermsSideEffect.NavigateBack) }
     }
 
