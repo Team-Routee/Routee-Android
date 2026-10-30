@@ -1,11 +1,9 @@
 package com.routee.android.feature.workout.tracking
 
-import android.Manifest
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -14,6 +12,8 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.TrackWorkoutUseCase
+import com.routee.android.feature.workout.tracking.pause.WorkoutPauseAlarm
+import com.routee.android.feature.workout.tracking.pause.WorkoutPauseNotification
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.Clock
 import javax.inject.Inject
@@ -24,7 +24,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -74,6 +76,7 @@ internal class WorkoutTrackingService : Service() {
                 stopSelfResult(startId)
             }
             scope.launch { updateNotification() }
+            scope.launch { updatePauseAlarm() }
         }
         return START_STICKY
     }
@@ -103,14 +106,22 @@ internal class WorkoutTrackingService : Service() {
             }
         }
         trackingRepository.state.combine(minuteTicks) { state, _ -> state.record }.collect { record ->
-            val isDenied = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            if (isDenied) return@collect
+            if (!canPostNotifications()) return@collect
             NotificationManagerCompat.from(this).notify(
                 WorkoutTrackingNotification.ID,
                 WorkoutTrackingNotification.build(this, record, clock.instant()),
             )
+        }
+    }
+
+    private suspend fun updatePauseAlarm() {
+        trackingRepository.state.map { it.record?.pauseExpiresAt }.distinctUntilChanged().collect { expiresAt ->
+            if (expiresAt != null) {
+                WorkoutPauseAlarm.schedule(this, expiresAt)
+            } else {
+                WorkoutPauseAlarm.cancel(this)
+                WorkoutPauseNotification.cancel(this)
+            }
         }
     }
 
