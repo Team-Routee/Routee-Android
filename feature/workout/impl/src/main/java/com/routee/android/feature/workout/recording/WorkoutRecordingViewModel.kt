@@ -401,7 +401,9 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     private fun navigateHomeWhenPauseExpired() {
         viewModelScope.launch {
             while (!isPauseExpired()) delay(DURATION_TICK_MILLIS)
-            _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+            if (_uiState.value.mode != WorkoutMode.FINISHING) {
+                _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+            }
         }
     }
 
