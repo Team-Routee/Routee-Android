@@ -172,6 +172,18 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
+    /** 화면 재진입, 일시정지 2시간이 지난 기록이면 복구 모달 */
+    fun onScreenResumed() {
+        val state = _uiState.value
+        val isRecoveryHandling = state.isCheckingUnfinishedWorkout || state.recovery != null ||
+            state.isRecoveryInProgress || state.isRecoverySaving || isContinuingRecovery
+        if (isRecoveryHandling) return
+        viewModelScope.launch {
+            val unfinished = getUnfinishedWorkout().onFailure { Timber.e(it, "남은 운동 기록 확인 실패") }.getOrNull()
+            if (unfinished is UnfinishedWorkout.Recoverable) handleUnfinishedWorkout(unfinished)
+        }
+    }
+
     fun onScreenPaused() {
         stopObservingAddress()
     }

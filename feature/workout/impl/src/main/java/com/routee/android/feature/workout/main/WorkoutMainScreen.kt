@@ -124,6 +124,7 @@ internal fun WorkoutMainRoute(
 
     LifecycleResumeEffect(Unit) {
         viewModel.onLocationPermissionChecked(context.locationPermission())
+        viewModel.onScreenResumed()
         onPauseOrDispose { viewModel.onScreenPaused() }
     }
 
