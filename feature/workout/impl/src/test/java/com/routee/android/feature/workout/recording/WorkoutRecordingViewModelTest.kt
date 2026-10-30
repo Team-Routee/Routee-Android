@@ -416,22 +416,51 @@ class WorkoutRecordingViewModelTest {
 
     /**
      * GIVEN: 경로 좌표가 있는 기록 중일 때
-     * WHEN: 사진을 찍으면
-     * THEN: 사진 개수와 지도 마커에 마지막 경로 좌표로 반영한다
+     * WHEN: 사진을 찍고 위치 입력 화면에서 [기록 완료]를 누르면
+     * THEN: 찍을 때의 마지막 경로 좌표와 장소명으로 사진 개수와 지도 마커에 반영한다
      */
     @Test
-    fun `사진을 찍으면 개수와 마커가 늘어난다`() = runTest {
+    fun `사진을 찍고 기록 완료를 누르면 개수와 마커가 늘어난다`() = runTest {
         val tracking = FakeWorkoutTrackingRepository(record()).apply {
             setState(WorkoutTrackingState(record = record(), trackPoints = listOf(trackPoint(1), trackPoint(2))))
         }
-        val viewModel = viewModel(tracking)
+        val photos = FakeWorkoutPhotoRepository()
+        val viewModel = viewModel(tracking, photos = photos)
 
         viewModel.onPhotoTaken("capture-1.jpg", isSaved = true)
+        assertEquals(File("capture-1.jpg").toURI().toString(), viewModel.uiState.value.takenPhoto?.imageUrl)
+        assertEquals(0, viewModel.uiState.value.photoCount)
+        tracking.setState(tracking.state.value.copy(trackPoints = tracking.state.value.trackPoints + trackPoint(3)))
+
+        viewModel.onPhotoLocationComplete("말바위")
 
         val state = viewModel.uiState.value
+        assertNull(state.takenPhoto)
         assertEquals(1, state.photoCount)
         assertEquals(MapPoint(39.0, 127.0), state.photos.single().point)
-        assertEquals(File("capture-1.jpg").toURI().toString(), state.photos.single().imageUrl)
+        assertEquals("말바위", photos.photos.value.single().title)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 사진을 찍어 위치 입력 화면이 떠 있을 때
+     * WHEN: 뒤로 가면
+     * THEN: 카메라 원본 파일을 지우고 사진은 늘지 않는다
+     */
+    @Test
+    fun `위치 입력에서 뒤로 가면 사진을 버린다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository()
+        val tracking = FakeWorkoutTrackingRepository(record()).apply {
+            setState(WorkoutTrackingState(record = record(), trackPoints = listOf(trackPoint(1))))
+        }
+        val viewModel = viewModel(tracking, photos = photos)
+        viewModel.onPhotoTaken("capture-1.jpg", isSaved = true)
+
+        viewModel.onPhotoLocationBack()
+
+        assertNull(viewModel.uiState.value.takenPhoto)
+        assertEquals(listOf(File("capture-1.jpg")), photos.discarded)
+        assertEquals(0, viewModel.uiState.value.photoCount)
         viewModel.close()
     }
 
