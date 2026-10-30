@@ -76,4 +76,8 @@
     <string name="workout_tracking_label_distance">거리(km)</string>
     <string name="workout_tracking_label_duration">시간</string>
     <string name="workout_tracking_label_max_elevation">최고 고도(m)</string>
+
+    <!-- 일시정지 2시간 알림 -->
+    <string name="workout_pause_title">이어서 기록할까요?</string>
+    <string name="workout_pause_text">기록을 멈춘 지 2시간이 지났어요!</string>
 </resources>
