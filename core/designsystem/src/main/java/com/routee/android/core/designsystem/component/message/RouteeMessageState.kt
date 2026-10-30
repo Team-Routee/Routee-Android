@@ -49,8 +49,7 @@ class RouteeMessageState internal constructor(
 
     private var currentResult: CompletableDeferred<RouteeMessageResult>? = null
 
-    // 위치 기준 요소마다, 화면 아래에서 그 요소 위쪽까지 거리(px)
-    internal val anchorBottomOffsets = mutableStateMapOf<Modifier.Node, Int>()
+    internal val anchors = mutableStateMapOf<Modifier.Node, MessageAnchor>()
 
     /**
      * 토스트를 띄운다
