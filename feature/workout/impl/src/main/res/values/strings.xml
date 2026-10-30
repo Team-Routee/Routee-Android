@@ -38,9 +38,9 @@
     <string name="workout_recording_save_failure_confirm">확인</string>
     <string name="workout_recording_camera_a11y">사진 촬영</string>
     <string name="workout_recording_exit_toast">한 번 더 누르면 앱이 닫히며,\n운동 기록은 계속됩니다.</string>
-    <!-- TODO P1 기획: 카메라 앱이 없을 때 모달 (피그마 없음) -->
+    <!-- 카메라 없음 모달 -->
     <string name="workout_recording_camera_unavailable_title">카메라를 사용할 수 없어요</string>
-    <string name="workout_recording_camera_unavailable_description">카메라를 지원하는 기기에서 다시 시도해주세요.</string>
+    <string name="workout_recording_camera_unavailable_description">카메라를 지원하는 기기에서\n다시 시도해주세요.</string>
     <string name="workout_recording_camera_unavailable_confirm">확인</string>
     <!-- TODO P1 기획: 찍은 위치를 알 수 없어 사진을 버릴 때 안내 -->
     <string name="workout_recording_photo_no_location_toast">위치를 확인할 수 없어 사진을 저장하지 못했어요.</string>
