@@ -1,5 +1,6 @@
 package com.routee.android.feature.workout.tracking
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -104,6 +105,7 @@ internal class WorkoutTrackingService : Service() {
         }.onFailure(Timber::e).isSuccess
     }
 
+    @SuppressLint("MissingPermission")
     private suspend fun updateNotification() {
         val minuteTicks = flow {
             while (true) {

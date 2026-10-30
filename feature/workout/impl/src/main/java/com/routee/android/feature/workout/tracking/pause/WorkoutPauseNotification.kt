@@ -1,5 +1,6 @@
 package com.routee.android.feature.workout.tracking.pause
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -13,13 +14,14 @@ internal object WorkoutPauseNotification {
     private const val ID = 1002
 
     /** 알림 표시, 알림 권한이 없으면 무시 */
+    @SuppressLint("MissingPermission")
     fun show(context: Context) {
         if (!context.canPostNotifications()) return
         WorkoutTrackingNotification.createChannel(context)
         val notification = NotificationCompat.Builder(context, WorkoutTrackingNotification.CHANNEL_ID)
             .setSmallIcon(DesignSystemR.drawable.ic_notification_sm_white)
-            .setContentTitle(context.getString(R.string.workout_pause_title))
-            .setContentText(context.getString(R.string.workout_pause_text))
+            .setContentTitle(context.getString(R.string.workout_tracking_pause_expired_title))
+            .setContentText(context.getString(R.string.workout_tracking_pause_expired_text))
             .setContentIntent(WorkoutTrackingNotification.launchIntent(context))
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
