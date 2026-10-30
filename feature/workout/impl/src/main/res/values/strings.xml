@@ -60,6 +60,7 @@
     <string name="workout_recording_photo_close_a11y">닫기</string>
     <string name="workout_recording_photo_location_placeholder">현재 위치를 남겨주세요.</string>
     <string name="workout_recording_photo_location_edit_a11y">장소명 편집</string>
+    <string name="workout_recording_photo_location_complete">기록 완료</string>
     <string name="workout_recording_photo_deleted_snackbar">삭제되었습니다</string>
     <string name="workout_recording_photo_deleted_undo">취소</string>
 
