@@ -36,38 +36,52 @@ class StickerGeometryTest {
 
     /**
      * GIVEN: 오른쪽 아래 핸들을
-     * WHEN: 오른쪽으로 끌면
+     * WHEN: 대각선 바깥으로 끌면
      * THEN: 왼쪽 위를 고정한 채 비율을 유지하며 커진다
      */
     @Test
     fun `오른쪽 아래 핸들은 왼쪽 위를 고정하고 비율을 유지한다`() {
-        val resized = StickerGeometry.resize(STICKER, StickerHandle.BOTTOM_END, Offset(50f, 0f), CANVAS)
+        val resized = StickerGeometry.resize(STICKER, StickerHandle.BOTTOM_END, Offset(50f, 25f), CANVAS)
 
         assertEquals(Rect(Offset(100f, 100f), Size(150f, 75f)), resized)
     }
 
     /**
      * GIVEN: 왼쪽 위 핸들을
-     * WHEN: 오른쪽 아래로 끌면
+     * WHEN: 대각선 안쪽으로 끌면
      * THEN: 오른쪽 아래를 고정한 채 작아진다
      */
     @Test
     fun `왼쪽 위 핸들은 오른쪽 아래를 고정한다`() {
-        val resized = StickerGeometry.resize(STICKER, StickerHandle.TOP_START, Offset(50f, 10f), CANVAS)
+        val resized = StickerGeometry.resize(STICKER, StickerHandle.TOP_START, Offset(50f, 25f), CANVAS)
 
         assertEquals(Rect(Offset(150f, 125f), Size(50f, 25f)), resized)
     }
 
     /**
      * GIVEN: 왼쪽 아래 핸들을
-     * WHEN: 아래로만 끌면
-     * THEN: 오른쪽 위를 고정한 채 높이 변화만큼 커진다
+     * WHEN: 대각선 바깥으로 끌면
+     * THEN: 오른쪽 위를 고정한 채 커진다
      */
     @Test
     fun `왼쪽 아래 핸들은 오른쪽 위를 고정한다`() {
-        val resized = StickerGeometry.resize(STICKER, StickerHandle.BOTTOM_START, Offset(0f, 25f), CANVAS)
+        val resized = StickerGeometry.resize(STICKER, StickerHandle.BOTTOM_START, Offset(-50f, 25f), CANVAS)
 
         assertEquals(Rect(Offset(50f, 100f), Size(150f, 75f)), resized)
+    }
+
+    /**
+     * GIVEN: 오른쪽 아래 핸들을
+     * WHEN: 오른쪽으로 가면서 위로 조금씩 더 끌면
+     * THEN: 크기가 튀지 않고 조금씩 바뀐다
+     */
+    @Test
+    fun `대각선에서 벗어나게 끌어도 크기가 튀지 않는다`() {
+        val widths = (4..8).map { up ->
+            StickerGeometry.resize(STICKER, StickerHandle.BOTTOM_END, Offset(10f, -up.toFloat()), CANVAS).width
+        }
+
+        widths.zipWithNext { before, after -> assertEquals(before, after, 1f) }
     }
 
     /**
