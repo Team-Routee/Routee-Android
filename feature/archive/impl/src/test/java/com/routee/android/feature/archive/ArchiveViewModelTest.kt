@@ -38,11 +38,46 @@ class ArchiveViewModelTest {
         viewModel.onPreviousMonthClick()
         val month = viewModel.uiState.value.selectedMonth
 
+        members.totalCount = 4
         viewModel.onRecordChanged()
 
+        assertEquals(4, viewModel.content().profile.workoutCount)
         assertEquals(2, members.callCount)
         assertEquals(month, viewModel.content().month)
         assertEquals(3, repository.months.size)
+    }
+
+    @Test
+    fun consecutiveDeletionsRefreshCountsAndClearTheLastRecord() = runTest {
+        var recordCount = 2
+        val repository = FakeArchiveRepository { month ->
+            Result.success(
+                if (recordCount == 0) {
+                    emptyList()
+                } else {
+                    listOf(
+                        DailyActivitySummary(month.atDay(12), recordCount * 45, recordCount, null),
+                    )
+                },
+            )
+        }
+        val members = FakeMemberRepository().apply { totalCount = 2 }
+        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(2, viewModel.content().profile.workoutCount)
+        assertEquals(2, viewModel.content().calendarDays.single().recordCount)
+
+        for (remaining in 1 downTo 0) {
+            recordCount = remaining
+            members.totalCount = remaining
+            viewModel.onRecordChanged()
+
+            assertEquals(remaining, viewModel.content().profile.workoutCount)
+            assertEquals(remaining, viewModel.content().calendarDays.sumOf { it.recordCount })
+        }
+
+        assertTrue(viewModel.content().calendarDays.isEmpty())
+        assertTrue(viewModel.content().activityLevels.all { it == MountainActivityLevel.NONE })
+        assertEquals(3, members.callCount)
     }
 
     @Test
@@ -174,12 +209,13 @@ class ArchiveViewModelTest {
 
     private class FakeMemberRepository : MemberRepository {
         var callCount = 0
+        var totalCount = 5
         var error: Exception? = null
 
         override suspend fun getMemberSummary(): Result<MemberSummary> {
             callCount++
             error?.let { return Result.failure(it) }
-            return Result.success(MemberSummary("이름", null, YearMonth.now().minusMonths(2).atDay(1), 70, 5))
+            return Result.success(MemberSummary("이름", null, YearMonth.now().minusMonths(2).atDay(1), 70, totalCount))
         }
     }
 
