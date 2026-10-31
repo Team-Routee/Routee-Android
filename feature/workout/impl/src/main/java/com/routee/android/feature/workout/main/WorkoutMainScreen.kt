@@ -60,6 +60,8 @@ import com.routee.android.feature.workout.main.model.WorkoutMainUiState
 import com.routee.android.feature.workout.main.model.WorkoutRecoveryUiModel
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import com.routee.android.feature.workout.model.captureRouteJpeg
+import com.routee.android.feature.workout.tracking.WorkoutTrackingService
+import com.routee.android.feature.workout.tracking.pause.WorkoutPauseAlarm
 import com.routee.android.feature.workout.tracking.pause.WorkoutPauseNotification
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -130,7 +132,11 @@ internal fun WorkoutMainRoute(
     }
 
     if (uiState.recovery != null) {
-        LaunchedEffect(Unit) { WorkoutPauseNotification.cancel(context) }
+        LaunchedEffect(Unit) {
+            WorkoutTrackingService.stop(context)
+            WorkoutPauseAlarm.cancel(context)
+            WorkoutPauseNotification.cancel(context)
+        }
     }
 
     uiState.recoveryCaptureRoute?.let { route ->
