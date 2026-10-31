@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -28,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.ResultEffect
 import com.routee.android.core.common.util.suspendRunCatching
@@ -65,6 +67,7 @@ import com.routee.android.feature.recordedit.model.StickerType
 
 // recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
+private val ToastAnchorHeight = 48.dp
 
 private const val CAPTURE_WAIT_FRAMES = 2
 
@@ -322,13 +325,18 @@ private fun RecapEditorContent(
                     RecapEditTab.STICKER -> StickerPalette(
                         selectedSticker = uiState.selectedSticker,
                         onStickerClick = onStickerItemClick,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .routeeMessageAnchor(),
+                        modifier = Modifier.align(Alignment.BottomCenter),
                     )
 
                     RecapEditTab.BACKGROUND, null -> Unit
                 }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(ToastAnchorHeight)
+                        .routeeMessageAnchor(),
+                )
             }
             RecapEditNavBar(
                 selectedTab = uiState.selectedTab,
