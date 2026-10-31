@@ -100,6 +100,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         observeTracking()
         observePhotos()
         updateDurationEverySecond()
+        navigateHomeWhenPauseExpired()
     }
 
     /** 카운트다운이 끝나면 시작 API 결과를 기다려 기록 시작, 시작 API 실패는 카운트다운 중에 바로 알림. 복구면 불러온 기록을 다시 시작 */
@@ -396,6 +397,18 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
             }
         }
     }
+
+    private fun navigateHomeWhenPauseExpired() {
+        viewModelScope.launch {
+            while (!isPauseExpired()) delay(DURATION_TICK_MILLIS)
+            if (_uiState.value.mode != WorkoutMode.FINISHING) {
+                _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+            }
+        }
+    }
+
+    private fun isPauseExpired(): Boolean =
+        trackingRepository.state.value.record?.isPauseExpiredAt(clock.instant()) == true
 
     private fun applyTracking(state: WorkoutTrackingState) {
         val record = state.record ?: return
