@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -105,15 +106,30 @@ private fun ArchiveScreen(
     recordMessage: String? = null,
 ) {
     when (val content = uiState.content) {
-        is UiState.Failure, UiState.Empty -> RouteeErrorScreen(
-            type = if (content == UiState.Empty) RouteeErrorType.NotFound else RouteeErrorType.Unknown,
+        is UiState.Failure -> RouteeErrorScreen(
+            type = RouteeErrorType.Unknown,
             onHomeClick = onHomeClick,
             onRetryClick = onRetryClick,
             modifier = modifier.fillMaxSize(),
         )
 
         UiState.Loading -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize()) { RouteeLoadingOverlay() }
+            Box(Modifier.fillMaxSize().statusBarsPadding()) {
+                RouteePageHeader(title = stringResource(R.string.archive_title))
+                RouteeLoadingOverlay()
+            }
+        }
+
+        UiState.Empty -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
+            PullToRefreshBox(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = onRetryClick,
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+            ) {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    RouteePageHeader(title = stringResource(R.string.archive_title))
+                }
+            }
         }
 
         is UiState.Success -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
@@ -191,6 +207,23 @@ private fun ArchiveScreenOfflinePreview() {
     RouteePreviewTheme {
         ArchiveScreen(
             uiState = archivePreviewState().copy(isOffline = true),
+            onPreviousMonthClick = {},
+            onNextMonthClick = {},
+            onRetryClick = {},
+            onDateClick = {},
+            onRecordSheetDismiss = {},
+            onRecordClick = {},
+            onHomeClick = {},
+        )
+    }
+}
+
+@PreviewDeviceSizes
+@Composable
+private fun ArchiveScreenInitialOfflinePreview() {
+    RouteePreviewTheme {
+        ArchiveScreen(
+            uiState = ArchiveUiState(content = UiState.Empty, isOffline = true),
             onPreviousMonthClick = {},
             onNextMonthClick = {},
             onRetryClick = {},
