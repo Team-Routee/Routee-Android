@@ -22,6 +22,7 @@ internal fun TimelinePhotoSection(
     onSaveClick: (Int, ArchivePhoto) -> Unit,
     modifier: Modifier = Modifier,
     savedPhotoIndex: Int = -1,
+    saveMessage: String? = null,
 ) {
     val loaded = (photos as? UiState.Success)?.data.orEmpty()
     val date = remember(loaded, recordDate) {
@@ -33,6 +34,7 @@ internal fun TimelinePhotoSection(
         date = date,
         onSaveClick = { index -> onSaveClick(index, loaded[index]) },
         savedPhotoIndex = savedPhotoIndex,
+        saveMessage = saveMessage,
         isLoading = photos is UiState.Loading,
         modifier = modifier,
     )

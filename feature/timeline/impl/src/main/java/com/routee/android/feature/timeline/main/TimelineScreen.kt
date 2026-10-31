@@ -187,6 +187,7 @@ internal fun TimelineRoute(
                         gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
                     },
                     savedPhotoIndex = gallerySave.savedPhotoIndex,
+                    saveMessage = gallerySave.saveMessage,
                 )
             }
         } else {
