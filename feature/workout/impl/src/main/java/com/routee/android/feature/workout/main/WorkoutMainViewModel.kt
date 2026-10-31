@@ -78,7 +78,7 @@ internal class WorkoutMainViewModel @Inject constructor(
         _uiState.update { it.copy(locationPermission = permission) }
         if (!isPermissionChecked) {
             isPermissionChecked = true
-            if (permission != LocationPermission.GRANTED) guideLocationPermissionOnEntry(permission)
+            if (permission != LocationPermission.GRANTED) guideLocationPermissionOnEntry()
         }
         if (permission == LocationPermission.GRANTED) {
             moveCameraToMyLocationOnce()
@@ -278,9 +278,11 @@ internal class WorkoutMainViewModel @Inject constructor(
     }
 
     // 홈 첫 진입 때 거부한 적 없으면 시스템 팝업, 거부했으면 앱 실행마다 한 번 안내 모달
-    private fun guideLocationPermissionOnEntry(permission: LocationPermission) {
+    private fun guideLocationPermissionOnEntry() {
         viewModelScope.launch {
             val isDenied = permissionRepository.getLocationPermissionDenied().getOrDefault(true)
+            val permission = _uiState.value.locationPermission
+            if (permission == LocationPermission.GRANTED) return@launch
             if (isDenied) {
                 if (permissionRepository.consumeLocationGuideOnLaunch()) showLocationPermissionDialog()
             } else if (permission == LocationPermission.DENIED) {
