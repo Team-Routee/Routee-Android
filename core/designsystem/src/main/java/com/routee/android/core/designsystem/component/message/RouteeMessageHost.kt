@@ -89,13 +89,18 @@ private fun Modifier.toastPosition(
     gap: Dp,
 ): Modifier = layout { measurable, constraints ->
     val horizontal = ToastHorizontalPadding.roundToPx()
-    val anchorBottom = state.anchors.values.filter { it.isActive() }.maxOfOrNull { it.bottomOffset } ?: 0
+    val anchorBottom = toastAnchorBottom(state.anchors.values, constraints.maxHeight)
     val bottom = maxOf(anchorBottom, bottomInsets.getBottom(this)) + gap.roundToPx()
     val placeable = measurable.measure(constraints.offset(horizontal = -horizontal * 2, vertical = -bottom))
     layout(placeable.width + horizontal * 2, placeable.height + bottom) {
         placeable.place(horizontal, 0)
     }
 }
+
+internal fun toastAnchorBottom(anchors: Collection<MessageAnchor>, maxHeight: Int): Int =
+    anchors.filter { it.isActive() }.maxOfOrNull { it.bottomOffset }
+        ?: anchors.filter { it.bottomOffset in 1..maxHeight }.maxOfOrNull { it.bottomOffset }
+        ?: 0
 
 /**
  * 토스트를 이 요소 위에 띄우도록 지정
