@@ -123,7 +123,7 @@ class ArchiveViewModelTest {
     }
 
     @Test
-    fun initialFailureCanBeRetriedAndRestoredMonthIsUsed() = runTest {
+    fun initialOfflineEntryShowsEmptyContentAndCanBeRetried() = runTest {
         val repository = FakeArchiveRepository().apply { error = ApiException.NetworkConnection() }
         val restored = YearMonth.now().minusMonths(1)
         val viewModel = ArchiveViewModel(
@@ -131,8 +131,10 @@ class ArchiveViewModelTest {
             FakeMemberRepository(),
             SavedStateHandle(mapOf("selectedMonth" to restored.toString())),
         )
-        assertTrue(viewModel.uiState.value.content is UiState.Failure)
+        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.uiState.value.isOffline)
         assertFalse(viewModel.uiState.value.isRefreshing)
+        assertEquals(ArchiveSideEffect.NetworkUnavailable, viewModel.sideEffect.first())
 
         repository.error = null
         viewModel.onRetryClick()
@@ -141,13 +143,42 @@ class ArchiveViewModelTest {
         assertTrue(viewModel.uiState.value.content is UiState.Success)
     }
 
+    @Test
+    fun initialMemberNetworkFailureAlsoShowsOfflineContent() = runTest {
+        val members = FakeMemberRepository().apply { error = ApiException.NetworkConnection() }
+        val viewModel = ArchiveViewModel(FakeArchiveRepository(), members, SavedStateHandle())
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.uiState.value.isOffline)
+        assertFalse(viewModel.uiState.value.isRefreshing)
+        assertEquals(ArchiveSideEffect.NetworkUnavailable, viewModel.sideEffect.first())
+
+        members.error = null
+        viewModel.onRetryClick()
+
+        assertTrue(viewModel.uiState.value.content is UiState.Success)
+        assertFalse(viewModel.uiState.value.isOffline)
+    }
+
+    @Test
+    fun nonNetworkFailureStillShowsErrorScreen() = runTest {
+        val repository = FakeArchiveRepository().apply { error = IllegalStateException() }
+        val viewModel = ArchiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
+
+        assertTrue(viewModel.uiState.value.content is UiState.Failure)
+        assertFalse(viewModel.uiState.value.isOffline)
+        assertFalse(viewModel.uiState.value.isRefreshing)
+    }
+
     private fun ArchiveViewModel.content() = (uiState.value.content as UiState.Success<ArchiveContent>).data
 
     private class FakeMemberRepository : MemberRepository {
         var callCount = 0
+        var error: Exception? = null
 
         override suspend fun getMemberSummary(): Result<MemberSummary> {
             callCount++
+            error?.let { return Result.failure(it) }
             return Result.success(MemberSummary("이름", null, YearMonth.now().minusMonths(2).atDay(1), 70, 5))
         }
     }
