@@ -250,12 +250,21 @@ internal class FakeLocationRepository(
     override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(lastLocation)
 }
 
-internal class FakePermissionRepository(var isLocationRequested: Boolean = false) : PermissionRepository {
-    override suspend fun getLocationPermissionRequested(): Result<Boolean> = Result.success(isLocationRequested)
+internal class FakePermissionRepository(
+    var isLocationDenied: Boolean = false,
+    var isLocationGuideShown: Boolean = false,
+) : PermissionRepository {
+    override suspend fun getLocationPermissionDenied(): Result<Boolean> = Result.success(isLocationDenied)
 
-    override suspend fun saveLocationPermissionRequested(): Result<Unit> {
-        isLocationRequested = true
+    override suspend fun saveLocationPermissionDenied(): Result<Unit> {
+        isLocationDenied = true
         return Result.success(Unit)
+    }
+
+    override fun consumeLocationGuideOnLaunch(): Boolean {
+        if (isLocationGuideShown) return false
+        isLocationGuideShown = true
+        return true
     }
 }
 

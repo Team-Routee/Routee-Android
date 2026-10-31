@@ -131,7 +131,6 @@ internal fun WorkoutMainRoute(
         LaunchedEffect(route) { viewModel.onRecoveryMapCaptured(mapState.captureRouteJpeg(route)) }
     }
 
-    // TODO P1 기획: 피그마는 거부 직후 안내, 지금은 운동 기록, 내 위치 탭 때 시스템 팝업을 한 번 더 띄우고(흐름 B) 거부면 안내 (제안)
     val isLocationGranted = uiState.locationPermission == LocationPermission.GRANTED
     WorkoutMainScreen(
         uiState = uiState,
@@ -154,24 +153,9 @@ internal fun WorkoutMainRoute(
     }
 
     if (uiState.isLocationPermissionDialogVisible) {
-        val isApproximate = uiState.locationPermission == LocationPermission.APPROXIMATE
-        // TODO P1 기획: 임시 디자인 (설정으로 이동 버튼이 빨간 글자)
-        // TODO P1 기획: 대략적인 위치 안내 문구
         RouteeTwoButtonDialog(
-            title = stringResource(
-                if (isApproximate) {
-                    R.string.workout_main_precise_location_dialog_title
-                } else {
-                    R.string.workout_main_location_permission_dialog_title
-                },
-            ),
-            description = stringResource(
-                if (isApproximate) {
-                    R.string.workout_main_precise_location_dialog_description
-                } else {
-                    R.string.workout_main_location_permission_dialog_description
-                },
-            ),
+            title = stringResource(R.string.workout_main_location_permission_dialog_title),
+            description = stringResource(R.string.workout_main_location_permission_dialog_description),
             leftButtonText = stringResource(R.string.workout_main_location_permission_dialog_cancel),
             rightButtonText = stringResource(R.string.workout_main_location_permission_dialog_settings),
             onRightButtonClick = {
@@ -184,6 +168,7 @@ internal fun WorkoutMainRoute(
                 )
             },
             onDismissRequest = viewModel::onLocationPermissionDialogDismiss,
+            rightButtonContentColor = RouteeTheme.colors.white,
         )
     }
 }

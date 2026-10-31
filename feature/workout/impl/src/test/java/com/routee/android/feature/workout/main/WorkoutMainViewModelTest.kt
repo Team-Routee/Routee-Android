@@ -30,8 +30,6 @@ import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
@@ -151,19 +149,18 @@ class WorkoutMainViewModelTest {
 
     /**
      * GIVEN: 복구 모달이 떠 있고 위치 권한이 없을 때
-     * WHEN: 이어서 기록을 눌러 시스템 팝업에서 거부하면
+     * WHEN: 이어서 기록을 누르면
      * THEN: 위치 권한 모달을 띄우고, 닫으면 복구 모달로 돌아간다. 기록은 그대로 둔다
      */
     @Test
-    fun `이어서 기록에서 위치 권한을 거부하면 안내 뒤 복구 모달로 돌아간다`() = runTest {
-        permissions.isLocationRequested = true
+    fun `이어서 기록에서 위치 권한이 없으면 안내 뒤 복구 모달로 돌아간다`() = runTest {
+        permissions.isLocationDenied = true
+        permissions.isLocationGuideShown = true
         val tracking = FakeWorkoutTrackingRepository(savedRecord = STOPPED_RECORD)
         val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(STOPPED_RECORD))
         viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
 
         viewModel.onRecoveryContinueClick()
-        assertEquals(WorkoutMainSideEffect.RequestLocationPermission, viewModel.sideEffect.first())
-        viewModel.onLocationPermissionResult(LocationPermission.DENIED)
 
         assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
         assertFalse(viewModel.uiState.value.isRecoveryDialogVisible)
@@ -298,33 +295,38 @@ class WorkoutMainViewModelTest {
     }
 
     /**
-     * GIVEN: 위치 권한을 물어본 적 없을 때
+     * GIVEN: 위치 권한을 거부한 적 없을 때
      * WHEN: 처음 확인한 권한이 거부면
-     * THEN: 시스템 팝업을 요청하고 물어봤다고 남긴다
+     * THEN: 시스템 팝업을 요청하고, 결과가 오기 전에는 거부로 남기지 않는다
      */
     @Test
-    fun `처음 진입에 권한이 없으면 한 번 요청한다`() = runTest {
+    fun `거부한 적 없이 권한이 없으면 진입할 때 요청한다`() = runTest {
         val viewModel = viewModel()
 
         viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
 
         assertEquals(WorkoutMainSideEffect.RequestLocationPermission, viewModel.sideEffect.first())
-        assertTrue(permissions.isLocationRequested)
+        assertFalse(permissions.isLocationDenied)
     }
 
     /**
-     * GIVEN: 이미 위치 권한을 물어봤을 때
-     * WHEN: 권한이 거부면
-     * THEN: 다시 요청하지 않는다
+     * GIVEN: 첫 진입 팝업에서 위치 권한을 거부한 적 있을 때
+     * WHEN: 앱을 다시 열어 홈에 들어오고, 같은 실행에서 탭을 옮겼다 다시 들어오면
+     * THEN: 시스템 팝업 없이 처음 한 번만 안내 모달을 띄운다
      */
     @Test
-    fun `이미 물어봤으면 다시 요청하지 않는다`() = runTest {
-        permissions.isLocationRequested = true
-        val viewModel = viewModel()
+    fun `거부한 적 있으면 앱 실행마다 홈 첫 진입에 한 번 안내 모달을 띄운다`() = runTest {
+        permissions.isLocationDenied = true
+        val first = viewModel()
+        first.onLocationPermissionChecked(LocationPermission.DENIED)
 
-        viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
+        assertTrue(first.uiState.value.isLocationPermissionDialogVisible)
+        assertNull(withTimeoutOrNull(100) { first.sideEffect.first() })
 
-        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+        val second = viewModel()
+        second.onLocationPermissionChecked(LocationPermission.DENIED)
+
+        assertFalse(second.uiState.value.isLocationPermissionDialogVisible)
     }
 
     /**
@@ -342,76 +344,62 @@ class WorkoutMainViewModelTest {
         assertEquals(WorkoutMainSideEffect.FollowMyLocation(from = MapPoint(37.0, 127.0)), viewModel.sideEffect.first())
         assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
         assertEquals("영등포구 의사당대로 1", viewModel.uiState.value.address)
-        assertFalse(permissions.isLocationRequested)
+        assertFalse(permissions.isLocationDenied)
     }
 
     /**
-     * GIVEN: 이미 물어봤고 권한이 없을 때
-     * WHEN: 운동 기록을 눌러 허용하면
-     * THEN: 시스템 팝업을 요청하고, 허용 뒤 내 위치로 옮기고 이어서 알림 권한을 요청한다
+     * GIVEN: 거부한 적 있고 권한이 없을 때
+     * WHEN: 운동 기록이나 내 위치를 누르면
+     * THEN: 시스템 팝업 없이 안내 모달을 띄운다
      */
     @Test
-    fun `운동 기록에서 위치 권한을 허용하면 이어서 알림 권한을 요청한다`() = runTest {
+    fun `권한 없이 운동 기록이나 내 위치를 누르면 안내 모달을 띄운다`() = runTest {
         val viewModel = deniedViewModel()
 
         viewModel.onRecordClick()
-        assertEquals(WorkoutMainSideEffect.RequestLocationPermission, viewModel.sideEffect.first())
+        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+        viewModel.onLocationPermissionDialogDismiss()
+        viewModel.onMyLocationClick()
+
+        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+    }
+
+    /**
+     * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
+     * WHEN: 거부하거나 대략적인 위치만 허용하면
+     * THEN: 안내 모달을 바로 띄우고 거부로 남긴다
+     */
+    @Test
+    fun `첫 진입 요청을 거부하면 안내 모달을 띄우고 거부로 남긴다`() = runTest {
+        listOf(LocationPermission.DENIED, LocationPermission.APPROXIMATE).forEach { result ->
+            permissions.isLocationDenied = false
+            val viewModel = viewModel()
+            viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
+            viewModel.sideEffect.first()
+
+            viewModel.onLocationPermissionResult(result)
+
+            assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+            assertTrue(permissions.isLocationDenied)
+        }
+    }
+
+    /**
+     * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
+     * WHEN: 허용하면 (이번만 허용 포함)
+     * THEN: 거부로 남기지 않아, 권한이 풀리면 다음 진입에 다시 요청한다
+     */
+    @Test
+    fun `첫 진입 요청을 허용하면 거부로 남기지 않는다`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
+        viewModel.sideEffect.first()
+
         viewModel.onLocationPermissionResult(LocationPermission.GRANTED)
 
-        assertEquals(
-            listOf(
-                WorkoutMainSideEffect.FollowMyLocation(from = null),
-                WorkoutMainSideEffect.RequestNotificationPermission,
-            ),
-            viewModel.sideEffect.take(2).toList(),
-        )
-    }
-
-    /**
-     * GIVEN: 이미 물어봤고 권한이 없을 때
-     * WHEN: 운동 기록이나 내 위치를 눌러 거부하면
-     * THEN: 안내 모달을 띄운다
-     */
-    @Test
-    fun `탭해서 요청한 권한을 거부하면 안내 모달을 띄운다`() = runTest {
-        val viewModel = deniedViewModel()
-
-        viewModel.onMyLocationClick()
-        viewModel.onLocationPermissionResult(LocationPermission.DENIED)
-
-        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
-    }
-
-    /**
-     * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
-     * WHEN: 거부하면
-     * THEN: 안내 모달은 띄우지 않는다
-     */
-    @Test
-    fun `첫 진입 요청을 거부하면 안내 모달을 띄우지 않는다`() = runTest {
-        val viewModel = viewModel()
-        viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
-        viewModel.sideEffect.first()
-
-        viewModel.onLocationPermissionResult(LocationPermission.DENIED)
-
         assertFalse(viewModel.uiState.value.isLocationPermissionDialogVisible)
-    }
-
-    /**
-     * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
-     * WHEN: 대략적인 위치만 허용하면
-     * THEN: 정확한 위치 안내 모달을 바로 띄운다
-     */
-    @Test
-    fun `첫 진입 요청에서 대략적인 위치만 허용하면 안내 모달을 띄운다`() = runTest {
-        val viewModel = viewModel()
-        viewModel.onLocationPermissionChecked(LocationPermission.DENIED)
-        viewModel.sideEffect.first()
-
-        viewModel.onLocationPermissionResult(LocationPermission.APPROXIMATE)
-
-        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+        assertFalse(permissions.isLocationDenied)
     }
 
     /**
@@ -448,16 +436,14 @@ class WorkoutMainViewModelTest {
     private suspend fun grantedViewModel(
         tracking: FakeWorkoutTrackingRepository = FakeWorkoutTrackingRepository(),
         records: FakeWorkoutRecordRepository = FakeWorkoutRecordRepository(),
-    ): WorkoutMainViewModel {
-        permissions.isLocationRequested = true
-        return viewModel(tracking, records).apply {
-            onLocationPermissionChecked(LocationPermission.GRANTED)
-            sideEffect.first()
-        }
+    ): WorkoutMainViewModel = viewModel(tracking, records).apply {
+        onLocationPermissionChecked(LocationPermission.GRANTED)
+        sideEffect.first()
     }
 
     private fun deniedViewModel(): WorkoutMainViewModel {
-        permissions.isLocationRequested = true
+        permissions.isLocationDenied = true
+        permissions.isLocationGuideShown = true
         return viewModel().apply { onLocationPermissionChecked(LocationPermission.DENIED) }
     }
 
