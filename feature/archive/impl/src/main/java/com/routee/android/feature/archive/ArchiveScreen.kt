@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +26,9 @@ import com.routee.android.core.designsystem.component.RouteeMonthControl
 import com.routee.android.core.designsystem.component.RouteeMonthControlSize
 import com.routee.android.core.designsystem.component.RouteePageHeader
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessage
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
+import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -59,17 +62,25 @@ internal fun ArchiveRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ResultEffect<ArchiveRecordChanged> { viewModel.onRecordChanged() }
     val messages = LocalRouteeMessageState.current
+    val sheetMessages = rememberRouteeMessageState()
+    val isSheetVisible = uiState.selectedDate != null && uiState.records.size > 1
+    LaunchedEffect(isSheetVisible) {
+        if (!isSheetVisible) sheetMessages.dismiss()
+    }
     val networkMessage = stringResource(R.string.archive_network_unavailable)
     val loadFailedMessage = stringResource(R.string.archive_record_load_failed)
     viewModel.sideEffect.CollectSideEffect { effect ->
+        val state = viewModel.uiState.value
+        val target = if (state.selectedDate != null && state.records.size > 1) sheetMessages else messages
         when (effect) {
-            ArchiveSideEffect.NetworkUnavailable -> messages.showToast(networkMessage, RouteeMessageDuration.LONG)
-            ArchiveSideEffect.RecordLoadFailed -> messages.showToast(loadFailedMessage)
+            ArchiveSideEffect.NetworkUnavailable -> target.showToast(networkMessage, RouteeMessageDuration.LONG)
+            ArchiveSideEffect.RecordLoadFailed -> target.showToast(loadFailedMessage)
             is ArchiveSideEffect.NavigateToDetail -> onRecordClick(effect.activityId)
         }
     }
     ArchiveScreen(
         uiState = uiState,
+        recordMessage = (sheetMessages.currentMessage as? RouteeMessage.Toast)?.text,
         onPreviousMonthClick = viewModel::onPreviousMonthClick,
         onNextMonthClick = viewModel::onNextMonthClick,
         onRetryClick = viewModel::onRetryClick,
@@ -91,6 +102,7 @@ private fun ArchiveScreen(
     onRecordClick: (Long) -> Unit,
     onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
+    recordMessage: String? = null,
 ) {
     when (val content = uiState.content) {
         is UiState.Failure, UiState.Empty -> RouteeErrorScreen(
@@ -147,6 +159,7 @@ private fun ArchiveScreen(
                 RecordBottomSheet(
                     date = date.format(SheetDateFormatter),
                     records = uiState.records,
+                    message = recordMessage,
                     onRecordClick = onRecordClick,
                     onDismissRequest = onRecordSheetDismiss,
                 )
