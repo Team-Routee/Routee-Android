@@ -45,6 +45,7 @@ internal data class WorkoutRecordingUiState(
     val openedPhoto: OpenedPhoto? = null,
     val isPhotoDeletePending: Boolean = false,
     val isCameraUnavailable: Boolean = false,
+    val isLocationServiceDialogVisible: Boolean = false,
     val saveFailure: WorkoutSaveFailure? = null,
     // 종료 지도 캡처 요청, 캡처를 받으면 null. 화면이 다시 만들어져도 남아서 다시 캡처
     val captureRoute: ImmutableList<MapPoint>? = null,

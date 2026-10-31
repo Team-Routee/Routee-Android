@@ -46,6 +46,10 @@
     <string name="workout_recording_camera_unavailable_title">카메라를 사용할 수 없어요</string>
     <string name="workout_recording_camera_unavailable_description">카메라를 지원하는 기기에서 다시 시도해주세요.</string>
     <string name="workout_recording_camera_unavailable_confirm">확인</string>
+    <string name="workout_recording_location_service_title">위치 서비스가 꺼져 있어요</string>
+    <string name="workout_recording_location_service_description">운동 시간은 계속 기록되지만,\n위치 서비스를 켜기 전까지\n경로와 거리는 기록되지 않아요.</string>
+    <string name="workout_recording_location_service_confirm">확인</string>
+    <string name="workout_recording_location_service_settings">설정 이동</string>
     <!-- TODO P1 기획: 찍은 위치를 알 수 없어 사진을 버릴 때 안내 -->
     <string name="workout_recording_photo_no_location_toast">위치를 확인할 수 없어 사진을 저장하지 못했어요.</string>
     <!-- TODO P1 기획: 사진 저장 실패 안내 -->
