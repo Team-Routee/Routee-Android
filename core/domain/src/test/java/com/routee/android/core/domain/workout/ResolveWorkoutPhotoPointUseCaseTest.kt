@@ -7,7 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class GetWorkoutPhotoPointUseCaseTest {
+class ResolveWorkoutPhotoPointUseCaseTest {
     /**
      * GIVEN: 경로 좌표가 쌓인 기록 중일 때
      * WHEN: 사진 좌표를 정하면
@@ -58,7 +58,7 @@ class GetWorkoutPhotoPointUseCaseTest {
     private suspend fun getPoint(
         tracking: FakePhotoTrackingRepository,
         lastLocation: DeviceLocation? = null,
-    ) = GetWorkoutPhotoPointUseCase(
+    ) = ResolveWorkoutPhotoPointUseCase(
         trackingRepository = tracking,
         locationRepository = FakeLastLocationRepository(lastLocation),
     )()

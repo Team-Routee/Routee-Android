@@ -6,7 +6,7 @@ import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import javax.inject.Inject
 
 /** 찍은 사진을 연결할 경로 좌표, 카메라가 돌아왔을 때 정함 */
-class GetWorkoutPhotoPointUseCase @Inject constructor(
+class ResolveWorkoutPhotoPointUseCase @Inject constructor(
     private val trackingRepository: WorkoutTrackingRepository,
     private val locationRepository: LocationRepository,
 ) {

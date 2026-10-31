@@ -6,7 +6,7 @@ import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
-import com.routee.android.core.domain.workout.GetWorkoutPhotoPointUseCase
+import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
 import com.routee.android.feature.workout.FakeLocationRepository
@@ -416,11 +416,11 @@ class WorkoutRecordingViewModelTest {
 
     /**
      * GIVEN: 경로 좌표가 있는 기록 중일 때
-     * WHEN: 사진을 찍고 위치 입력 화면에서 [기록 완료]를 누르면
+     * WHEN: 사진을 찍고 위치 입력을 마치면
      * THEN: 찍을 때의 마지막 경로 좌표와 장소명으로 사진 개수와 지도 마커에 반영한다
      */
     @Test
-    fun `사진을 찍고 기록 완료를 누르면 개수와 마커가 늘어난다`() = runTest {
+    fun `사진을 찍고 위치 입력을 마치면 개수와 마커가 늘어난다`() = runTest {
         val tracking = FakeWorkoutTrackingRepository(record()).apply {
             setState(WorkoutTrackingState(record = record(), trackPoints = listOf(trackPoint(1), trackPoint(2))))
         }
@@ -631,7 +631,7 @@ class WorkoutRecordingViewModelTest {
             remoteRepository = remote,
             photoRepository = photos,
         ),
-        getWorkoutPhotoPoint = GetWorkoutPhotoPointUseCase(
+        resolveWorkoutPhotoPoint = ResolveWorkoutPhotoPointUseCase(
             trackingRepository = tracking,
             locationRepository = location,
         ),

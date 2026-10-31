@@ -14,7 +14,7 @@ import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
-import com.routee.android.core.domain.workout.GetWorkoutPhotoPointUseCase
+import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
@@ -68,7 +68,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
-    private val getWorkoutPhotoPoint: GetWorkoutPhotoPointUseCase,
+    private val resolveWorkoutPhotoPoint: ResolveWorkoutPhotoPointUseCase,
     private val addWorkoutPhoto: AddWorkoutPhotoUseCase,
     private val photoRepository: WorkoutPhotoRepository,
     private val locationRepository: LocationRepository,
@@ -159,7 +159,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 photoRepository.discardCaptureFile(file)
                 return@launch
             }
-            val point = getWorkoutPhotoPoint() ?: run {
+            val point = resolveWorkoutPhotoPoint() ?: run {
                 photoRepository.discardCaptureFile(file)
                 _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoNoLocation)
                 return@launch

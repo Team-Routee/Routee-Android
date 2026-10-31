@@ -17,7 +17,7 @@ class AddWorkoutPhotoUseCase @Inject constructor(
 ) {
     /**
      * @param original 카메라 원본, 추가하지 못해도 삭제
-     * @param point    찍을 때 정한 경로 좌표 ([GetWorkoutPhotoPointUseCase])
+     * @param point    찍을 때 정한 경로 좌표 ([ResolveWorkoutPhotoPointUseCase])
      * @param title    장소명, 비어 있어도 됨
      */
     suspend operator fun invoke(
