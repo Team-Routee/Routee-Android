@@ -1,5 +1,9 @@
 package com.routee.android.core.designsystem.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.routee.android.core.designsystem.R
+import com.routee.android.core.designsystem.component.message.RouteeToast
 import com.routee.android.core.designsystem.component.skeleton.skeleton
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -34,6 +42,7 @@ data class RouteeTimelinePhoto(val imageUrl: String?, val location: String?)
  * @param onSaveClick 현재 사진 인덱스 전달. null이면 저장 버튼을 숨김
  * @param savedPhotoIndex 저장 완료 표시할 사진 인덱스
  * @param isLoading true 이면 사진 대신 스켈레톤 카드 표시
+ * @param saveMessage 사진 내부 하단에 표시할 저장 결과 문구
  */
 @Composable
 fun RouteePhotoTimelineSection(
@@ -43,6 +52,7 @@ fun RouteePhotoTimelineSection(
     onSaveClick: ((Int) -> Unit)? = null,
     savedPhotoIndex: Int? = null,
     isLoading: Boolean = false,
+    saveMessage: String? = null,
 ) {
     if (photos.isEmpty() && !isLoading) return
     val pagerState = rememberPagerState(pageCount = { photos.size })
@@ -64,18 +74,36 @@ fun RouteePhotoTimelineSection(
             Box(Modifier.fillMaxWidth().aspectRatio(1f).skeleton(RectangleShape))
             return@Column
         }
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-        ) { page ->
-            val photo = photos[page]
-            RouteePhotoTimelineCard(
-                imageUrl = photo.imageUrl,
-                location = photo.location,
-                isSaved = savedPhotoIndex == page,
-                onSaveClick = onSaveClick?.let { save -> { save(page) } },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.matchParentSize(),
+            ) { page ->
+                val photo = photos[page]
+                RouteePhotoTimelineCard(
+                    imageUrl = photo.imageUrl,
+                    location = photo.location,
+                    isSaved = savedPhotoIndex == page,
+                    onSaveClick = onSaveClick?.let { save -> { save(page) } },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            AnimatedContent(
+                targetState = saveMessage,
+                contentAlignment = Alignment.BottomCenter,
+                transitionSpec = { (fadeIn() togetherWith fadeOut()).using(sizeTransform = null) },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(
+                        start = RouteeTheme.spacing.Spacing24,
+                        end = RouteeTheme.spacing.Spacing24,
+                        bottom = RouteeTheme.spacing.Spacing16,
+                    )
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                label = "PhotoSaveMessage",
+            ) { text ->
+                if (text != null) RouteeToast(text = text)
+            }
         }
         if (photos.size > 1) {
             Spacer(Modifier.height(RouteeTheme.spacing.Spacing12))
@@ -106,6 +134,19 @@ private fun RouteePhotoTimelineSectionLoadingPreview() {
             photos = emptyList(),
             date = "2026.03.12",
             isLoading = true,
+        )
+    }
+}
+
+@PreviewFontSizes
+@Composable
+private fun RouteePhotoTimelineSectionSaveMessagePreview() {
+    RouteeTheme {
+        RouteePhotoTimelineSection(
+            photos = listOf(RouteeTimelinePhoto(null, "창의문")),
+            date = "2026.03.12",
+            onSaveClick = {},
+            saveMessage = "갤러리 저장에 실패했습니다.",
         )
     }
 }
