@@ -240,6 +240,29 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 경로 좌표가 1개뿐인 기록으로 복구 모달이 떠 있을 때
+     * WHEN: 종료 후 저장을 누르고 캡처를 받으면
+     * THEN: 토스트 대신 기록 등록 실패 모달을 띄우고 기기 기록을 지운다
+     */
+    @Test
+    fun `종료 후 저장에서 경로가 부족하면 기록 등록 실패 모달`() = runTest {
+        val tracking =
+            FakeWorkoutTrackingRepository(savedRecord = STOPPED_RECORD, savedTrackPoints = listOf(trackPoint(1)))
+        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(STOPPED_RECORD))
+        viewModel.onRecoverySaveClick()
+
+        viewModel.onRecoveryMapCaptured(byteArrayOf(1))
+
+        assertTrue(viewModel.uiState.value.isInvalidRouteDialogVisible)
+        assertTrue(tracking.isCleared)
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+
+        viewModel.onInvalidRouteDialogDismiss()
+
+        assertFalse(viewModel.uiState.value.isInvalidRouteDialogVisible)
+    }
+
+    /**
      * GIVEN: 종료 저장에 실패한 기록이 기기에 남았을 때
      * WHEN: 운동 메인에 다시 들어오면
      * THEN: 다시 보내지 않고 복구 모달을 띄운다

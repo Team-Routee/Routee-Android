@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeCtaPrimaryButton
 import com.routee.android.core.designsystem.component.dialog.RouteeDraftDialog
+import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
@@ -150,6 +151,16 @@ internal fun WorkoutMainRoute(
             onSaveClick = viewModel::onRecoverySaveClick,
             onContinueClick = viewModel::onRecoveryContinueClick,
             onDiscardClick = viewModel::onRecoveryDiscardClick,
+        )
+    }
+
+    if (uiState.isInvalidRouteDialogVisible) {
+        RouteeOneButtonDialog(
+            title = stringResource(R.string.workout_recording_save_failure_title),
+            description = stringResource(R.string.workout_recording_save_failure_invalid_route_description),
+            buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
+            onButtonClick = viewModel::onInvalidRouteDialogDismiss,
+            onDismissRequest = viewModel::onInvalidRouteDialogDismiss,
         )
     }
 

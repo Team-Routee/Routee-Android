@@ -181,6 +181,11 @@ internal class WorkoutMainViewModel @Inject constructor(
         _uiState.update { it.copy(isLocationPermissionDialogVisible = true) }
     }
 
+    /** 종료 후 저장 기록 등록 실패 모달 닫기 */
+    fun onInvalidRouteDialogDismiss() {
+        _uiState.update { it.copy(isInvalidRouteDialogVisible = false) }
+    }
+
     /** 위치 권한 안내 모달 닫기, 복구 중이었으면 복구 모달로 돌아감 */
     fun onLocationPermissionDialogDismiss() {
         isContinuingRecovery = false
@@ -253,21 +258,24 @@ internal class WorkoutMainViewModel @Inject constructor(
         _uiState.update { it.copy(isRecoverySaving = true, recoveryCaptureRoute = route) }
     }
 
+    // 경로가 2점 미만이라 저장할 수 없으면 기록 등록 실패 모달, 기기 기록은 이미 지워짐
     private suspend fun showRecoverySaveResult(result: WorkoutSaveResult) {
         _uiState.update { it.copy(isRecoverySaving = false) }
-        showSaveResultToast(result)
+        when (result) {
+            WorkoutSaveResult.Saved, WorkoutSaveResult.PhotosMissing -> {
+                _sideEffect.send(WorkoutMainSideEffect.ShowRecoverySaved)
+            }
+
+            WorkoutSaveResult.InvalidRoute -> _uiState.update { it.copy(isInvalidRouteDialogVisible = true) }
+
+            else -> {
+                Timber.w("운동 기록 저장 실패: $result")
+                _sideEffect.send(WorkoutMainSideEffect.ShowRecoverySaveFailed)
+            }
+        }
         if (_uiState.value.locationPermission == LocationPermission.GRANTED) {
             _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null))
         }
-    }
-
-    // TODO P1 기획: 경로가 2점 미만이라 저장할 수 없을 때도 실패 토스트
-    private suspend fun showSaveResultToast(result: WorkoutSaveResult) {
-        val isSaved = result == WorkoutSaveResult.Saved || result == WorkoutSaveResult.PhotosMissing
-        if (!isSaved) Timber.w("운동 기록 저장 실패: $result")
-        _sideEffect.send(
-            if (isSaved) WorkoutMainSideEffect.ShowRecoverySaved else WorkoutMainSideEffect.ShowRecoverySaveFailed,
-        )
     }
 
     // 설치 후 첫 진입에만 시스템 팝업. 거부 안내 모달은 운동 기록, 내 위치를 누를 때만

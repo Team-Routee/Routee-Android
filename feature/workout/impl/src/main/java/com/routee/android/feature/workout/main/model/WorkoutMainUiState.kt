@@ -14,6 +14,8 @@ internal data class WorkoutMainUiState(
     val isRecoverySaving: Boolean = false,
     // 종료 후 저장 지도 캡처 요청, 캡처를 받으면 null
     val recoveryCaptureRoute: ImmutableList<MapPoint>? = null,
+    // 종료 후 저장에서 경로가 2점 미만이라 기록 등록 실패 모달
+    val isInvalidRouteDialogVisible: Boolean = false,
     // 복구 모달에서 이어서 기록, X를 눌러 처리 중, 모달을 내림
     val isRecoveryInProgress: Boolean = false,
     // 진입 때 남은 기록 확인 중이면 true, 새 기록이 남은 기록과 겹치지 않게 운동 기록 비활성화
