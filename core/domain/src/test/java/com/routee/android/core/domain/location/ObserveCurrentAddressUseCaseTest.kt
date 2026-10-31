@@ -64,6 +64,8 @@ class ObserveCurrentAddressUseCaseTest {
     private class FakeLocationRepository(private val flow: Flow<DeviceLocation>) : LocationRepository {
         override fun observeLocations(): Flow<DeviceLocation> = flow
 
+        override fun observeLocationEnabled(): Flow<Boolean> = flowOf(true)
+
         override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(null)
     }
 

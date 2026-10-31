@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -131,6 +132,8 @@ class TrackWorkoutUseCaseTest {
         val flow = MutableSharedFlow<DeviceLocation>(extraBufferCapacity = 16)
 
         override fun observeLocations(): Flow<DeviceLocation> = flow
+
+        override fun observeLocationEnabled(): Flow<Boolean> = flowOf(true)
 
         override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(null)
     }

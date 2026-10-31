@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 
 internal val START: Instant = Instant.ofEpochMilli(1_000_000)
 
@@ -243,6 +244,8 @@ internal class FakeLocationRepository(
     private val lastLocation: DeviceLocation? = null,
 ) : LocationRepository {
     override fun observeLocations(): Flow<DeviceLocation> = locations
+
+    override fun observeLocationEnabled(): Flow<Boolean> = flowOf(true)
 
     override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(lastLocation)
 }
