@@ -3,6 +3,7 @@ package com.routee.android.feature.timeline.main
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +36,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -53,6 +56,7 @@ import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.RouteeWorkoutMetricCard
 import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.component.textfield.RouteeBasicTextField
 import com.routee.android.core.designsystem.component.textfield.RouteeRecordSummaryTextField
 import com.routee.android.core.designsystem.extension.clearFocus
@@ -244,80 +248,89 @@ private fun TimelineScreen(
     myRoute: (@Composable () -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    var buttonAreaHeight by remember { mutableStateOf(0.dp) }
     RouteeBgEllipse(modifier = modifier) {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            RouteePageNavBar(
-                onBackClick = onBackClick,
-                modifier = Modifier.fillMaxWidth(),
-                actions = {
-                    Text(
-                        text = stringResource(R.string.timeline_complete),
-                        style = RouteeTheme.typography.labelSb18,
-                        color = RouteeTheme.colors.white,
-                        modifier = Modifier
-                            .noRippleClickable(onClick = onCompleteClick)
-                            .semantics { role = Role.Button }
-                            .padding(
-                                horizontal = RouteeTheme.spacing.Spacing16,
-                                vertical = RouteeTheme.spacing.Spacing10,
-                            ),
-                    )
-                },
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .navigationBarsPadding()
-                    .imePadding()
-                    .verticalScroll(rememberScrollState())
-                    .clearFocus(focusManager, onOutsideClick),
-            ) {
+        Box(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                RouteePageNavBar(
+                    onBackClick = onBackClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    actions = {
+                        Text(
+                            text = stringResource(R.string.timeline_complete),
+                            style = RouteeTheme.typography.labelSb18,
+                            color = RouteeTheme.colors.white,
+                            modifier = Modifier
+                                .noRippleClickable(onClick = onCompleteClick)
+                                .semantics { role = Role.Button }
+                                .padding(
+                                    horizontal = RouteeTheme.spacing.Spacing16,
+                                    vertical = RouteeTheme.spacing.Spacing10,
+                                ),
+                        )
+                    },
+                )
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = RouteeTheme.spacing.Spacing16),
+                        .weight(1f)
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .clearFocus(focusManager, onOutsideClick),
                 ) {
-                    RouteeRecordSummaryTextField(
-                        state = titleState,
-                        defaultTitle = defaultTitle,
-                        isEditing = isTitleEditing,
-                        onEditClick = onEditTitleClick,
-                        onEditComplete = onTitleEditFinish,
-                    )
-                    Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
-                    RouteeWorkoutMetricCard(
-                        distance = uiState.distance,
-                        duration = uiState.duration,
-                        maxElevation = uiState.maxElevation,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    if (routeMap != null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    ) {
+                        RouteeRecordSummaryTextField(
+                            state = titleState,
+                            defaultTitle = defaultTitle,
+                            isEditing = isTitleEditing,
+                            onEditClick = onEditTitleClick,
+                            onEditComplete = onTitleEditFinish,
+                        )
                         Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
-                        routeMap()
+                        RouteeWorkoutMetricCard(
+                            distance = uiState.distance,
+                            duration = uiState.duration,
+                            maxElevation = uiState.maxElevation,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (routeMap != null) {
+                            Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
+                            routeMap()
+                        }
                     }
-                }
-                if (photoSection != null || myRoute != null) {
-                    Spacer(Modifier.height(SectionTopSpacing))
-                }
-                photoSection?.invoke()
-                if (photoSection != null && myRoute != null) {
-                    Spacer(Modifier.height(SectionSpacing))
-                }
-                if (myRoute != null) {
-                    Column(modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16)) {
-                        myRoute()
+                    if (photoSection != null || myRoute != null) {
+                        Spacer(Modifier.height(SectionTopSpacing))
                     }
+                    photoSection?.invoke()
+                    if (photoSection != null && myRoute != null) {
+                        Spacer(Modifier.height(SectionSpacing))
+                    }
+                    if (myRoute != null) {
+                        Column(modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16)) {
+                            myRoute()
+                        }
+                    }
+                    Spacer(Modifier.height(CtaTopSpacing + buttonAreaHeight))
                 }
-                Spacer(Modifier.height(CtaTopSpacing))
-                RouteeCtaPrimaryButton(
-                    text = stringResource(R.string.timeline_edit_record),
-                    onClick = onRecordEditClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = RouteeTheme.spacing.Spacing16),
-                )
-                Spacer(Modifier.height(BottomSpacing))
             }
+            RouteeCtaPrimaryButton(
+                text = stringResource(R.string.timeline_edit_record),
+                onClick = onRecordEditClick,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .onSizeChanged { buttonAreaHeight = with(density) { it.height.toDp() } }
+                    .routeeMessageAnchor()
+                    .padding(
+                        start = RouteeTheme.spacing.Spacing16,
+                        end = RouteeTheme.spacing.Spacing16,
+                        bottom = BottomSpacing,
+                    ),
+            )
         }
     }
 }
