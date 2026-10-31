@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -88,7 +89,7 @@ private fun Modifier.toastPosition(
     gap: Dp,
 ): Modifier = layout { measurable, constraints ->
     val horizontal = ToastHorizontalPadding.roundToPx()
-    val anchorBottom = state.anchorBottomOffsets.values.maxOrNull() ?: 0
+    val anchorBottom = state.anchors.values.filter { it.isActive() }.maxOfOrNull { it.bottomOffset } ?: 0
     val bottom = maxOf(anchorBottom, bottomInsets.getBottom(this)) + gap.roundToPx()
     val placeable = measurable.measure(constraints.offset(horizontal = -horizontal * 2, vertical = -bottom))
     layout(placeable.width + horizontal * 2, placeable.height + bottom) {
@@ -103,6 +104,25 @@ private fun Modifier.toastPosition(
  * 다이얼로그 · 바텀시트 안에서는 쓰지 않는다 (별도 창이라 위치가 맞지 않음)
  */
 fun Modifier.routeeMessageAnchor(): Modifier = this then MessageAnchorElement
+
+/**
+ * 이 영역의 [routeeMessageAnchor]를 토스트 위치 계산에 쓸지 정하는 값
+ *
+ * 화면 전환으로 사라지는 중인 화면은 false 를 돌려주게 제공한다
+ *
+ * ```kotlin
+ * val scope = LocalNavAnimatedContentScope.current
+ * CompositionLocalProvider(
+ *     LocalRouteeMessageAnchorActive provides { scope.transition.targetState != EnterExitState.PostExit },
+ * ) { content() }
+ * ```
+ */
+val LocalRouteeMessageAnchorActive = staticCompositionLocalOf<() -> Boolean> { { true } }
+
+internal class MessageAnchor(
+    val bottomOffset: Int,
+    val isActive: () -> Boolean,
+)
 
 private data object MessageAnchorElement : ModifierNodeElement<MessageAnchorNode>() {
     override fun create() = MessageAnchorNode()
@@ -120,15 +140,15 @@ private class MessageAnchorNode :
         val messageState = state ?: currentValueOf(LocalRouteeMessageState).also { state = it }
         val rootHeight = coordinates.findRootCoordinates().size.height
         val bottomOffset = rootHeight - coordinates.positionInRoot().y.toInt()
-        if (messageState.anchorBottomOffsets[this] !=
-            bottomOffset
-        ) {
-            messageState.anchorBottomOffsets[this] = bottomOffset
+        val isActive = currentValueOf(LocalRouteeMessageAnchorActive)
+        val anchor = messageState.anchors[this]
+        if (anchor?.bottomOffset != bottomOffset || anchor.isActive !== isActive) {
+            messageState.anchors[this] = MessageAnchor(bottomOffset = bottomOffset, isActive = isActive)
         }
     }
 
     override fun onDetach() {
-        state?.anchorBottomOffsets?.remove(this)
+        state?.anchors?.remove(this)
         state = null
     }
 }

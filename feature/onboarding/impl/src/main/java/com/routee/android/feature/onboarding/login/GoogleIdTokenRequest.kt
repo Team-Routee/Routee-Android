@@ -1,9 +1,6 @@
 package com.routee.android.feature.onboarding.login
 
 import android.app.Activity
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -15,7 +12,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.routee.android.feature.onboarding.BuildConfig
 
-internal suspend fun Activity.requestGoogleIdToken(): Result<String> {
+internal suspend fun Activity.requestGoogleIdToken(isConnected: suspend () -> Boolean): Result<String> {
     return try {
         val credential = CredentialManager.create(this)
             .getCredential(this, googleIdRequest())
@@ -28,15 +25,15 @@ internal suspend fun Activity.requestGoogleIdToken(): Result<String> {
         Result.success(GoogleIdTokenCredential.createFrom(credential.data).idToken)
     } catch (e: GetCredentialCancellationException) {
         Result.failure(
-            if (isNetworkAvailable()) GoogleLoginException.Cancelled(e) else GoogleLoginException.NetworkUnavailable(e),
+            if (isConnected()) GoogleLoginException.Cancelled(e) else GoogleLoginException.NetworkUnavailable(e),
         )
     } catch (e: NoCredentialException) {
         Result.failure(
-            if (isNetworkAvailable()) GoogleLoginException.NoAccount(e) else GoogleLoginException.NetworkUnavailable(e),
+            if (isConnected()) GoogleLoginException.NoAccount(e) else GoogleLoginException.NetworkUnavailable(e),
         )
     } catch (e: GetCredentialException) {
         Result.failure(
-            if (isNetworkAvailable()) GoogleLoginException.Failed(e) else GoogleLoginException.NetworkUnavailable(e),
+            if (isConnected()) GoogleLoginException.Failed(e) else GoogleLoginException.NetworkUnavailable(e),
         )
     } catch (e: GoogleIdTokenParsingException) {
         Result.failure(GoogleLoginException.Failed(e))
@@ -50,10 +47,3 @@ private fun googleIdRequest(): GetCredentialRequest = GetCredentialRequest.Build
         GetSignInWithGoogleOption.Builder(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID).build(),
     )
     .build()
-
-private fun Context.isNetworkAvailable(): Boolean {
-    val connectivityManager = getSystemService(ConnectivityManager::class.java) ?: return false
-    val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork) ?: return false
-    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-}

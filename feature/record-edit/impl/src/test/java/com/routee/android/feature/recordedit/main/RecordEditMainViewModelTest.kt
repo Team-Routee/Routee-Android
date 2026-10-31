@@ -1,10 +1,13 @@
 package com.routee.android.feature.recordedit.main
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import com.routee.android.core.data.member.exception.MemberException
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
+import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.model.ActivityRecap
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeConnectivityRepository
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.main.model.RecordEditMainSideEffect
@@ -14,8 +17,10 @@ import java.time.YearMonth
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -28,9 +33,10 @@ class RecordEditMainViewModelTest {
 
     private val recapRepository = FakeRecapRepository()
     private val memberRepository = FakeMemberRepository()
+    private val connectivityRepository = FakeConnectivityRepository()
 
     private fun createViewModel() =
-        RecordEditMainViewModel(recapRepository, memberRepository)
+        RecordEditMainViewModel(recapRepository, memberRepository, connectivityRepository)
 
     @Test
     fun `가입 월을 불러오면 그달에서 이전 달 이동이 막힌다`() {
@@ -84,6 +90,75 @@ class RecordEditMainViewModelTest {
 
         assertEquals(UiState.Empty, viewModel.uiState.value.recaps)
         assertEquals(YearMonth.from(memberRepository.joinDate), viewModel.uiState.value.joinedMonth)
+    }
+
+    @Test
+    fun `네트워크가 끊긴 채 들어오면 빈 상태와 네트워크 토스트를 보여준다`() = runTest {
+        connectivityRepository.connected = false
+
+        val viewModel = createViewModel()
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.recaps)
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+        assertTrue(recapRepository.requestedMonths.isEmpty())
+    }
+
+    @Test
+    fun `목록 조회가 네트워크 오류로 실패하면 빈 상태와 네트워크 토스트를 보여준다`() = runTest {
+        recapRepository.error = RecapException.NetworkUnavailable(null)
+
+        val viewModel = createViewModel()
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.recaps)
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+    }
+
+    @Test
+    fun `가입 월 조회가 네트워크 오류로 실패하면 빈 상태와 네트워크 토스트를 보여준다`() = runTest {
+        memberRepository.error = MemberException.NetworkUnavailable(null)
+
+        val viewModel = createViewModel()
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.recaps)
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+    }
+
+    @Test
+    fun `네트워크가 끊긴 뒤 달을 옮기면 빈 상태와 네트워크 토스트를 보여준다`() = runTest {
+        memberRepository.joinDate = LocalDate.now().minusYears(1)
+        val viewModel = createViewModelWithRecap()
+        val requestedMonths = recapRepository.requestedMonths.toList()
+        connectivityRepository.connected = false
+
+        viewModel.onPreviousMonthClick()
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.recaps)
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+        assertEquals(requestedMonths, recapRepository.requestedMonths)
+    }
+
+    @Test
+    fun `네트워크가 끊긴 뒤 기록을 누르면 편집 화면 대신 네트워크 토스트를 보여준다`() = runTest {
+        val viewModel = createViewModelWithRecap()
+        connectivityRepository.connected = false
+
+        viewModel.onRecapClick(1L)
+
+        assertEquals(RecordEditMainSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+        assertNull(withTimeoutOrNull(1_000) { viewModel.sideEffect.first() })
+    }
+
+    @Test
+    fun `네트워크가 끊긴 뒤 제목 편집 중 기록을 누르면 제목을 저장하지 않는다`() = runTest {
+        val viewModel = createViewModelWithRecap()
+        viewModel.onEditTitleClick(1L)
+        viewModel.titleEditingState.setTextAndPlaceCursorAtEnd("관악산")
+        connectivityRepository.connected = false
+
+        viewModel.onRecapClick(1L)
+
+        assertTrue(recapRepository.updatedTitles.isEmpty())
+        assertEquals(ORIGINAL_TITLE, titleOf(viewModel))
     }
 
     @Test
