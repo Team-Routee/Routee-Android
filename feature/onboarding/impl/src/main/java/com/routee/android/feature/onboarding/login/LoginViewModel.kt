@@ -37,7 +37,7 @@ internal class LoginViewModel @AssistedInject constructor(
 
     private var isLoggingIn = false
 
-    fun isConnected(): Boolean = connectivityRepository.isConnected()
+    suspend fun isConnected(): Boolean = connectivityRepository.isConnected()
 
     fun onIdTokenResult(result: Result<String>) {
         val idToken = result.getOrElse { e ->

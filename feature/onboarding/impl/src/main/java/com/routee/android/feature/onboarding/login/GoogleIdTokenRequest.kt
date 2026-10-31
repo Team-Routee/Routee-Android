@@ -12,7 +12,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.routee.android.feature.onboarding.BuildConfig
 
-internal suspend fun Activity.requestGoogleIdToken(isConnected: () -> Boolean): Result<String> {
+internal suspend fun Activity.requestGoogleIdToken(isConnected: suspend () -> Boolean): Result<String> {
     return try {
         val credential = CredentialManager.create(this)
             .getCredential(this, googleIdRequest())

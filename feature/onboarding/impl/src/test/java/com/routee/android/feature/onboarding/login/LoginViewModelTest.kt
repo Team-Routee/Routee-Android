@@ -106,7 +106,7 @@ class LoginViewModelTest {
     }
 
     private class FakeConnectivityRepository : ConnectivityRepository {
-        override fun isConnected(): Boolean = true
+        override suspend fun isConnected(): Boolean = true
     }
 
     private class FakeAuthRepository : AuthRepository {

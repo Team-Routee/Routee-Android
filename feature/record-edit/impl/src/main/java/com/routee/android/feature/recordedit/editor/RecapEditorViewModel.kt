@@ -191,13 +191,16 @@ internal class RecapEditorViewModel @AssistedInject constructor(
 
     fun onCompleteClick() {
         if (isCompleting) return
-        if (!connectivityRepository.isConnected()) {
-            viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.ShowNetworkErrorToast) }
-            return
-        }
         isCompleting = true
-        _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }
-        viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.CaptureRecap) }
+        viewModelScope.launch {
+            if (!connectivityRepository.isConnected()) {
+                isCompleting = false
+                _sideEffect.send(RecapEditorSideEffect.ShowNetworkErrorToast)
+                return@launch
+            }
+            _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }
+            _sideEffect.send(RecapEditorSideEffect.CaptureRecap)
+        }
     }
 
     fun onRecapCaptured(bitmap: Bitmap) {

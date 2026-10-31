@@ -5,5 +5,5 @@ import com.routee.android.core.data.connectivity.repository.ConnectivityReposito
 internal class FakeConnectivityRepository : ConnectivityRepository {
     var connected = true
 
-    override fun isConnected(): Boolean = connected
+    override suspend fun isConnected(): Boolean = connected
 }

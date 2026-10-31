@@ -47,6 +47,7 @@ internal class RecordEditMainViewModel @Inject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
 
     private var loadJob: Job? = null
+    private var recapClickJob: Job? = null
     private val titleSaveMutex = Mutex()
     private val savedTitles = mutableMapOf<Long, String>()
 
@@ -69,7 +70,8 @@ internal class RecordEditMainViewModel @Inject constructor(
     }
 
     fun onRecapClick(activityId: Long) {
-        viewModelScope.launch {
+        if (recapClickJob?.isActive == true) return
+        recapClickJob = viewModelScope.launch {
             if (!connectivityRepository.isConnected()) {
                 _sideEffect.send(RecordEditMainSideEffect.ShowNetworkErrorToast)
                 return@launch
