@@ -1,8 +1,10 @@
 package com.routee.android.core.map
 
+import android.content.Context
 import android.location.Location
 import android.os.Bundle
 import android.view.Gravity
+import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -107,7 +109,7 @@ private fun NaverMapView(
     val locationSource = remember { MapLocationSource() }
     // 지도는 한 번만 만듦. 내 위치가 처음 보일 때부터 루티 아이콘이도록 여기서 정함
     val mapView = remember {
-        MapView(context, routeeMapOptions(state.initialCamera)).apply {
+        GestureOwningMapView(context, routeeMapOptions(state.initialCamera)).apply {
             getMapAsync { map ->
                 map.locationSource = locationSource
                 map.applyMyLocationIcon()
@@ -150,6 +152,14 @@ private fun NaverMapView(
             }
         },
     )
+}
+
+// 지도 안 드래그를 바깥 스크롤이 가져가지 않도록 터치 시작 시 부모 가로채기 막음
+private class GestureOwningMapView(context: Context, options: NaverMapOptions) : MapView(context, options) {
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) parent?.requestDisallowInterceptTouchEvent(true)
+        return super.dispatchTouchEvent(event)
+    }
 }
 
 // 첫 프레임부터 적용할 고정 설정
