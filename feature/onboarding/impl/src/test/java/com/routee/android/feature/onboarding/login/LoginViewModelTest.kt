@@ -4,6 +4,7 @@ import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
 import com.routee.android.feature.onboarding.MainDispatcherRule
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
@@ -20,6 +21,9 @@ class LoginViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private fun createViewModel(key: LoginNavKey = LoginNavKey()) =
+        LoginViewModel(key, FakeAuthRepository(), FakeConnectivityRepository())
+
     /**
      * GIVEN: 토큰 재발급까지 실패해 로그인으로 왔을 때
      * WHEN: 로그인 화면에 들어오면
@@ -27,7 +31,7 @@ class LoginViewModelTest {
      */
     @Test
     fun `세션이 만료되어 들어오면 안내 다이얼로그를 띄운다`() {
-        val viewModel = LoginViewModel(LoginNavKey(isSessionExpired = true), FakeAuthRepository())
+        val viewModel = createViewModel(LoginNavKey(isSessionExpired = true))
 
         assertTrue(viewModel.uiState.value.isSessionExpiredDialogVisible)
     }
@@ -39,7 +43,7 @@ class LoginViewModelTest {
      */
     @Test
     fun `확인을 누르면 안내 다이얼로그를 닫는다`() {
-        val viewModel = LoginViewModel(LoginNavKey(isSessionExpired = true), FakeAuthRepository())
+        val viewModel = createViewModel(LoginNavKey(isSessionExpired = true))
 
         viewModel.onSessionExpiredDialogDismiss()
 
@@ -53,7 +57,7 @@ class LoginViewModelTest {
      */
     @Test
     fun `일반 진입이면 안내 다이얼로그를 띄우지 않는다`() {
-        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+        val viewModel = createViewModel()
 
         assertFalse(viewModel.uiState.value.isSessionExpiredDialogVisible)
     }
@@ -65,7 +69,7 @@ class LoginViewModelTest {
      */
     @Test
     fun `오프라인이라 구글 로그인에 실패하면 네트워크 토스트를 띄운다`() = runTest {
-        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+        val viewModel = createViewModel()
 
         viewModel.onIdTokenResult(Result.failure(GoogleLoginException.NetworkUnavailable(IOException())))
 
@@ -79,7 +83,7 @@ class LoginViewModelTest {
      */
     @Test
     fun `구글 로그인이 그 밖의 이유로 실패하면 일시적인 오류 토스트를 띄운다`() = runTest {
-        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+        val viewModel = createViewModel()
 
         viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Failed()))
 
@@ -93,12 +97,16 @@ class LoginViewModelTest {
      */
     @Test
     fun `사용자가 구글 로그인을 닫으면 토스트를 띄우지 않는다`() = runTest {
-        val viewModel = LoginViewModel(LoginNavKey(), FakeAuthRepository())
+        val viewModel = createViewModel()
 
         viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Cancelled(IOException())))
         viewModel.onIdTokenResult(Result.failure(GoogleLoginException.Failed()))
 
         assertEquals(LoginSideEffect.ShowUnknownErrorToast, viewModel.sideEffect.first())
+    }
+
+    private class FakeConnectivityRepository : ConnectivityRepository {
+        override fun isConnected(): Boolean = true
     }
 
     private class FakeAuthRepository : AuthRepository {

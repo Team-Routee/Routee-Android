@@ -6,6 +6,7 @@ import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
+import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
@@ -26,6 +27,7 @@ import timber.log.Timber
 internal class LoginViewModel @AssistedInject constructor(
     @Assisted key: LoginNavKey,
     private val authRepository: AuthRepository,
+    private val connectivityRepository: ConnectivityRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState(isSessionExpiredDialogVisible = key.isSessionExpired))
     val uiState = _uiState.asStateFlow()
@@ -34,6 +36,8 @@ internal class LoginViewModel @AssistedInject constructor(
     val sideEffect = _sideEffect.receiveAsFlow()
 
     private var isLoggingIn = false
+
+    fun isConnected(): Boolean = connectivityRepository.isConnected()
 
     fun onIdTokenResult(result: Result<String>) {
         val idToken = result.getOrElse { e ->
