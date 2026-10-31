@@ -75,7 +75,7 @@ internal class FakeWorkoutTrackingRepository(
         val record = current.record
         if (record != null) {
             _state.value = current.copy(record = record.recovered(START))
-        } else if (savedRecord?.isTracking == true) {
+        } else if (savedRecord != null) {
             _state.value = WorkoutTrackingState(record = savedRecord.recovered(START), trackPoints = savedTrackPoints)
         }
         return Result.success(Unit)
