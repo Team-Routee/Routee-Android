@@ -171,6 +171,21 @@ internal fun WorkoutMainRoute(
             rightButtonContentColor = RouteeTheme.colors.white,
         )
     }
+
+    if (uiState.isLocationServiceDialogVisible) {
+        RouteeTwoButtonDialog(
+            title = stringResource(R.string.workout_main_location_service_dialog_title),
+            description = stringResource(R.string.workout_main_location_service_dialog_description),
+            leftButtonText = stringResource(R.string.workout_main_location_service_dialog_cancel),
+            rightButtonText = stringResource(R.string.workout_main_location_service_dialog_settings),
+            onRightButtonClick = {
+                viewModel.onLocationServiceDialogDismiss()
+                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            },
+            onDismissRequest = viewModel::onLocationServiceDialogDismiss,
+            rightButtonContentColor = RouteeTheme.colors.white,
+        )
+    }
 }
 
 @Composable
@@ -244,10 +259,14 @@ private fun WorkoutMainScreen(
                 modifier = Modifier.padding(vertical = RouteeTheme.spacing.Spacing14),
             )
             LocationChip(
-                text = if (uiState.locationPermission == LocationPermission.GRANTED && uiState.address != null) {
-                    uiState.address
-                } else {
-                    stringResource(R.string.workout_main_location_permission_required)
+                text = when {
+                    uiState.locationPermission != LocationPermission.GRANTED ->
+                        stringResource(R.string.workout_main_location_permission_required)
+
+                    !uiState.isLocationServiceEnabled || uiState.address == null ->
+                        stringResource(R.string.workout_main_location_checking)
+
+                    else -> uiState.address
                 },
             )
         }

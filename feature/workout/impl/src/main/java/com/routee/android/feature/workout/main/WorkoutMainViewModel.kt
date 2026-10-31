@@ -71,6 +71,7 @@ internal class WorkoutMainViewModel @Inject constructor(
 
     init {
         checkUnfinishedWorkout()
+        observeLocationService()
     }
 
     fun onLocationPermissionChecked(permission: LocationPermission) {
@@ -89,11 +90,15 @@ internal class WorkoutMainViewModel @Inject constructor(
 
     // TODO P1 기획: 알림 권한 요청 시점
     // 운동 기록을 누를 때마다 위치 권한 다음에 알림 권한 요청, 두 번 거부하면 시스템이 팝업을 막음
+    // 위치 서비스가 꺼져 있으면 켜기 전까지 시작하지 않음
     fun onRecordClick() {
-        if (uiState.value.locationPermission == LocationPermission.GRANTED) {
-            viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestNotificationPermission) }
-        } else {
-            showLocationPermissionDialog()
+        when {
+            uiState.value.locationPermission != LocationPermission.GRANTED -> showLocationPermissionDialog()
+
+            !uiState.value.isLocationServiceEnabled ->
+                _uiState.update { it.copy(isLocationServiceDialogVisible = true) }
+
+            else -> viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestNotificationPermission) }
         }
     }
 
@@ -170,6 +175,12 @@ internal class WorkoutMainViewModel @Inject constructor(
     fun onLocationPermissionDialogDismiss() {
         isContinuingRecovery = false
         _uiState.update { it.copy(isLocationPermissionDialogVisible = false, isRecoveryInProgress = false) }
+    }
+
+    /** 위치 서비스 안내 모달 닫기, 복구 중이었으면 복구 모달로 돌아감 */
+    fun onLocationServiceDialogDismiss() {
+        isContinuingRecovery = false
+        _uiState.update { it.copy(isLocationServiceDialogVisible = false, isRecoveryInProgress = false) }
     }
 
     // 고른 동작이 끝날 때까지 모달을 내려 다른 버튼을 막음, 이미 처리 중이면 false
@@ -294,6 +305,12 @@ internal class WorkoutMainViewModel @Inject constructor(
         addressJob = observeCurrentAddress(onAddressFailure = { Timber.w(it, "주소 조회 실패") })
             .catch { Timber.e(it, "내 위치 수신 실패") }
             .onEach { address -> _uiState.update { it.copy(address = address) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeLocationService() {
+        locationRepository.observeLocationEnabled()
+            .onEach { isEnabled -> _uiState.update { it.copy(isLocationServiceEnabled = isEnabled) } }
             .launchIn(viewModelScope)
     }
 

@@ -3,10 +3,16 @@
     <!-- 운동 메인 -->
     <string name="workout_main_record">운동 기록</string>
     <string name="workout_main_location_permission_required">위치 권한 허용이 필요합니다.</string>
+    <string name="workout_main_location_checking">현재 위치를 확인하고 있어요</string>
     <string name="workout_main_location_permission_dialog_title">정확한 위치 권한이 필요해요</string>
     <string name="workout_main_location_permission_dialog_description">운동 경로를 기록하려면 설정에서\n정확한 위치를 켜주세요.</string>
     <string name="workout_main_location_permission_dialog_cancel">취소</string>
     <string name="workout_main_location_permission_dialog_settings">설정 이동</string>
+    <!-- TODO P1 기획: 기록 시작 전 위치 서비스 꺼짐 안내 (피그마 없음) -->
+    <string name="workout_main_location_service_dialog_title">위치 서비스가 꺼져 있어요</string>
+    <string name="workout_main_location_service_dialog_description">운동 경로를 기록하려면 설정에서 위치 서비스를 켜주세요.</string>
+    <string name="workout_main_location_service_dialog_cancel">취소</string>
+    <string name="workout_main_location_service_dialog_settings">설정 이동</string>
     <string name="workout_main_my_location_a11y">내 위치로 이동</string>
     <string name="workout_main_control_stop">정지</string>
     <string name="workout_main_control_restart">다시 시작</string>
