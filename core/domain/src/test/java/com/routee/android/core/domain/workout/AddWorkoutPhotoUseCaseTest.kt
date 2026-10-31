@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -168,6 +169,8 @@ class AddWorkoutPhotoUseCaseTest {
 
     private class FakeLocationRepository(private val lastLocation: DeviceLocation?) : LocationRepository {
         override fun observeLocations(): Flow<DeviceLocation> = emptyFlow()
+
+        override fun observeLocationEnabled(): Flow<Boolean> = flowOf(true)
 
         override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(lastLocation)
     }

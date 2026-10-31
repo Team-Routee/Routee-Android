@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -53,14 +54,15 @@ fun RouteeOneButtonDialog(
 // modal_action_primary_android (actionCount=double)
 
 /**
- * 버튼 두 개 다이얼로그. 오른쪽 버튼은 빨간 글자
+ * 버튼 두 개 다이얼로그
  *
- * @param title               제목
- * @param leftButtonText      왼쪽 버튼 문구 (예: "취소")
- * @param rightButtonText     오른쪽 버튼 문구 (예: "기록 삭제")
- * @param onRightButtonClick  오른쪽 버튼 탭 시 호출. 닫기는 호출하는 쪽에서
- * @param onDismissRequest    왼쪽 버튼, 뒤로가기, 바깥 영역 탭 시 호출
- * @param description         제목 아래 설명. null 이면 숨김
+ * @param title                    제목
+ * @param leftButtonText           왼쪽 버튼 문구 (예: "취소")
+ * @param rightButtonText          오른쪽 버튼 문구 (예: "기록 삭제")
+ * @param onRightButtonClick       오른쪽 버튼 탭 시 호출. 닫기는 호출하는 쪽에서
+ * @param onDismissRequest         왼쪽 버튼, 뒤로가기, 바깥 영역 탭 시 호출
+ * @param description              제목 아래 설명. null 이면 숨김
+ * @param rightButtonContentColor  오른쪽 버튼 글자색
  */
 @Composable
 fun RouteeTwoButtonDialog(
@@ -71,6 +73,7 @@ fun RouteeTwoButtonDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
+    rightButtonContentColor: Color = RouteeTheme.colors.statusError,
 ) {
     RouteeDialogContainer(
         onDismissRequest = onDismissRequest,
@@ -84,6 +87,7 @@ fun RouteeTwoButtonDialog(
             onLeftButtonClick = onDismissRequest,
             onRightButtonClick = onRightButtonClick,
             description = description,
+            rightButtonContentColor = rightButtonContentColor,
         )
     }
 }
@@ -111,6 +115,7 @@ private fun ColumnScope.TwoButtonDialogContent(
     onLeftButtonClick: () -> Unit,
     onRightButtonClick: () -> Unit,
     description: String?,
+    rightButtonContentColor: Color = RouteeTheme.colors.statusError,
 ) {
     DialogInfo(title = title, description = description)
     // action_group
@@ -127,7 +132,7 @@ private fun ColumnScope.TwoButtonDialogContent(
             text = rightButtonText,
             onClick = onRightButtonClick,
             modifier = Modifier.weight(1f),
-            contentColor = RouteeTheme.colors.statusError,
+            contentColor = rightButtonContentColor,
         )
     }
 }
@@ -205,6 +210,17 @@ private fun RouteeTwoButtonDialogPreview() {
                     onLeftButtonClick = {},
                     onRightButtonClick = {},
                     description = null,
+                )
+            }
+            DialogCard(contentPadding = PaddingValues(RouteeTheme.spacing.Spacing24)) {
+                TwoButtonDialogContent(
+                    title = "위치 서비스가 꺼져 있어요",
+                    leftButtonText = "확인",
+                    rightButtonText = "설정 이동",
+                    onLeftButtonClick = {},
+                    onRightButtonClick = {},
+                    description = "운동 시간은 계속 기록되지만,\n위치 서비스를 켜기 전까지\n경로와 거리는 기록되지 않아요.",
+                    rightButtonContentColor = RouteeTheme.colors.white,
                 )
             }
         }

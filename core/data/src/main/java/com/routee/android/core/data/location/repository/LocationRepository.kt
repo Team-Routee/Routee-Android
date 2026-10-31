@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.Flow
 interface LocationRepository {
     fun observeLocations(): Flow<DeviceLocation>
 
+    /** 기기 위치 서비스 켜짐 여부, 지금 값부터 켜고 끌 때마다 */
+    fun observeLocationEnabled(): Flow<Boolean>
+
     /** 기기에 남아 있는 마지막 위치, 없으면 null. 지도 첫 위치용 */
     suspend fun getLastLocation(): Result<DeviceLocation?>
 }

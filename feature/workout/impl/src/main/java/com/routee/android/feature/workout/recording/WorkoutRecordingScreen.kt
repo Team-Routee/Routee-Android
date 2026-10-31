@@ -1,8 +1,10 @@
 package com.routee.android.feature.workout.recording
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.location.Location
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
+import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.RouteeMessageResult
@@ -194,6 +197,21 @@ internal fun WorkoutRecordingRoute(
             buttonText = stringResource(R.string.workout_recording_camera_unavailable_confirm),
             onButtonClick = viewModel::onCameraUnavailableDialogConfirm,
             onDismissRequest = viewModel::onCameraUnavailableDialogConfirm,
+        )
+    }
+
+    if (uiState.isLocationServiceDialogVisible) {
+        RouteeTwoButtonDialog(
+            title = stringResource(R.string.workout_recording_location_service_title),
+            description = stringResource(R.string.workout_recording_location_service_description),
+            leftButtonText = stringResource(R.string.workout_recording_location_service_confirm),
+            rightButtonText = stringResource(R.string.workout_recording_location_service_settings),
+            onRightButtonClick = {
+                viewModel.onLocationServiceDialogDismiss()
+                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            },
+            onDismissRequest = viewModel::onLocationServiceDialogDismiss,
+            rightButtonContentColor = RouteeTheme.colors.white,
         )
     }
 

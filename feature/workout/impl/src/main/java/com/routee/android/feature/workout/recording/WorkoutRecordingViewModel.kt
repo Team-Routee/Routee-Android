@@ -99,6 +99,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         prepareRecording()
         observeTracking()
         observePhotos()
+        observeLocationService()
         updateDurationEverySecond()
     }
 
@@ -172,6 +173,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
 
     fun onCameraUnavailableDialogConfirm() {
         _uiState.update { it.copy(isCameraUnavailable = false) }
+    }
+
+    fun onLocationServiceDialogDismiss() {
+        _uiState.update { it.copy(isLocationServiceDialogVisible = false) }
     }
 
     fun onPhotoMarkerClick(photoId: String) {
@@ -373,6 +378,18 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 .collect { photos ->
                     _uiState.update { it.copy(photos = photos.map { photo -> photo.toMapPhoto() }.toImmutableList()) }
                 }
+        }
+    }
+
+    // 기록 중에 위치 서비스가 꺼지면 한 번 안내, 켜거나 일시정지하면 닫고 다시 꺼지거나 꺼진 채 다시 시작하면 또 안내
+    private fun observeLocationService() {
+        viewModelScope.launch {
+            combine(
+                locationRepository.observeLocationEnabled(),
+                _uiState.map { it.mode == WorkoutMode.RECORDING }.distinctUntilChanged(),
+            ) { isEnabled, isRecording -> isRecording && !isEnabled }
+                .distinctUntilChanged()
+                .collect { isOff -> _uiState.update { it.copy(isLocationServiceDialogVisible = isOff) } }
         }
     }
 
