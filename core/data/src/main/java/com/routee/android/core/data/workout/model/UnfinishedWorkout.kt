@@ -12,7 +12,7 @@ sealed interface UnfinishedWorkout {
     /** 앱이 꺼졌다 켜졌거나 일시정지가 2시간을 넘음, 이어서 기록과 종료 후 저장을 고르게 함 */
     data class Recoverable(val record: WorkoutRecord) : UnfinishedWorkout
 
-    /** 종료했지만 서버 저장을 확인하지 못함 */
+    /** 종료했지만 서버 저장에 실패함, [Recoverable]과 같은 복구 안내 */
     data class PendingUpload(val record: WorkoutRecord) : UnfinishedWorkout
 
     companion object {

@@ -162,6 +162,26 @@ class WorkoutRecordTest {
     }
 
     /**
+     * GIVEN: 지도 키까지 올리고 저장에 실패한 종료 기록일 때
+     * WHEN: 복구 안내를 위해 불러오면
+     * THEN: 운동 시간은 그대로 일시정지로 되돌리고 종료 시각, 지도는 비운다
+     */
+    @Test
+    fun `저장에 실패한 종료 기록을 복구하면 종료를 되돌린다`() {
+        val finished = record().finished(START.plusSeconds(90))
+            .copy(mapImageObjectKey = "map-key", mapImagePath = "map.jpg")
+
+        val recovered = finished.recovered(START.plusSeconds(3_600))
+
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, recovered.status)
+        assertEquals(90_000L, recovered.durationMillisAt(START.plusSeconds(7_200)))
+        assertEquals(START.plusSeconds(3_600), recovered.pausedAt)
+        assertNull(recovered.endedAt)
+        assertNull(recovered.mapImageObjectKey)
+        assertNull(recovered.mapImagePath)
+    }
+
+    /**
      * GIVEN: 일시정지한 기록일 때
      * WHEN: 2시간이 되기 직전과 2시간이 된 때
      * THEN: 2시간이 되어야 일시정지가 끝났다고 본다

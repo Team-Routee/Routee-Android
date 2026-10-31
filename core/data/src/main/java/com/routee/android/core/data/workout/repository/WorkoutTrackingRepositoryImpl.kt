@@ -64,7 +64,6 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         suspendRunCatching {
             val current = _state.value
             val saved = current.record ?: recordRepository.getRecord().getOrThrow() ?: return@suspendRunCatching
-            if (!saved.isTracking) return@suspendRunCatching
             val record = saved.recovered(clock.instant())
             recordRepository.saveRecord(record).getOrThrow()
             val trackPoints = if (current.record != null) {

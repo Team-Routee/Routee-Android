@@ -88,9 +88,20 @@ data class WorkoutRecord(
         )
     }
 
-    /** 복구 안내에서 고를 때까지 일시정지로 둠, 꺼져 있던 시간은 뺌 (durationMillis = 마지막 기록 시각까지, pausedAt = now) */
+    /**
+     * 복구 안내에서 고를 때까지 일시정지로 둠, 꺼져 있던 시간은 뺌 (durationMillis = 마지막 기록 시각까지, pausedAt = now)
+     * 저장에 실패한 종료 기록은 운동 시간은 그대로 두고 종료를 되돌림, 지도는 다시 캡처
+     */
     fun recovered(now: Instant): WorkoutRecord {
-        if (!isTracking) return this
+        if (status == WorkoutStatus.PENDING_UPLOAD) {
+            return copy(
+                status = WorkoutStatus.ACTIVITY_PAUSED,
+                pausedAt = now,
+                endedAt = null,
+                mapImageObjectKey = null,
+                mapImagePath = null,
+            )
+        }
         return copy(
             status = WorkoutStatus.ACTIVITY_PAUSED,
             durationMillis = durationMillisAt(lastRecordedAt),

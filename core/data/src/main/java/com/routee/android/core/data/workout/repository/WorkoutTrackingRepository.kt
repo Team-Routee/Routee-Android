@@ -35,7 +35,7 @@ interface WorkoutTrackingRepository {
     /** 진행 중인 기록이 없으면 기기에 저장된 기록을 이어감, 꺼져 있던 시간은 뺌 */
     suspend fun restore(): Result<Unit>
 
-    /** 앱이 꺼졌다 켜졌거나 일시정지가 길어 멈춘 기록을 일시정지로 불러옴, 꺼져 있던 시간은 뺌. 이어서 기록은 [resume], 종료 후 저장은 [finish] */
+    /** 앱이 꺼졌다 켜졌거나 일시정지가 길어 멈춘 기록, 저장에 실패한 종료 기록을 일시정지로 불러옴, 꺼져 있던 시간은 뺌. 이어서 기록은 [resume], 종료 후 저장은 [finish] */
     suspend fun recover(): Result<Unit>
 
     /**
