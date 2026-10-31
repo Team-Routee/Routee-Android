@@ -179,12 +179,13 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         _uiState.update { it.copy(openedPhoto = photo.toOpenedPhoto()) }
     }
 
-    /** 사진 모달 닫기, 장소명은 닫을 때 저장 */
+    /** 사진 모달 닫기, 장소명은 닫을 때 저장하고 비어 있으면 이전 장소명 유지 */
     fun onPhotoDialogClose(title: String) {
         val photo = _uiState.value.openedPhoto ?: return
         _uiState.update { it.copy(openedPhoto = null) }
-        if (title == photo.title) return
-        photoRepository.updateTitle(photo.id, title)
+        val trimmedTitle = title.trim()
+        if (trimmedTitle.isEmpty() || trimmedTitle == photo.title) return
+        photoRepository.updateTitle(photoId = photo.id, title = trimmedTitle)
         syncPhotos()
     }
 

@@ -513,6 +513,24 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 사진이 있는 기록 중일 때
+     * WHEN: 장소명을 공백만 남기고 닫으면
+     * THEN: 이전 장소명을 유지한다
+     */
+    @Test
+    fun `장소명을 비우고 닫으면 이전 장소명을 유지한다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"))) }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+
+        viewModel.onPhotoDialogClose("  ")
+
+        assertNull(viewModel.uiState.value.openedPhoto)
+        assertEquals("말바위", photos.photos.value.single().title)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 사진 2장이 있는 기록 중일 때
      * WHEN: 모달에서 삭제하고 스낵바가 시간이 지나 닫히면
      * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 삭제를 확정한다
