@@ -57,11 +57,13 @@ import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.finish.WorkoutSavingSkeleton
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
+import com.routee.android.feature.workout.component.recording.PhotoLocationContent
 import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import com.routee.android.feature.workout.model.captureRouteJpeg
 import com.routee.android.feature.workout.recording.model.OpenedPhoto
+import com.routee.android.feature.workout.recording.model.TakenPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -179,6 +181,14 @@ internal fun WorkoutRecordingRoute(
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
 
+    uiState.takenPhoto?.let { photo ->
+        TakenPhotoLocation(
+            photo = photo,
+            onBack = viewModel::onPhotoLocationBack,
+            onComplete = viewModel::onPhotoLocationComplete,
+        )
+    }
+
     uiState.openedPhoto?.let { photo ->
         OpenedPhotoDialog(
             photo = photo,
@@ -211,6 +221,29 @@ internal fun WorkoutRecordingRoute(
             buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
             onButtonClick = viewModel::onSaveFailureDialogConfirm,
             onDismissRequest = viewModel::onSaveFailureDialogConfirm,
+        )
+    }
+}
+
+/**
+ * 촬영 후 위치 입력, 기록 화면 위를 덮음
+ *
+ * @param onComplete 입력한 장소명을 넘김
+ */
+@Composable
+private fun TakenPhotoLocation(
+    photo: TakenPhoto,
+    onBack: () -> Unit,
+    onComplete: (title: String) -> Unit,
+) {
+    key(photo.filePath) {
+        val locationState = rememberTextFieldState()
+        BackHandler(onBack = onBack)
+        PhotoLocationContent(
+            imageUrl = photo.imageUrl,
+            locationState = locationState,
+            onBackClick = onBack,
+            onCompleteClick = { onComplete(locationState.text.toString()) },
         )
     }
 }
