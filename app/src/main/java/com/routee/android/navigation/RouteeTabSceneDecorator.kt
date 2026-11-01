@@ -119,7 +119,7 @@ private fun RouteeBottomBar(
     onTabClick: (RouteeTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RouteeNavBar(modifier = modifier) {
+    RouteeNavBar(selectedIndex = RouteeTab.entries.indexOf(currentTab), modifier = modifier) {
         RouteeTab.entries.forEach { tab ->
             RouteeNavBarItem(
                 selected = tab == currentTab,
