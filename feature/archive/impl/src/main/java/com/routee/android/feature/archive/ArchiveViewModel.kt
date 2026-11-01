@@ -158,7 +158,8 @@ internal class ArchiveViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         content = when {
-                            !isOffline || it.content !is UiState.Success -> UiState.Failure(error)
+                            !isOffline -> UiState.Failure(error)
+                            it.content !is UiState.Success -> UiState.Empty
                             it.content.data.month == month -> it.content
                             else -> UiState.Success(archiveContent(it.content.data.profile, month, emptyList()))
                         },

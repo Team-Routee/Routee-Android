@@ -1,13 +1,17 @@
 package com.routee.android.feature.workout.tracking
 
+import android.Manifest
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.feature.workout.R
@@ -16,7 +20,7 @@ import java.time.Instant
 /** 운동 기록 중 상시 알림 */
 internal object WorkoutTrackingNotification {
     const val ID = 1001
-    private const val CHANNEL_ID = "workout_tracking"
+    const val CHANNEL_ID = "workout_tracking"
 
     fun createChannel(context: Context) {
         val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
@@ -87,7 +91,7 @@ internal object WorkoutTrackingNotification {
     )
 
     // 앱 열기. 기록 화면(운동 중, 정지)이나 복구 모달은 운동 메인이 기록 상태로 정함
-    private fun launchIntent(context: Context): PendingIntent? {
+    fun launchIntent(context: Context): PendingIntent? {
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         return PendingIntent.getActivity(
@@ -98,3 +102,7 @@ internal object WorkoutTrackingNotification {
         )
     }
 }
+
+/** 알림 권한 여부, Android 13 미만은 늘 true */
+internal fun Context.canPostNotifications(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED

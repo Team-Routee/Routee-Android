@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeMonthControl
 import com.routee.android.core.designsystem.component.RouteePageHeader
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.routeeNavBarPadding
 import com.routee.android.core.designsystem.extension.clearFocus
 import com.routee.android.core.designsystem.preview.PreviewDeviceSizes
@@ -59,9 +60,12 @@ internal fun RecordEditMainRoute(
     viewModel: RecordEditMainViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val messageState = LocalRouteeMessageState.current
+    val networkErrorMessage = stringResource(R.string.record_edit_main_network_error_toast)
     viewModel.sideEffect.CollectSideEffect { sideEffect ->
         when (sideEffect) {
             is RecordEditMainSideEffect.NavigateToEditor -> onNavigateToEditor(sideEffect.activityId)
+            RecordEditMainSideEffect.ShowNetworkErrorToast -> messageState.showToast(text = networkErrorMessage)
         }
     }
 

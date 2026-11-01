@@ -3,6 +3,7 @@ package com.routee.android.navigation
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.EnterExitState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -24,10 +25,12 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneDecoratorStrategy
 import androidx.navigation3.scene.SceneDecoratorStrategyScope
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.routee.android.R
 import com.routee.android.core.designsystem.component.LocalRouteeNavBarPadding
 import com.routee.android.core.designsystem.component.RouteeNavBar
 import com.routee.android.core.designsystem.component.RouteeNavBarItem
+import com.routee.android.core.designsystem.component.message.LocalRouteeMessageAnchorActive
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
@@ -73,25 +76,31 @@ private class RouteeTabScene(
 
     override val content: @Composable () -> Unit = {
         TabExitBackHandler(enabled = backStack.lastOrNull() == currentTab.navKey)
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0),
-            bottomBar = {
-                RouteeBottomBar(
-                    currentTab = currentTab,
-                    // TODO 탭별 상태 유지 여부 기획 확인 후 반영 필수
-                    onTabClick = { tab -> navigator.clearAndNavigateTo(tab.navKey) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .routeeMessageAnchor()
-                        .padding(horizontal = RouteeTheme.spacing.Spacing16),
-                )
-            },
-        ) { innerPadding ->
-            CompositionLocalProvider(LocalRouteeNavBarPadding provides innerPadding.calculateBottomPadding()) {
-                Box(Modifier.consumeWindowInsets(innerPadding)) {
-                    delegate.content()
+        val animatedScope = LocalNavAnimatedContentScope.current
+        val isAnchorActive: () -> Boolean = remember(animatedScope) {
+            { animatedScope.transition.targetState != EnterExitState.PostExit }
+        }
+        CompositionLocalProvider(LocalRouteeMessageAnchorActive provides isAnchorActive) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0),
+                bottomBar = {
+                    RouteeBottomBar(
+                        currentTab = currentTab,
+                        // TODO 탭별 상태 유지 여부 기획 확인 후 반영 필수
+                        onTabClick = { tab -> navigator.clearAndNavigateTo(tab.navKey) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .routeeMessageAnchor()
+                            .padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    )
+                },
+            ) { innerPadding ->
+                CompositionLocalProvider(LocalRouteeNavBarPadding provides innerPadding.calculateBottomPadding()) {
+                    Box(Modifier.consumeWindowInsets(innerPadding)) {
+                        delegate.content()
+                    }
                 }
             }
         }

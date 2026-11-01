@@ -42,9 +42,9 @@
     <string name="workout_recording_save_failure_confirm">확인</string>
     <string name="workout_recording_camera_a11y">사진 촬영</string>
     <string name="workout_recording_exit_toast">한 번 더 누르면 앱이 닫히며,\n운동 기록은 계속됩니다.</string>
-    <!-- TODO P1 기획: 카메라 앱이 없을 때 모달 (피그마 없음) -->
+    <!-- 카메라 없음 모달 -->
     <string name="workout_recording_camera_unavailable_title">카메라를 사용할 수 없어요</string>
-    <string name="workout_recording_camera_unavailable_description">카메라를 지원하는 기기에서 다시 시도해주세요.</string>
+    <string name="workout_recording_camera_unavailable_description">카메라를 지원하는 기기에서\n다시 시도해주세요.</string>
     <string name="workout_recording_camera_unavailable_confirm">확인</string>
     <string name="workout_recording_location_service_title">위치 서비스가 꺼져 있어요</string>
     <string name="workout_recording_location_service_description">운동 시간은 계속 기록되지만,\n위치 서비스를 켜기 전까지\n경로와 거리는 기록되지 않아요.</string>
@@ -66,8 +66,9 @@
     <!-- 운동 중 사진 타임라인 -->
     <string name="workout_recording_photo_delete_a11y">사진 삭제</string>
     <string name="workout_recording_photo_close_a11y">닫기</string>
-    <string name="workout_recording_photo_location_placeholder">장소명을 입력해주세요</string>
+    <string name="workout_recording_photo_location_placeholder">현재 위치를 남겨주세요.</string>
     <string name="workout_recording_photo_location_edit_a11y">장소명 편집</string>
+    <string name="workout_recording_photo_location_complete">기록 완료</string>
     <string name="workout_recording_photo_deleted_snackbar">삭제되었습니다</string>
     <string name="workout_recording_photo_deleted_undo">취소</string>
 
@@ -84,4 +85,8 @@
     <string name="workout_tracking_label_distance">거리(km)</string>
     <string name="workout_tracking_label_duration">시간</string>
     <string name="workout_tracking_label_max_elevation">최고 고도(m)</string>
+
+    <!-- 일시정지 2시간 알림 -->
+    <string name="workout_tracking_pause_expired_title">이어서 기록할까요?</string>
+    <string name="workout_tracking_pause_expired_text">기록을 멈춘 지 2시간이 지났어요!</string>
 </resources>

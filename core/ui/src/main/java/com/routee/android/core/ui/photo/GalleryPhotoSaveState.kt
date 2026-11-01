@@ -19,15 +19,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
+import com.routee.android.core.designsystem.component.message.RouteeMessage
+import com.routee.android.core.designsystem.component.message.rememberRouteeMessageState
 import com.routee.android.core.ui.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** 저장 완료 페이지와 사진 주소·촬영 시각으로 요청하는 갤러리 저장 이벤트 */
+/** 저장 완료 페이지·결과 문구와 사진 주소·촬영 시각으로 요청하는 갤러리 저장 이벤트 */
 @Immutable
 class GalleryPhotoSaveState internal constructor(
     val savedPhotoIndex: Int,
+    val saveMessage: String?,
     val onSavePhoto: (index: Int, imageUrl: String, capturedAtEpochMillis: Long) -> Unit,
 )
 
@@ -38,7 +40,7 @@ fun rememberGalleryPhotoSaveState(
 ): GalleryPhotoSaveState {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val messageState = LocalRouteeMessageState.current
+    val messageState = rememberRouteeMessageState()
     val savedText = stringResource(R.string.ui_photo_saved)
     val deniedText = stringResource(R.string.ui_photo_access_denied)
     val failedText = stringResource(R.string.ui_photo_save_failed)
@@ -78,7 +80,8 @@ fun rememberGalleryPhotoSaveState(
         if (granted && request != null) save(request)
         if (!granted) messageState.showToast(deniedText)
     }
-    return GalleryPhotoSaveState(savedIndex) { index, url, capturedAt ->
+    val saveMessage = (messageState.currentMessage as? RouteeMessage.Toast)?.text
+    return GalleryPhotoSaveState(savedIndex, saveMessage) { index, url, capturedAt ->
         if (!isSaving && pendingSave == null && savedIndex != index) {
             val request = GallerySaveRequest(index, url, capturedAt)
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&

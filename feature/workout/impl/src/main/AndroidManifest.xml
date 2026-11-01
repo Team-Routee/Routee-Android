@@ -14,6 +14,10 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <receiver
+            android:name=".tracking.pause.WorkoutPauseAlarmReceiver"
+            android:exported="false" />
+
         <provider
             android:name=".recording.WorkoutPhotoFileProvider"
             android:authorities="${applicationId}.workout.fileprovider"

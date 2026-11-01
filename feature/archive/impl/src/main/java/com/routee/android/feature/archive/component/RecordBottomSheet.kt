@@ -1,6 +1,10 @@
 package com.routee.android.feature.archive.component
 
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,13 +35,17 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindowProvider
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.RouteeAsyncImage
+import com.routee.android.core.designsystem.component.message.RouteeToast
 import com.routee.android.core.designsystem.extension.noRippleClickable
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
@@ -71,6 +79,7 @@ internal data class RecordSheetItem(
  * @param records           그날 기록 목록. 넘치면 시트 안에서 스크롤
  * @param onRecordClick     기록 탭 시 activityId 전달
  * @param onDismissRequest  아래로 끌기, 뒤로가기, 바깥 영역 탭 시 호출
+ * @param message           시트 안에 표시할 안내 문구
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +89,7 @@ internal fun RecordBottomSheet(
     onRecordClick: (Long) -> Unit,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    message: String? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -95,11 +105,24 @@ internal fun RecordBottomSheet(
         dragHandle = { SheetHandle() },
     ) {
         DisableNavigationBarContrast()
-        RecordBottomSheetContent(
-            date = date,
-            records = records,
-            onRecordClick = onRecordClick,
-        )
+        Box {
+            RecordBottomSheetContent(
+                date = date,
+                records = records,
+                onRecordClick = onRecordClick,
+            )
+            AnimatedContent(
+                targetState = message,
+                contentAlignment = Alignment.BottomCenter,
+                transitionSpec = { (fadeIn() togetherWith fadeOut()).using(sizeTransform = null) },
+                modifier = Modifier.align(Alignment.BottomCenter)
+                    .padding(horizontal = RouteeTheme.spacing.Spacing24, vertical = RouteeTheme.spacing.Spacing16)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
+                label = "RecordSheetMessage",
+            ) { text ->
+                if (text != null) RouteeToast(text)
+            }
+        }
     }
 }
 

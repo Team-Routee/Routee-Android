@@ -133,6 +133,7 @@ internal fun ArchiveDetailRoute(
         onBackClick = { finishTitleEdit(viewModel::onBackClick) },
         titleState = titleState,
         savedPhotoIndex = gallerySave.savedPhotoIndex,
+        photoSaveMessage = gallerySave.saveMessage,
         onPhotoSaveClick = { index ->
             record?.photos?.getOrNull(index)?.let { photo ->
                 gallerySave.onSavePhoto(index, photo.imageUrl, photo.createdAt.toEpochMilli())
@@ -171,6 +172,7 @@ private fun ArchiveDetailScreen(
     onTitleEditFinish: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
     savedPhotoIndex: Int = -1,
+    photoSaveMessage: String? = null,
     onPhotoSaveClick: (Int) -> Unit = {},
 ) {
     when (val record = uiState.record) {
@@ -207,6 +209,7 @@ private fun ArchiveDetailScreen(
                         onExpandedChange = onExpandedChange,
                         titleState = titleState ?: rememberTextFieldState(record.data.title),
                         savedPhotoIndex = savedPhotoIndex,
+                        photoSaveMessage = photoSaveMessage,
                         onPhotoSaveClick = onPhotoSaveClick,
                         isTitleEditing = uiState.isTitleEditing,
                         onEditTitleClick = onEditTitleClick,
@@ -231,6 +234,7 @@ private fun ArchiveDetailContent(
     onEditTitleClick: () -> Unit,
     onTitleEditFinish: () -> Unit,
     savedPhotoIndex: Int,
+    photoSaveMessage: String?,
     onPhotoSaveClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -263,6 +267,7 @@ private fun ArchiveDetailContent(
                 },
                 date = record.date,
                 savedPhotoIndex = savedPhotoIndex,
+                saveMessage = photoSaveMessage,
                 onSaveClick = onPhotoSaveClick,
             )
         }

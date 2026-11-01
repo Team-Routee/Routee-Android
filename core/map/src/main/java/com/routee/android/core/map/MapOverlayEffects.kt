@@ -1,5 +1,6 @@
 package com.routee.android.core.map
 
+import android.graphics.PointF
 import android.location.Location
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -92,7 +93,10 @@ internal fun MarkersEffect(
         val overlays = markers.map { item ->
             Marker().apply {
                 position = item.point.toLatLng()
-                item.icon?.let { icon = OverlayImage.fromBitmap(it.asAndroidBitmap()) }
+                item.icon?.let {
+                    icon = OverlayImage.fromBitmap(it.asAndroidBitmap())
+                    anchor = CenterAnchor
+                }
                 item.size?.let {
                     width = with(density) { it.roundToPx() }
                     height = width
@@ -107,6 +111,9 @@ internal fun MarkersEffect(
         onDispose { overlays.forEach { it.map = null } }
     }
 }
+
+// 이미지 마커는 가운데가 좌표에 옴 (SDK 기본은 아래 가운데)
+private val CenterAnchor = PointF(0.5f, 0.5f)
 
 internal val RouteWidth = 4.dp
 

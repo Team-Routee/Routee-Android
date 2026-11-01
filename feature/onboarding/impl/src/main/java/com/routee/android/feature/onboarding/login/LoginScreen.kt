@@ -115,7 +115,7 @@ internal fun LoginRoute(
             if (activity != null && !isRequestingIdToken) {
                 isRequestingIdToken = true
                 coroutineScope.launch {
-                    viewModel.onIdTokenResult(activity.requestGoogleIdToken())
+                    viewModel.onIdTokenResult(activity.requestGoogleIdToken(viewModel::isConnected))
                     isRequestingIdToken = false
                 }
             }
