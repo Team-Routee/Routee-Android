@@ -367,7 +367,7 @@ class WorkoutRecordingViewModelTest {
 
         viewModel.onFinishAnimationEnd()
 
-        assertEquals(WorkoutSaveFailure.NETWORK, viewModel.uiState.value.saveFailure)
+        assertEquals(WorkoutSaveFailure.UNKNOWN, viewModel.uiState.value.saveFailure)
         assertFalse(tracking.isCleared)
         viewModel.close()
     }

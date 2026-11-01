@@ -237,61 +237,83 @@ class WorkoutMainViewModelTest {
     }
 
     /**
-     * GIVEN: 앱이 다시 켜졌고 지도 키를 올려 둔 업로드 대기 기록이 있을 때
-     * WHEN: 운동 메인에 들어오면
-     * THEN: 다시 보내 저장 토스트를 띄우고 기기 기록을 지운다
+     * GIVEN: 경로 좌표가 1개뿐인 기록으로 복구 모달이 떠 있을 때
+     * WHEN: 종료 후 저장을 누르고 캡처를 받으면
+     * THEN: 토스트 대신 기록 등록 실패 모달을 띄우고 기기 기록을 지운다
      */
     @Test
-    fun `업로드 대기 기록이 있으면 다시 보내고 저장 토스트`() = runTest {
-        val pending = PENDING_RECORD.copy(mapImageObjectKey = "map-key")
-        val tracking = pendingTracking(pending)
+    fun `종료 후 저장에서 경로가 부족하면 기록 등록 실패 모달`() = runTest {
+        val tracking =
+            FakeWorkoutTrackingRepository(savedRecord = STOPPED_RECORD, savedTrackPoints = listOf(trackPoint(1)))
+        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(STOPPED_RECORD))
+        viewModel.onRecoverySaveClick()
 
-        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(pending))
+        viewModel.onRecoveryMapCaptured(byteArrayOf(1))
 
-        assertEquals(WorkoutMainSideEffect.ShowRecoverySaved, viewModel.sideEffect.first())
-        assertFalse(viewModel.uiState.value.isCheckingUnfinishedWorkout)
+        assertTrue(viewModel.uiState.value.isInvalidRouteDialogVisible)
         assertTrue(tracking.isCleared)
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+
+        viewModel.onInvalidRouteDialogDismiss()
+
+        assertFalse(viewModel.uiState.value.isInvalidRouteDialogVisible)
     }
 
     /**
-     * GIVEN: 지도 키도 캡처 파일도 없는 업로드 대기 기록일 때
-     * WHEN: 운동 메인에 들어오면
-     * THEN: 로딩과 함께 경로 전체 캡처를 요청하고, 캡처를 받으면 저장 토스트
+     * GIVEN: 종료 저장에 실패한 기록이 기기에 남았을 때
+     * WHEN: 운동 메인에 다시 들어오면
+     * THEN: 다시 보내지 않고 복구 모달을 띄운다
      */
     @Test
-    fun `캡처가 없는 업로드 대기 기록은 다시 캡처해 보낸다`() = runTest {
+    fun `저장에 실패한 기록이 있으면 복구 모달을 띄운다`() = runTest {
         val tracking = pendingTracking(PENDING_RECORD)
 
         val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(PENDING_RECORD))
 
-        assertTrue(viewModel.uiState.value.isRecoverySaving)
+        assertEquals(
+            WorkoutRecoveryUiModel(lastRecordedAt = START.plusSeconds(60), distanceMeters = 1_234, durationSec = 60),
+            viewModel.uiState.value.recovery,
+        )
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+        assertFalse(tracking.isCleared)
+    }
+
+    /**
+     * GIVEN: 저장에 실패한 기록으로 복구 모달이 떠 있을 때
+     * WHEN: 종료 후 저장을 누르면
+     * THEN: 경로 전체 캡처를 요청하고, 캡처를 받으면 저장 토스트
+     */
+    @Test
+    fun `저장에 실패한 기록도 종료 후 저장하면 다시 캡처해 저장한다`() = runTest {
+        val tracking = pendingTracking(PENDING_RECORD)
+        val viewModel = viewModel(tracking, FakeWorkoutRecordRepository(PENDING_RECORD))
+
+        viewModel.onRecoverySaveClick()
+
         assertEquals(listOf(MapPoint(38.0, 127.0), MapPoint(39.0, 127.0)), viewModel.uiState.value.recoveryCaptureRoute)
 
         viewModel.onRecoveryMapCaptured(byteArrayOf(1))
 
         assertEquals(WorkoutMainSideEffect.ShowRecoverySaved, viewModel.sideEffect.first())
-        assertFalse(viewModel.uiState.value.isRecoverySaving)
         assertTrue(tracking.isCleared)
     }
 
     /**
-     * GIVEN: 인터넷이 끊겨 다시 보내기가 실패할 때
-     * WHEN: 운동 메인에 들어오면
-     * THEN: 안내 없이 기기 기록을 남긴다
+     * GIVEN: 저장에 실패한 기록으로 복구 모달이 떠 있고 위치 권한이 있을 때
+     * WHEN: 이어서 기록을 누르고 알림 권한 결과가 오면
+     * THEN: 새 기록을 만들지 않고 일시정지로 불러와 복구한 기록 화면으로 보낸다
      */
     @Test
-    fun `다시 보내기가 실패하면 안내 없이 기록을 남긴다`() = runTest {
-        val pending = PENDING_RECORD.copy(mapImageObjectKey = "map-key")
-        val tracking = pendingTracking(pending)
+    fun `저장에 실패한 기록도 이어서 기록하면 일시정지로 불러온다`() = runTest {
+        val tracking = pendingTracking(PENDING_RECORD)
+        val viewModel = grantedViewModel(tracking, FakeWorkoutRecordRepository(PENDING_RECORD))
 
-        val viewModel = viewModel(
-            tracking = tracking,
-            records = FakeWorkoutRecordRepository(pending),
-            remote = FakeWorkoutRemoteRepository(completeError = IOException()),
-        )
+        viewModel.onRecoveryContinueClick()
+        assertEquals(WorkoutMainSideEffect.RequestNotificationPermission, viewModel.sideEffect.first())
+        viewModel.onNotificationPermissionResult()
 
-        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
-        assertFalse(tracking.isCleared)
+        assertEquals(WorkoutMainSideEffect.NavigateToRecoveredRecording, viewModel.sideEffect.first())
+        assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
     }
 
     /**
@@ -484,7 +506,6 @@ class WorkoutMainViewModelTest {
         tracking: FakeWorkoutTrackingRepository = FakeWorkoutTrackingRepository(),
         records: FakeWorkoutRecordRepository = FakeWorkoutRecordRepository(),
         location: FakeLocationRepository = FakeLocationRepository(),
-        remote: FakeWorkoutRemoteRepository = FakeWorkoutRemoteRepository(),
     ) = WorkoutMainViewModel(
         savedStateHandle = SavedStateHandle(),
         trackingRepository = tracking,
@@ -496,7 +517,7 @@ class WorkoutMainViewModelTest {
             trackingRepository = tracking,
             recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
-            remoteRepository = remote,
+            remoteRepository = FakeWorkoutRemoteRepository(),
             photoRepository = FakeWorkoutPhotoRepository(),
         ),
         discardWorkout = DiscardWorkoutUseCase(tracking, records, FakeWorkoutPhotoRepository()),
@@ -511,7 +532,7 @@ class WorkoutMainViewModelTest {
         // 1분 기록하고 앱이 꺼진 기록
         val STOPPED_RECORD = record().copy(lastRecordedAt = START.plusSeconds(60))
 
-        // 1분 기록하고 종료했지만 서버 저장을 확인하지 못한 기록
+        // 1분 기록하고 종료했지만 서버 저장에 실패한 기록
         val PENDING_RECORD = STOPPED_RECORD.finished(START.plusSeconds(60))
         val LOCATION = DeviceLocation(
             latitude = 37.0,
