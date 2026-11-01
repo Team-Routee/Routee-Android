@@ -33,6 +33,8 @@
     <string name="workout_recording_resume_error_toast">기록을 다시 시작하지 못했어요.\n다시 시작을 눌러 주세요.</string>
     <string name="workout_recording_save_failure_title">기록 등록 실패</string>
     <string name="workout_recording_save_failure_network_description">인터넷 연결이 불안정해서\n기록이 등록되지 않았어요.\n연결이 안정되면 다시 기록해주세요.\n\n(인터넷 연결 오프라인 상태)</string>
+    <!-- TODO P1 기획: 서버 거절, 지도 캡처 없음 문구 (인터넷 문구에서 오프라인 표시만 뺌) -->
+    <string name="workout_recording_save_failure_unknown_description">인터넷 연결이 불안정해서\n기록이 등록되지 않았어요.\n연결이 안정되면 다시 기록해주세요.</string>
     <string name="workout_recording_save_failure_invalid_route_description">운동 경로를 확인할 수 없어\n기록이 등록되지 않았어요.\n위치 정보를 확인한 후 다시 시도해주세요.</string>
     <string name="workout_recording_save_failure_confirm">확인</string>
     <string name="workout_recording_camera_a11y">사진 촬영</string>

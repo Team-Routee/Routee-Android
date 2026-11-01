@@ -30,6 +30,9 @@ internal fun WorkoutStatus.toMode(): WorkoutMode? = when (this) {
 // 기록 등록 실패 모달 종류
 internal enum class WorkoutSaveFailure {
     NETWORK,
+
+    // 서버 거절, 지도 캡처 없음
+    UNKNOWN,
     INVALID_ROUTE,
 }
 

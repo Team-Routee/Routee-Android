@@ -249,6 +249,11 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 result == WorkoutSaveResult.InvalidRoute ->
                     _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.INVALID_ROUTE) }
 
+                result == WorkoutSaveResult.Rejected || result == WorkoutSaveResult.MapImageMissing -> {
+                    Timber.w("운동 저장 실패: $result")
+                    _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.UNKNOWN) }
+                }
+
                 else -> {
                     Timber.w("운동 저장 실패, 기기 기록은 업로드 대기로 남음")
                     _uiState.update { it.copy(saveFailure = WorkoutSaveFailure.NETWORK) }

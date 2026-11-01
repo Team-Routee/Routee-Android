@@ -204,6 +204,8 @@ internal fun WorkoutRecordingRoute(
                 when (failure) {
                     WorkoutSaveFailure.NETWORK -> R.string.workout_recording_save_failure_network_description
 
+                    WorkoutSaveFailure.UNKNOWN -> R.string.workout_recording_save_failure_unknown_description
+
                     WorkoutSaveFailure.INVALID_ROUTE ->
                         R.string.workout_recording_save_failure_invalid_route_description
                 },
