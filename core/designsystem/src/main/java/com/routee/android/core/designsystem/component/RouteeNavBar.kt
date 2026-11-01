@@ -64,6 +64,7 @@ fun RouteeNavBar(
     ) { measurables, constraints ->
         val indicator = measurables.first()
         val items = measurables.drop(1)
+        if (items.isEmpty()) return@Layout layout(0, 0) {}
 
         // 항목 같은 폭으로 나눔
         val gap = NavItemSpacing.roundToPx()
