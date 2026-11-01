@@ -197,6 +197,7 @@ internal class FakeWorkoutPhotoRepository(
         original: File,
         point: TrackPoint,
         takenAt: Instant,
+        title: String,
     ): Result<WorkoutPhoto> {
         val photo = WorkoutPhoto(
             id = "photo-${_photos.value.size + 1}",
@@ -204,6 +205,7 @@ internal class FakeWorkoutPhotoRepository(
             filePath = original.path,
             point = point,
             takenAt = takenAt,
+            title = title,
         )
         _photos.value += photo
         return Result.success(photo)
