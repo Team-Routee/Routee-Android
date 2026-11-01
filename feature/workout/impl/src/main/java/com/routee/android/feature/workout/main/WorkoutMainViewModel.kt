@@ -238,12 +238,12 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    // 꺼져 있던 시간은 빼고 마지막 기록 시각에 종료
+    // 꺼져 있던 시간은 빼고 마지막 기록 시각에 종료, 저장에 실패한 기록은 이전 종료 시각 그대로
     private suspend fun finishRecoveredWorkout() {
         trackingRepository.recover()
             .mapCatching {
                 val record = checkNotNull(trackingRepository.state.value.record) { "복구할 기록 없음" }
-                trackingRepository.finish(endedAt = record.lastRecordedAt).getOrThrow()
+                trackingRepository.finish(endedAt = record.endedAt ?: record.lastRecordedAt).getOrThrow()
             }.onSuccess {
                 requestRouteCapture()
             }.onFailure {

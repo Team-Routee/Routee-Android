@@ -317,7 +317,6 @@ class WorkoutMainViewModelTest {
 
         assertEquals(WorkoutMainSideEffect.NavigateToRecoveredRecording, viewModel.sideEffect.first())
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
-        assertNull(tracking.state.value.record?.endedAt)
     }
 
     /**

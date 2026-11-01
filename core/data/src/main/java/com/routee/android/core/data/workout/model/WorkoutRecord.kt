@@ -15,7 +15,7 @@ val WORKOUT_PAUSE_LIMIT: Duration = Duration.ofHours(2)
  * @param resumedAt          마지막으로 시작하거나 다시 시작한 시각, 일시정지면 null
  * @param pausedAt           일시정지 시각, 2시간 규칙 판단
  * @param lastRecordedAt     마지막 위치 기록 시각, 복구 안내와 종료 후 저장 기준
- * @param endedAt            종료 시각, 완료 API를 다시 보낼 때 사용
+ * @param endedAt            종료 시각, 저장에 실패한 기록을 복구해 다시 종료할 때도 사용
  * @param mapImageObjectKey  지도 이미지 업로드 결과, 있으면 업로드 생략
  * @param mapImagePath       지도 캡처 파일 경로
  */
@@ -64,16 +64,16 @@ data class WorkoutRecord(
         )
     }
 
-    /** 다시 시작, 일시정지 중일 때만 (resumedAt = now) */
+    /** 다시 시작, 일시정지 중일 때만 (resumedAt = now, 복구한 기록의 종료 시각은 비움) */
     fun resumed(now: Instant): WorkoutRecord {
         if (status != WorkoutStatus.ACTIVITY_PAUSED) return this
-        return copy(status = WorkoutStatus.ACTIVITY_IN_PROGRESS, resumedAt = now, pausedAt = null)
+        return copy(status = WorkoutStatus.ACTIVITY_IN_PROGRESS, resumedAt = now, pausedAt = null, endedAt = null)
     }
 
     /**
      * 종료, 업로드 대기로 바꾸고 운동 시간 확정. 기록 중, 일시정지일 때만
      *
-     * @param endedAt 종료 시각, 복구의 종료 후 저장은 마지막 기록 시각
+     * @param endedAt 종료 시각, 복구의 종료 후 저장은 이전 종료 시각, 없으면 마지막 기록 시각
      */
     fun finished(
         now: Instant,
@@ -90,14 +90,13 @@ data class WorkoutRecord(
 
     /**
      * 복구 안내에서 고를 때까지 일시정지로 둠, 꺼져 있던 시간은 뺌 (durationMillis = 마지막 기록 시각까지, pausedAt = now)
-     * 저장에 실패한 종료 기록은 운동 시간은 그대로 두고 종료를 되돌림, 지도는 다시 캡처
+     * 저장에 실패한 종료 기록은 운동 시간과 종료 시각은 그대로 두고 일시정지로 되돌림, 지도는 다시 캡처
      */
     fun recovered(now: Instant): WorkoutRecord {
         if (status == WorkoutStatus.PENDING_UPLOAD) {
             return copy(
                 status = WorkoutStatus.ACTIVITY_PAUSED,
                 pausedAt = now,
-                endedAt = null,
                 mapImageObjectKey = null,
                 mapImagePath = null,
             )

@@ -191,7 +191,7 @@ class WorkoutTrackingRepositoryImplTest {
         repository.recover()
 
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, repository.state.value.record?.status)
-        assertNull(repository.state.value.record?.endedAt)
+        assertEquals(START.plusSeconds(60), repository.state.value.record?.endedAt)
         assertEquals(listOf(1), repository.state.value.trackPoints.map { it.pointIndex })
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, recordRepository.getRecord().getOrThrow()?.status)
     }
