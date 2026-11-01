@@ -160,6 +160,7 @@ internal class WorkoutMainViewModel @Inject constructor(
         viewModelScope.launch {
             permissionRepository.saveLocationPermissionDenied().onFailure { Timber.e(it, "위치 권한 거부 저장 실패") }
         }
+        permissionRepository.consumeLocationGuideOnLaunch()
         showLocationPermissionDialog()
     }
 

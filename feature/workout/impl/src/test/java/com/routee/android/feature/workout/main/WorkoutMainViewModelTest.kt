@@ -401,6 +401,24 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 첫 진입 팝업에서 거부해 안내 모달을 봤을 때
+     * WHEN: 같은 실행에서 탭을 옮겼다 다시 들어오면
+     * THEN: 안내 모달을 다시 띄우지 않는다
+     */
+    @Test
+    fun `첫 진입 요청을 거부한 실행에서는 다시 들어와도 안내 모달을 띄우지 않는다`() = runTest {
+        val first = viewModel()
+        first.onLocationPermissionChecked(LocationPermission.DENIED)
+        first.sideEffect.first()
+        first.onLocationPermissionResult(LocationPermission.DENIED)
+
+        val second = viewModel()
+        second.onLocationPermissionChecked(LocationPermission.DENIED)
+
+        assertFalse(second.uiState.value.isLocationPermissionDialogVisible)
+    }
+
+    /**
      * GIVEN: 처음 진입이라 시스템 팝업을 요청했을 때
      * WHEN: 허용하면 (이번만 허용 포함)
      * THEN: 거부로 남기지 않아, 권한이 풀리면 다음 진입에 다시 요청한다
