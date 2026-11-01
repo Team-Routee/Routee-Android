@@ -3,8 +3,12 @@ package com.routee.android.navigation
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterExitState
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +40,8 @@ import com.routee.android.core.designsystem.component.message.RouteeMessageDurat
 import com.routee.android.core.designsystem.component.message.routeeMessageAnchor
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.navigation.RouteeNavigator
+
+private const val TAB_FADE_MILLIS = 150
 
 /**
  * 탭 첫 화면 아래에 하단 탭 바 표시
@@ -69,7 +75,8 @@ private class RouteeTabScene(
     private val backStack: List<NavKey>,
     private val navigator: RouteeNavigator,
 ) : Scene<NavKey> {
-    override val key: Any get() = delegate.key
+    // 탭 첫 화면끼리 같은 key: 탭 바는 유지하고 내용만 짧게 페이드
+    override val key: Any get() = RouteeTabScene::class
     override val entries get() = delegate.entries
     override val previousEntries get() = delegate.previousEntries
     override val metadata get() = delegate.metadata
@@ -98,8 +105,16 @@ private class RouteeTabScene(
                 },
             ) { innerPadding ->
                 CompositionLocalProvider(LocalRouteeNavBarPadding provides innerPadding.calculateBottomPadding()) {
-                    Box(Modifier.consumeWindowInsets(innerPadding)) {
-                        delegate.content()
+                    AnimatedContent(
+                        targetState = delegate,
+                        modifier = Modifier.consumeWindowInsets(innerPadding),
+                        transitionSpec = {
+                            fadeIn(tween(TAB_FADE_MILLIS)) togetherWith fadeOut(tween(TAB_FADE_MILLIS))
+                        },
+                        contentKey = { it.key },
+                        label = "RouteeTabContent",
+                    ) { scene ->
+                        scene.content()
                     }
                 }
             }
@@ -118,7 +133,7 @@ private fun RouteeBottomBar(
     onTabClick: (RouteeTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    RouteeNavBar(modifier = modifier) {
+    RouteeNavBar(selectedIndex = RouteeTab.entries.indexOf(currentTab), modifier = modifier) {
         RouteeTab.entries.forEach { tab ->
             RouteeNavBarItem(
                 selected = tab == currentTab,
