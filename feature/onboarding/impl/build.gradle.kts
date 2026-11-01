@@ -1,16 +1,8 @@
-import java.util.Properties
+import com.routee.android.buildlogic.extension.localProperty
 
 plugins {
     alias(libs.plugins.routee.android.feature.impl)
 }
-
-val localProperties = Properties().apply {
-    val f = rootProject.file("local.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
-
-fun localProperty(key: String, defaultValue: String = ""): String =
-    localProperties.getProperty(key, defaultValue)
 
 android {
     namespace = "com.routee.android.feature.onboarding"
