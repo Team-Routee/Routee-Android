@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 
 internal val PHOTO_START: Instant = Instant.ofEpochMilli(1_000_000)
 internal val PHOTO_NOW: Instant = PHOTO_START.plusSeconds(60)
@@ -105,6 +106,8 @@ internal class FakePhotoTrackingRepository(
 
 internal class FakeLastLocationRepository(private val lastLocation: DeviceLocation?) : LocationRepository {
     override fun observeLocations(): Flow<DeviceLocation> = emptyFlow()
+
+    override fun observeLocationEnabled(): Flow<Boolean> = flowOf(true)
 
     override suspend fun getLastLocation(): Result<DeviceLocation?> = Result.success(lastLocation)
 }
