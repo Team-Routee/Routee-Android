@@ -1,17 +1,10 @@
-import java.util.Properties
+import com.routee.android.buildlogic.extension.localProperty
 
 plugins {
     alias(libs.plugins.routee.android.library)
     alias(libs.plugins.routee.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
-
-val localProperties = Properties().apply {
-    val f = rootProject.file("local.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
-
-fun localProperty(key: String): String = localProperties.getProperty(key, "")
 
 android {
     namespace = "com.routee.android.core.data"

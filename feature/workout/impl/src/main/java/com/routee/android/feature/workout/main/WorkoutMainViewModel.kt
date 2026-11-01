@@ -89,7 +89,6 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    // TODO P1 기획: 알림 권한 요청 시점
     // 운동 기록을 누를 때마다 위치 권한 다음에 알림 권한 요청, 두 번 거부하면 시스템이 팝업을 막음
     // 위치 서비스가 꺼져 있으면 켜기 전까지 시작하지 않음
     fun onRecordClick() {

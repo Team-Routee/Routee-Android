@@ -133,7 +133,6 @@ internal fun WorkoutRecordingRoute(
                 mapState.followMyLocation()
             }
 
-            // TODO P1 기획: 기본 카메라는 카메라 권한이 필요 없어 권한 확인 없이 실행
             is WorkoutRecordingSideEffect.TakePhoto -> try {
                 photoFilePath = sideEffect.filePath
                 takePhoto.launch(WorkoutPhotoFileProvider.uriFor(context, File(sideEffect.filePath)))

@@ -1,4 +1,4 @@
-import java.util.Properties
+import com.routee.android.buildlogic.extension.localProperty
 
 plugins {
     alias(libs.plugins.routee.android.library)
@@ -6,12 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val localProperties = Properties().apply {
-    val f = rootProject.file("local.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
-
-fun baseUrl(key: String): String = localProperties.getProperty(key, "").let { url ->
+fun baseUrl(key: String): String = localProperty(key).let { url ->
     if (url.isEmpty() || url.endsWith("/")) url else "$url/"
 }
 
