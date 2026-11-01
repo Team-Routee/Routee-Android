@@ -29,6 +29,7 @@ private val FontSizeStep = 1.sp
  * 잘리면 안 되는 숫자나 짧은 라벨에 쓴다. 잘려도 되는 문구는 `Text(maxLines = 1, overflow = TextOverflow.Ellipsis)`을 쓴다
  *
  * @param minFontSize 이 크기까지 줄인다. 기본 12sp
+ * @param overflow 넘침 처리. 높이까지 맞출 때는 [TextOverflow.Clip]
  */
 @Composable
 fun RouteeAutoSizeText(
@@ -38,6 +39,7 @@ fun RouteeAutoSizeText(
     color: Color = Color.Unspecified,
     textAlign: TextAlign? = null,
     minFontSize: TextUnit = DefaultMinFontSize,
+    overflow: TextOverflow = TextOverflow.Ellipsis,
 ) {
     val mergedStyle = LocalTextStyle.current.merge(style)
     val maxFontSize = mergedStyle.fontSize.takeOrElse { DefaultFontSize }
@@ -49,7 +51,7 @@ fun RouteeAutoSizeText(
         style = mergedStyle,
         textAlign = textAlign,
         maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+        overflow = overflow,
         autoSize = TextAutoSize.StepBased(
             minFontSize = if (minFontSize > maxFontSize) maxFontSize else minFontSize, // 12sp보다 작은 스타일이면 줄이지 않음
             maxFontSize = maxFontSize,
