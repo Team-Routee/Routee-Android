@@ -34,7 +34,7 @@ private val NavItemSpacing = 5.dp
 private const val INDICATOR_DURATION_MILLIS = 100
 
 /**
- * 하단 플로팅 탭 바
+ * 하단 플로팅 탭 바, 가로 폭이 정해진 곳에서 사용
  *
  * @param selectedIndex 선택 표시를 둘 항목 순서, 바뀌면 선택 표시가 이동
  * @param content       [RouteeNavBarItem] 목록
