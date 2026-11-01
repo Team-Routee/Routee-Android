@@ -69,7 +69,8 @@ private class RouteeTabScene(
     private val backStack: List<NavKey>,
     private val navigator: RouteeNavigator,
 ) : Scene<NavKey> {
-    override val key: Any get() = delegate.key
+    // 탭 첫 화면끼리 같은 key: 전환 애니메이션 없이 바뀌고 탭 바 유지
+    override val key: Any get() = RouteeTabScene::class
     override val entries get() = delegate.entries
     override val previousEntries get() = delegate.previousEntries
     override val metadata get() = delegate.metadata
