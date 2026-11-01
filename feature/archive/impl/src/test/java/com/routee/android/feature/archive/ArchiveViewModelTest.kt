@@ -81,6 +81,32 @@ class ArchiveViewModelTest {
     }
 
     @Test
+    fun failedRefreshAfterDeletionDoesNotKeepDeletedRecordsAndRetryLoadsUpdatedCounts() = runTest {
+        var recordCount = 2
+        val repository = FakeArchiveRepository { month ->
+            Result.success(listOf(DailyActivitySummary(month.atDay(12), recordCount * 45, recordCount, null)))
+        }
+        val members = FakeMemberRepository().apply { totalCount = 2 }
+        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(2, viewModel.content().profile.workoutCount)
+
+        recordCount = 1
+        members.totalCount = 1
+        repository.error = ApiException.NetworkConnection()
+        viewModel.onRecordChanged()
+
+        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.uiState.value.isOffline)
+
+        repository.error = null
+        viewModel.onRetryClick()
+
+        assertEquals(1, viewModel.content().profile.workoutCount)
+        assertEquals(1, viewModel.content().calendarDays.single().recordCount)
+        assertFalse(viewModel.uiState.value.isOffline)
+    }
+
+    @Test
     fun monthMovementHonorsJoinAndCurrentMonthsWithoutReloadingMember() = runTest {
         val repository = FakeArchiveRepository()
         val members = FakeMemberRepository()

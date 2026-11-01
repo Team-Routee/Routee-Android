@@ -68,6 +68,7 @@ internal class ArchiveViewModel @Inject constructor(
 
     fun onRecordChanged() {
         member = null
+        _uiState.update { it.copy(content = UiState.Loading) }
         loadSummary()
     }
 
