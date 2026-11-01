@@ -1,8 +1,10 @@
 package com.routee.android.feature.workout.recording
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.location.Location
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routee.android.core.designsystem.R as DesignSystemR
 import com.routee.android.core.designsystem.component.dialog.RouteeOneButtonDialog
+import com.routee.android.core.designsystem.component.dialog.RouteeTwoButtonDialog
 import com.routee.android.core.designsystem.component.message.LocalRouteeMessageState
 import com.routee.android.core.designsystem.component.message.RouteeMessageDuration
 import com.routee.android.core.designsystem.component.message.RouteeMessageResult
@@ -57,11 +60,13 @@ import com.routee.android.core.ui.lottie.RouteeLottie
 import com.routee.android.feature.workout.R
 import com.routee.android.feature.workout.component.finish.WorkoutSavingSkeleton
 import com.routee.android.feature.workout.component.pause.WorkoutPauseContent
+import com.routee.android.feature.workout.component.recording.PhotoLocationContent
 import com.routee.android.feature.workout.component.recording.PhotoTimelineDialog
 import com.routee.android.feature.workout.component.recording.WorkoutRecordingContent
 import com.routee.android.feature.workout.model.MY_LOCATION_ZOOM
 import com.routee.android.feature.workout.model.captureRouteJpeg
 import com.routee.android.feature.workout.recording.model.OpenedPhoto
+import com.routee.android.feature.workout.recording.model.TakenPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -179,6 +184,14 @@ internal fun WorkoutRecordingRoute(
         onFinishAnimationEnd = viewModel::onFinishAnimationEnd,
     )
 
+    uiState.takenPhoto?.let { photo ->
+        TakenPhotoLocation(
+            photo = photo,
+            onBack = viewModel::onPhotoLocationBack,
+            onComplete = viewModel::onPhotoLocationComplete,
+        )
+    }
+
     uiState.openedPhoto?.let { photo ->
         OpenedPhotoDialog(
             photo = photo,
@@ -194,6 +207,21 @@ internal fun WorkoutRecordingRoute(
             buttonText = stringResource(R.string.workout_recording_camera_unavailable_confirm),
             onButtonClick = viewModel::onCameraUnavailableDialogConfirm,
             onDismissRequest = viewModel::onCameraUnavailableDialogConfirm,
+        )
+    }
+
+    if (uiState.isLocationServiceDialogVisible) {
+        RouteeTwoButtonDialog(
+            title = stringResource(R.string.workout_recording_location_service_title),
+            description = stringResource(R.string.workout_recording_location_service_description),
+            leftButtonText = stringResource(R.string.workout_recording_location_service_confirm),
+            rightButtonText = stringResource(R.string.workout_recording_location_service_settings),
+            onRightButtonClick = {
+                viewModel.onLocationServiceDialogDismiss()
+                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            },
+            onDismissRequest = viewModel::onLocationServiceDialogDismiss,
+            rightButtonContentColor = RouteeTheme.colors.white,
         )
     }
 
@@ -213,6 +241,29 @@ internal fun WorkoutRecordingRoute(
             buttonText = stringResource(R.string.workout_recording_save_failure_confirm),
             onButtonClick = viewModel::onSaveFailureDialogConfirm,
             onDismissRequest = viewModel::onSaveFailureDialogConfirm,
+        )
+    }
+}
+
+/**
+ * 촬영 후 위치 입력, 기록 화면 위를 덮음
+ *
+ * @param onComplete 입력한 장소명을 넘김
+ */
+@Composable
+private fun TakenPhotoLocation(
+    photo: TakenPhoto,
+    onBack: () -> Unit,
+    onComplete: (title: String) -> Unit,
+) {
+    key(photo.filePath) {
+        val locationState = rememberTextFieldState()
+        BackHandler(onBack = onBack)
+        PhotoLocationContent(
+            imageUrl = photo.imageUrl,
+            locationState = locationState,
+            onBackClick = onBack,
+            onCompleteClick = { onComplete(locationState.text.toString()) },
         )
     }
 }

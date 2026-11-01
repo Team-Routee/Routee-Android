@@ -60,13 +60,6 @@ internal class WorkoutMainViewModel @Inject constructor(
         .map { it.toLocation() }
         .catch { Timber.e(it, "내 위치 수신 실패") }
 
-    // 위치 권한을 요청한 곳. 권한 팝업 중 프로세스가 종료돼도 결과를 처리하게 저장
-    private var permissionRequest: PermissionRequest
-        get() = savedStateHandle[KEY_PERMISSION_REQUEST] ?: PermissionRequest.NONE
-        set(value) {
-            savedStateHandle[KEY_PERMISSION_REQUEST] = value
-        }
-
     // 복구 모달에서 [이어서 기록]을 눌러 권한 흐름 중. 권한 팝업 중 프로세스가 종료돼도 새 기록을 만들지 않게 저장
     private var isContinuingRecovery: Boolean
         get() = savedStateHandle[KEY_CONTINUING_RECOVERY] ?: false
@@ -79,13 +72,14 @@ internal class WorkoutMainViewModel @Inject constructor(
 
     init {
         checkUnfinishedWorkout()
+        observeLocationService()
     }
 
     fun onLocationPermissionChecked(permission: LocationPermission) {
         _uiState.update { it.copy(locationPermission = permission) }
         if (!isPermissionChecked) {
             isPermissionChecked = true
-            if (permission == LocationPermission.DENIED) requestLocationPermissionOnce()
+            if (permission != LocationPermission.GRANTED) guideLocationPermissionOnEntry()
         }
         if (permission == LocationPermission.GRANTED) {
             moveCameraToMyLocationOnce()
@@ -97,11 +91,15 @@ internal class WorkoutMainViewModel @Inject constructor(
 
     // TODO P1 기획: 알림 권한 요청 시점
     // 운동 기록을 누를 때마다 위치 권한 다음에 알림 권한 요청, 두 번 거부하면 시스템이 팝업을 막음
+    // 위치 서비스가 꺼져 있으면 켜기 전까지 시작하지 않음
     fun onRecordClick() {
-        if (uiState.value.locationPermission == LocationPermission.GRANTED) {
-            viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestNotificationPermission) }
-        } else {
-            requestLocationPermission(PermissionRequest.RECORD)
+        when {
+            uiState.value.locationPermission != LocationPermission.GRANTED -> showLocationPermissionDialog()
+
+            !uiState.value.isLocationServiceEnabled ->
+                _uiState.update { it.copy(isLocationServiceDialogVisible = true) }
+
+            else -> viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestNotificationPermission) }
         }
     }
 
@@ -152,24 +150,30 @@ internal class WorkoutMainViewModel @Inject constructor(
         if (uiState.value.locationPermission == LocationPermission.GRANTED) {
             viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null)) }
         } else {
-            requestLocationPermission(PermissionRequest.MY_LOCATION)
+            showLocationPermissionDialog()
         }
     }
 
-    /** 시스템 권한 팝업 결과. 기록에서 요청해 허용하면 기록 화면으로, 탭해서 요청했는데 거부하거나 대략적인 위치면 안내 모달 */
+    /** 첫 진입 시스템 권한 팝업 결과. 거부하거나 대략적인 위치면 기록해 두고 바로 안내 모달 */
     fun onLocationPermissionResult(permission: LocationPermission) {
-        val request = permissionRequest
-        permissionRequest = PermissionRequest.NONE
         onLocationPermissionChecked(permission)
-        when {
-            permission == LocationPermission.GRANTED -> if (request == PermissionRequest.RECORD) onRecordClick()
+        if (permission == LocationPermission.GRANTED) return
+        viewModelScope.launch {
+            permissionRepository.saveLocationPermissionDenied().onFailure { Timber.e(it, "위치 권한 거부 저장 실패") }
+        }
+        permissionRepository.consumeLocationGuideOnLaunch()
+        showLocationPermissionDialog()
+    }
 
-            request == PermissionRequest.RECORD || request == PermissionRequest.MY_LOCATION -> {
-                showLocationPermissionDialog()
-            }
-
-            // 첫 진입이라도 대략적인 위치면 바로 안내
-            permission == LocationPermission.APPROXIMATE -> showLocationPermissionDialog()
+    /** 화면 재진입, 일시정지 2시간이 지난 기록이면 복구 모달 */
+    fun onScreenResumed() {
+        val isRecoveryHandling = with(_uiState.value) {
+            isCheckingUnfinishedWorkout || recovery != null || isRecoveryInProgress || isRecoverySaving
+        } || isContinuingRecovery
+        if (isRecoveryHandling) return
+        viewModelScope.launch {
+            val unfinished = getUnfinishedWorkout().onFailure { Timber.e(it, "남은 운동 기록 확인 실패") }.getOrNull()
+            if (unfinished is UnfinishedWorkout.Recoverable) handleUnfinishedWorkout(unfinished)
         }
     }
 
@@ -190,6 +194,12 @@ internal class WorkoutMainViewModel @Inject constructor(
     fun onLocationPermissionDialogDismiss() {
         isContinuingRecovery = false
         _uiState.update { it.copy(isLocationPermissionDialogVisible = false, isRecoveryInProgress = false) }
+    }
+
+    /** 위치 서비스 안내 모달 닫기, 복구 중이었으면 복구 모달로 돌아감 */
+    fun onLocationServiceDialogDismiss() {
+        isContinuingRecovery = false
+        _uiState.update { it.copy(isLocationServiceDialogVisible = false, isRecoveryInProgress = false) }
     }
 
     // 고른 동작이 끝날 때까지 모달을 내려 다른 버튼을 막음, 이미 처리 중이면 false
@@ -278,19 +288,18 @@ internal class WorkoutMainViewModel @Inject constructor(
         }
     }
 
-    // 설치 후 첫 진입에만 시스템 팝업. 거부 안내 모달은 운동 기록, 내 위치를 누를 때만
-    private fun requestLocationPermissionOnce() {
+    // 홈 첫 진입 때 거부한 적 없으면 시스템 팝업, 거부했거나 대략적인 위치면 앱 실행마다 한 번 안내 모달
+    private fun guideLocationPermissionOnEntry() {
         viewModelScope.launch {
-            val isRequested = permissionRepository.getLocationPermissionRequested().getOrDefault(true)
-            if (isRequested) return@launch
-            permissionRepository.saveLocationPermissionRequested()
-            requestLocationPermission(PermissionRequest.FIRST_ENTRY)
+            val isDenied = permissionRepository.getLocationPermissionDenied().getOrDefault(true)
+            val permission = _uiState.value.locationPermission
+            if (permission == LocationPermission.GRANTED) return@launch
+            if (isDenied || permission == LocationPermission.APPROXIMATE) {
+                if (permissionRepository.consumeLocationGuideOnLaunch()) showLocationPermissionDialog()
+            } else {
+                _sideEffect.send(WorkoutMainSideEffect.RequestLocationPermission)
+            }
         }
-    }
-
-    private fun requestLocationPermission(request: PermissionRequest) {
-        permissionRequest = request
-        viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.RequestLocationPermission) }
     }
 
     private fun moveCameraToMyLocationOnce() {
@@ -312,13 +321,16 @@ internal class WorkoutMainViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun observeLocationService() {
+        locationRepository.observeLocationEnabled()
+            .onEach { isEnabled -> _uiState.update { it.copy(isLocationServiceEnabled = isEnabled) } }
+            .launchIn(viewModelScope)
+    }
+
     private fun stopObservingAddress() {
         addressJob?.cancel()
         addressJob = null
     }
 }
 
-private const val KEY_PERMISSION_REQUEST = "permission_request"
 private const val KEY_CONTINUING_RECOVERY = "continuing_recovery"
-
-private enum class PermissionRequest { NONE, FIRST_ENTRY, MY_LOCATION, RECORD }

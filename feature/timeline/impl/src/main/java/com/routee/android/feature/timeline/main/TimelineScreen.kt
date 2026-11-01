@@ -2,6 +2,8 @@ package com.routee.android.feature.timeline.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
@@ -36,6 +39,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -251,7 +258,27 @@ private fun TimelineScreen(
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     var buttonAreaHeight by remember { mutableStateOf(0.dp) }
-    RouteeBgEllipse(modifier = modifier) {
+    val coordinates = remember { TitleEditCoordinates() }
+    val currentOnOutsideClick by rememberUpdatedState(onOutsideClick)
+    RouteeBgEllipse(
+        modifier = modifier
+            .onGloballyPositioned { coordinates.screen = it }
+            .pointerInput(isTitleEditing) {
+                if (!isTitleEditing) return@pointerInput
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                    val screen = coordinates.screen ?: return@awaitEachGesture
+                    val title = coordinates.title ?: return@awaitEachGesture
+                    val position = title.localPositionOf(screen, down.position)
+                    if (position.x < 0 || position.x > title.size.width ||
+                        position.y < 0 || position.y > title.size.height
+                    ) {
+                        currentOnOutsideClick()
+                        focusManager.clearFocus()
+                    }
+                }
+            },
+    ) {
         Box(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Column(modifier = Modifier.fillMaxSize()) {
                 RouteePageNavBar(
@@ -290,6 +317,7 @@ private fun TimelineScreen(
                             isEditing = isTitleEditing,
                             onEditClick = onEditTitleClick,
                             onEditComplete = onTitleEditFinish,
+                            modifier = Modifier.onGloballyPositioned { coordinates.title = it },
                         )
                         Spacer(Modifier.height(RouteeTheme.spacing.Spacing8))
                         RouteeWorkoutMetricCard(
@@ -334,6 +362,11 @@ private fun TimelineScreen(
             )
         }
     }
+}
+
+private class TitleEditCoordinates {
+    var screen: LayoutCoordinates? = null
+    var title: LayoutCoordinates? = null
 }
 
 @PreviewDeviceSizes

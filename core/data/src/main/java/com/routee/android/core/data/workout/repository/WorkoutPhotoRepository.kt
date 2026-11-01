@@ -19,12 +19,14 @@ interface WorkoutPhotoRepository {
      *
      * @param original  카메라 원본, 압축 후 삭제
      * @param point     찍은 위치에 연결할 경로 좌표
+     * @param title     장소명, 비어 있어도 됨
      */
     suspend fun addPhoto(
         activityId: Long,
         original: File,
         point: TrackPoint,
         takenAt: Instant,
+        title: String,
     ): Result<WorkoutPhoto>
 
     /** 카메라를 취소했거나 사진을 쓰지 않을 때 원본 삭제 */

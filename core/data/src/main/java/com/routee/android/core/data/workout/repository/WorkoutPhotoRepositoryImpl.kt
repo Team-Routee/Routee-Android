@@ -51,10 +51,18 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         original: File,
         point: TrackPoint,
         takenAt: Instant,
+        title: String,
     ): Result<WorkoutPhoto> = suspendRunCatching {
         val id = UUID.randomUUID().toString()
         val path = localDataSource.compress(activityId, id, original)
-        val photo = WorkoutPhoto(id = id, activityId = activityId, filePath = path, point = point, takenAt = takenAt)
+        val photo = WorkoutPhoto(
+            id = id,
+            activityId = activityId,
+            filePath = path,
+            point = point,
+            takenAt = takenAt,
+            title = title,
+        )
         mutex.withLock {
             clearOthers(activityId)
             _photos.value += photo

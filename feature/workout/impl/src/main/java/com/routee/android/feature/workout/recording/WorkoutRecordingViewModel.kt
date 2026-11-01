@@ -14,6 +14,7 @@ import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
+import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.WorkoutSaveResult
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
@@ -21,6 +22,7 @@ import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.model.observeLocationsFromLast
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
+import com.routee.android.feature.workout.recording.model.TakenPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingUiState
@@ -66,6 +68,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
+    private val resolveWorkoutPhotoPoint: ResolveWorkoutPhotoPointUseCase,
     private val addWorkoutPhoto: AddWorkoutPhotoUseCase,
     private val photoRepository: WorkoutPhotoRepository,
     private val locationRepository: LocationRepository,
@@ -99,7 +102,9 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         prepareRecording()
         observeTracking()
         observePhotos()
+        observeLocationService()
         updateDurationEverySecond()
+        navigateHomeWhenPauseExpired()
     }
 
     /** 카운트다운이 끝나면 시작 API 결과를 기다려 기록 시작, 시작 API 실패는 카운트다운 중에 바로 알림. 복구면 불러온 기록을 다시 시작 */
@@ -139,7 +144,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     }
 
     /**
-     * 카메라가 끝나면 사진 추가
+     * 카메라가 끝나면 찍은 위치를 정해 위치 입력 화면 표시
      *
      * @param isSaved 카메라가 사진을 저장했으면 true, 취소했거나 카메라를 열지 못했으면 false
      */
@@ -156,12 +161,32 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 photoRepository.discardCaptureFile(file)
                 return@launch
             }
-            when (addWorkoutPhoto(file)) {
+            val point = resolveWorkoutPhotoPoint() ?: run {
+                photoRepository.discardCaptureFile(file)
+                _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoNoLocation)
+                return@launch
+            }
+            _uiState.update { it.copy(takenPhoto = TakenPhoto(filePath, point, clock.instant())) }
+        }
+    }
+
+    /** 위치 입력 완료, 장소명과 함께 추가하고 업로드 */
+    fun onPhotoLocationComplete(title: String) {
+        val photo = _uiState.value.takenPhoto ?: return
+        _uiState.update { it.copy(takenPhoto = null) }
+        viewModelScope.launch {
+            when (addWorkoutPhoto(File(photo.filePath), photo.point, photo.takenAt, title)) {
                 AddWorkoutPhotoResult.Added -> Unit
-                AddWorkoutPhotoResult.NoLocation -> _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoNoLocation)
                 AddWorkoutPhotoResult.Failed -> _sideEffect.send(WorkoutRecordingSideEffect.ShowPhotoFailed)
             }
         }
+    }
+
+    /** 위치 입력 취소, 사진을 버림 */
+    fun onPhotoLocationBack() {
+        val photo = _uiState.value.takenPhoto ?: return
+        _uiState.update { it.copy(takenPhoto = null) }
+        viewModelScope.launch { photoRepository.discardCaptureFile(File(photo.filePath)) }
     }
 
     /** 기본 카메라 앱이 없어 열지 못함, 원본 파일을 지우고 안내 모달 */
@@ -172,6 +197,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
 
     fun onCameraUnavailableDialogConfirm() {
         _uiState.update { it.copy(isCameraUnavailable = false) }
+    }
+
+    fun onLocationServiceDialogDismiss() {
+        _uiState.update { it.copy(isLocationServiceDialogVisible = false) }
     }
 
     fun onPhotoMarkerClick(photoId: String) {
@@ -381,6 +410,18 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         }
     }
 
+    // 기록 중에 위치 서비스가 꺼지면 한 번 안내, 켜거나 일시정지하면 닫고 다시 꺼지거나 꺼진 채 다시 시작하면 또 안내
+    private fun observeLocationService() {
+        viewModelScope.launch {
+            combine(
+                locationRepository.observeLocationEnabled(),
+                _uiState.map { it.mode == WorkoutMode.RECORDING }.distinctUntilChanged(),
+            ) { isEnabled, isRecording -> isRecording && !isEnabled }
+                .distinctUntilChanged()
+                .collect { isOff -> _uiState.update { it.copy(isLocationServiceDialogVisible = isOff) } }
+        }
+    }
+
     private fun confirmPhotoDelete() {
         val photoId = pendingDeletePhotoId.value ?: return
         photoRepository.removePhoto(photoId)
@@ -402,6 +443,18 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
             }
         }
     }
+
+    private fun navigateHomeWhenPauseExpired() {
+        viewModelScope.launch {
+            while (!isPauseExpired()) delay(DURATION_TICK_MILLIS)
+            if (_uiState.value.mode != WorkoutMode.FINISHING) {
+                _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+            }
+        }
+    }
+
+    private fun isPauseExpired(): Boolean =
+        trackingRepository.state.value.record?.isPauseExpiredAt(clock.instant()) == true
 
     private fun applyTracking(state: WorkoutTrackingState) {
         val record = state.record ?: return
