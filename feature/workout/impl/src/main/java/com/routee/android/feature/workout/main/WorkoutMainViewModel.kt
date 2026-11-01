@@ -289,15 +289,15 @@ internal class WorkoutMainViewModel @Inject constructor(
         )
     }
 
-    // 홈 첫 진입 때 거부한 적 없으면 시스템 팝업, 거부했으면 앱 실행마다 한 번 안내 모달
+    // 홈 첫 진입 때 거부한 적 없으면 시스템 팝업, 거부했거나 대략적인 위치면 앱 실행마다 한 번 안내 모달
     private fun guideLocationPermissionOnEntry() {
         viewModelScope.launch {
             val isDenied = permissionRepository.getLocationPermissionDenied().getOrDefault(true)
             val permission = _uiState.value.locationPermission
             if (permission == LocationPermission.GRANTED) return@launch
-            if (isDenied) {
+            if (isDenied || permission == LocationPermission.APPROXIMATE) {
                 if (permissionRepository.consumeLocationGuideOnLaunch()) showLocationPermissionDialog()
-            } else if (permission == LocationPermission.DENIED) {
+            } else {
                 _sideEffect.send(WorkoutMainSideEffect.RequestLocationPermission)
             }
         }

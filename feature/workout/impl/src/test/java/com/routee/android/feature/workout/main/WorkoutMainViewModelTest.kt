@@ -330,6 +330,21 @@ class WorkoutMainViewModelTest {
     }
 
     /**
+     * GIVEN: 거부한 적 없이 설정에서 대략적인 위치로 바꿨을 때
+     * WHEN: 홈에 들어오면
+     * THEN: 시스템 팝업 없이 안내 모달을 띄운다
+     */
+    @Test
+    fun `거부한 적 없어도 대략적인 위치면 진입할 때 안내 모달을 띄운다`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onLocationPermissionChecked(LocationPermission.APPROXIMATE)
+
+        assertTrue(viewModel.uiState.value.isLocationPermissionDialogVisible)
+        assertNull(withTimeoutOrNull(100) { viewModel.sideEffect.first() })
+    }
+
+    /**
      * GIVEN: 마지막 위치가 있을 때
      * WHEN: 권한 허용을 두 번 확인하면
      * THEN: 마지막 위치에서 내 위치 따라가기를 한 번만 보내고, 주소를 채운다
