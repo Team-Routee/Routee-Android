@@ -265,6 +265,11 @@ class RecordEditMainViewModelTest {
 }
 
 private class FakeMemberRepository : MemberRepository {
+    override var cachedSummary: MemberSummary? = null
+    override fun clearCache() {
+        cachedSummary = null
+    }
+
     var joinDate: LocalDate = LocalDate.of(2026, 1, 1)
     var error: Throwable? = null
 
