@@ -220,6 +220,7 @@ internal fun WorkoutRecordingRoute(
                 context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             },
             onDismissRequest = viewModel::onLocationServiceDialogDismiss,
+            leftButtonContentColor = RouteeTheme.colors.white60,
             rightButtonContentColor = RouteeTheme.colors.white,
         )
     }

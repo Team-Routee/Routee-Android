@@ -62,6 +62,7 @@ fun RouteeOneButtonDialog(
  * @param onRightButtonClick       오른쪽 버튼 탭 시 호출. 닫기는 호출하는 쪽에서
  * @param onDismissRequest         왼쪽 버튼, 뒤로가기, 바깥 영역 탭 시 호출
  * @param description              제목 아래 설명. null 이면 숨김
+ * @param leftButtonContentColor   왼쪽 버튼 글자색
  * @param rightButtonContentColor  오른쪽 버튼 글자색
  */
 @Composable
@@ -73,6 +74,7 @@ fun RouteeTwoButtonDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
+    leftButtonContentColor: Color = RouteeTheme.colors.white,
     rightButtonContentColor: Color = RouteeTheme.colors.statusError,
 ) {
     RouteeDialogContainer(
@@ -87,6 +89,7 @@ fun RouteeTwoButtonDialog(
             onLeftButtonClick = onDismissRequest,
             onRightButtonClick = onRightButtonClick,
             description = description,
+            leftButtonContentColor = leftButtonContentColor,
             rightButtonContentColor = rightButtonContentColor,
         )
     }
@@ -115,6 +118,7 @@ private fun ColumnScope.TwoButtonDialogContent(
     onLeftButtonClick: () -> Unit,
     onRightButtonClick: () -> Unit,
     description: String?,
+    leftButtonContentColor: Color = RouteeTheme.colors.white,
     rightButtonContentColor: Color = RouteeTheme.colors.statusError,
 ) {
     DialogInfo(title = title, description = description)
@@ -127,6 +131,7 @@ private fun ColumnScope.TwoButtonDialogContent(
             text = leftButtonText,
             onClick = onLeftButtonClick,
             modifier = Modifier.weight(1f),
+            contentColor = leftButtonContentColor,
         )
         DialogActionButton(
             text = rightButtonText,
@@ -220,6 +225,7 @@ private fun RouteeTwoButtonDialogPreview() {
                     onLeftButtonClick = {},
                     onRightButtonClick = {},
                     description = "운동 시간은 계속 기록되지만,\n위치 서비스를 켜기 전까지\n경로와 거리는 기록되지 않아요.",
+                    leftButtonContentColor = RouteeTheme.colors.white60,
                     rightButtonContentColor = RouteeTheme.colors.white,
                 )
             }
