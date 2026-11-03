@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.ResultEffect
@@ -67,7 +71,7 @@ import com.routee.android.feature.recordedit.model.StickerType
 
 // recap_image
 private const val PREVIEW_ASPECT_RATIO = 9f / 16f
-private val ToastAnchorHeight = 48.dp
+private val NoRouteToastAnchorHeight = 48.dp
 
 private const val CAPTURE_WAIT_FRAMES = 2
 
@@ -85,6 +89,7 @@ internal fun RecapEditorRoute(
     val noRouteMessage = stringResource(R.string.record_edit_editor_no_route_toast)
     val networkErrorMessage = stringResource(R.string.record_edit_editor_network_error_toast)
     val completeNetworkErrorMessage = stringResource(R.string.record_edit_editor_complete_network_error_toast)
+    var toastAnchorHeight by remember { mutableStateOf(0.dp) }
     val onImagePicked: (Uri?) -> Unit = { uri ->
         if (uri == null) viewModel.onGalleryCancel() else onNavigateToBackgroundCrop(uri.toString())
     }
@@ -95,12 +100,17 @@ internal fun RecapEditorRoute(
         when (sideEffect) {
             RecapEditorSideEffect.NavigateBack -> onNavigateBack()
 
-            RecapEditorSideEffect.ShowNoRouteToast -> messageState.showToast(text = noRouteMessage)
+            RecapEditorSideEffect.ShowNoRouteToast -> {
+                toastAnchorHeight = NoRouteToastAnchorHeight
+                messageState.showToast(text = noRouteMessage)
+            }
 
             RecapEditorSideEffect.ShowNetworkErrorToast -> messageState.showToast(text = networkErrorMessage)
 
-            RecapEditorSideEffect.ShowCompleteNetworkErrorToast ->
+            RecapEditorSideEffect.ShowCompleteNetworkErrorToast -> {
+                toastAnchorHeight = 0.dp
                 messageState.showToast(text = completeNetworkErrorMessage)
+            }
 
             RecapEditorSideEffect.OpenGallery -> photoPickerLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -132,6 +142,7 @@ internal fun RecapEditorRoute(
     RecapEditorScreen(
         uiState = uiState,
         recapLayer = recapLayer,
+        toastAnchorHeight = toastAnchorHeight,
         onBackClick = viewModel::onBackClick,
         onCompleteClick = viewModel::onCompleteClick,
         onTabClick = viewModel::onTabClick,
@@ -157,6 +168,7 @@ internal fun RecapEditorRoute(
 private fun RecapEditorScreen(
     uiState: RecapEditorUiState,
     recapLayer: GraphicsLayer,
+    toastAnchorHeight: Dp,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onTabClick: (RecapEditTab) -> Unit,
@@ -191,6 +203,7 @@ private fun RecapEditorScreen(
             uiState = uiState,
             recapLayer = recapLayer,
             content = content.data,
+            toastAnchorHeight = toastAnchorHeight,
             onBackClick = onBackClick,
             onCompleteClick = onCompleteClick,
             onTabClick = onTabClick,
@@ -234,6 +247,7 @@ private fun RecapEditorContent(
     uiState: RecapEditorUiState,
     recapLayer: GraphicsLayer,
     content: RecapEditorContent,
+    toastAnchorHeight: Dp,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     onTabClick: (RecapEditTab) -> Unit,
@@ -338,7 +352,7 @@ private fun RecapEditorContent(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .height(ToastAnchorHeight)
+                        .height(toastAnchorHeight)
                         .routeeMessageAnchor(),
                 )
             }
@@ -388,6 +402,7 @@ private fun RecapEditorScreenPreview(
         RecapEditorScreen(
             uiState = uiState,
             recapLayer = rememberGraphicsLayer(),
+            toastAnchorHeight = 0.dp,
             onBackClick = {},
             onCompleteClick = {},
             onTabClick = {},
