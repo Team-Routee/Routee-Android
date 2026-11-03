@@ -52,7 +52,7 @@ fun RouteePhotoRouteMap(
         markers = markers,
         modifier = modifier
             .fillMaxWidth()
-            .height(480.dp)
+            .height(396.dp)
             .clip(RoundedCornerShape(radiusDp))
             .onSizeChanged { mapSize = it },
     )
