@@ -42,10 +42,13 @@ class RecapRecordUiModelTest {
     /**
      * GIVEN: 값이 0일 때
      * WHEN: 표시용 문자열로 바꾸면
-     * THEN: 빈 문자열이다
+     * THEN: 0으로 보여준다
      */
     @Test
-    fun `값이 0이면 빈 문자열이다`() {
-        assertEquals(RecapRecordUiModel.EMPTY, RecapRecordUiModel.from(0, 0, 0))
+    fun `값이 0이면 0으로 보여준다`() {
+        assertEquals(
+            RecapRecordUiModel(distance = "0.00km", duration = "0h 0m", maxElevation = "0m"),
+            RecapRecordUiModel.from(0, 0, 0),
+        )
     }
 }
