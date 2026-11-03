@@ -53,6 +53,7 @@ private fun MountainMapCell(
     Icon(
         imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_mountain_map_cell),
         contentDescription = null,
+        modifier = Modifier.size(width = 22.dp, height = 19.dp),
         tint = color,
     )
 }
@@ -76,11 +77,10 @@ internal fun MountainMap(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp),
             verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6),
         ) {
             repeat(MOUNTAIN_MAP_ROW_COUNT) { row ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(horizontalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing6)) {
                     repeat(MOUNTAIN_MAP_COLUMN_COUNT) { column ->
                         MountainMapCell(
                             activityLevel = activityLevels[row * MOUNTAIN_MAP_COLUMN_COUNT + column],
