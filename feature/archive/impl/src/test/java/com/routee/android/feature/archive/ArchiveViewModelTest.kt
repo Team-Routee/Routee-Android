@@ -34,14 +34,14 @@ class ArchiveViewModelTest {
     fun changedRecordRefreshesMemberSummaryWithoutChangingSelectedMonth() = runTest {
         val repository = FakeArchiveRepository()
         val members = FakeMemberRepository()
-        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
         viewModel.onPreviousMonthClick()
         val month = viewModel.uiState.value.selectedMonth
 
         members.totalCount = 4
         viewModel.onRecordChanged()
 
-        assertEquals(4, viewModel.content().profile.workoutCount)
+        assertEquals(4, viewModel.content().profile?.workoutCount)
         assertEquals(2, members.callCount)
         assertEquals(month, viewModel.content().month)
         assertEquals(3, repository.months.size)
@@ -62,8 +62,8 @@ class ArchiveViewModelTest {
             )
         }
         val members = FakeMemberRepository().apply { totalCount = 2 }
-        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
-        assertEquals(2, viewModel.content().profile.workoutCount)
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(2, viewModel.content().profile?.workoutCount)
         assertEquals(2, viewModel.content().calendarDays.single().recordCount)
 
         for (remaining in 1 downTo 0) {
@@ -71,7 +71,7 @@ class ArchiveViewModelTest {
             members.totalCount = remaining
             viewModel.onRecordChanged()
 
-            assertEquals(remaining, viewModel.content().profile.workoutCount)
+            assertEquals(remaining, viewModel.content().profile?.workoutCount)
             assertEquals(remaining, viewModel.content().calendarDays.sumOf { it.recordCount })
         }
 
@@ -87,22 +87,53 @@ class ArchiveViewModelTest {
             Result.success(listOf(DailyActivitySummary(month.atDay(12), recordCount * 45, recordCount, null)))
         }
         val members = FakeMemberRepository().apply { totalCount = 2 }
-        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
-        assertEquals(2, viewModel.content().profile.workoutCount)
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(2, viewModel.content().profile?.workoutCount)
 
         recordCount = 1
         members.totalCount = 1
         repository.error = ApiException.NetworkConnection()
         viewModel.onRecordChanged()
 
-        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.content().calendarDays.isEmpty())
         assertTrue(viewModel.uiState.value.isOffline)
 
         repository.error = null
         viewModel.onRetryClick()
 
-        assertEquals(1, viewModel.content().profile.workoutCount)
+        assertEquals(1, viewModel.content().profile?.workoutCount)
         assertEquals(1, viewModel.content().calendarDays.single().recordCount)
+        assertFalse(viewModel.uiState.value.isOffline)
+    }
+
+    @Test
+    fun failedProfileRefreshAfterDeletionPreservesProfileButInvalidatesRecords() = runTest {
+        val repository = FakeArchiveRepository { month ->
+            Result.success(listOf(DailyActivitySummary(month.atDay(12), 90, 2, null)))
+        }
+        val members = FakeMemberRepository().apply { totalCount = 2 }
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
+        val profile = viewModel.content().profile
+        val month = viewModel.content().month
+
+        members.error = ApiException.NetworkConnection()
+        repository.error = ApiException.NetworkConnection()
+        viewModel.onRecordChanged()
+
+        assertEquals(profile, viewModel.content().profile)
+        assertTrue(viewModel.content().calendarDays.isEmpty())
+        assertTrue(viewModel.content().activityLevels.all { it == MountainActivityLevel.NONE })
+        assertEquals(null, members.cachedSummary)
+        assertEquals(null, repository.getCachedMonthlySummary(month))
+        assertTrue(viewModel.uiState.value.isOffline)
+
+        members.error = null
+        members.totalCount = 1
+        repository.error = null
+        viewModel.onRetryClick()
+
+        assertEquals(1, viewModel.content().profile?.workoutCount)
+        assertEquals(3, members.callCount)
         assertFalse(viewModel.uiState.value.isOffline)
     }
 
@@ -110,7 +141,7 @@ class ArchiveViewModelTest {
     fun monthMovementHonorsJoinAndCurrentMonthsWithoutReloadingMember() = runTest {
         val repository = FakeArchiveRepository()
         val members = FakeMemberRepository()
-        val viewModel = ArchiveViewModel(repository, members, SavedStateHandle())
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
         val current = viewModel.uiState.value.currentMonth
 
         repeat(3) { viewModel.onPreviousMonthClick() }
@@ -128,7 +159,7 @@ class ArchiveViewModelTest {
         val repository = FakeArchiveRepository { month ->
             Result.success(listOf(DailyActivitySummary(month.atDay(12), 90, 2, "photo")))
         }
-        val viewModel = ArchiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
+        val viewModel = archiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
         val previousContent = viewModel.content()
         assertTrue(previousContent.calendarDays.isNotEmpty())
         repository.error = ApiException.NetworkConnection()
@@ -155,7 +186,7 @@ class ArchiveViewModelTest {
         val repository = FakeArchiveRepository { month ->
             Result.success(listOf(DailyActivitySummary(month.atDay(12), 90, 2, "photo")))
         }
-        val viewModel = ArchiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
+        val viewModel = archiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
         val previousContent = viewModel.uiState.value.content
         repository.error = ApiException.NetworkConnection()
 
@@ -167,13 +198,63 @@ class ArchiveViewModelTest {
     }
 
     @Test
+    fun offlineTabReentryRestoresLastSuccessfulProfileAndMonth() = runTest {
+        val repository = FakeArchiveRepository { month ->
+            Result.success(listOf(DailyActivitySummary(month.atDay(12), 90, 2, "photo")))
+        }
+        val members = FakeMemberRepository()
+        val original = archiveViewModel(repository, members, SavedStateHandle()).content()
+        repository.error = ApiException.NetworkConnection()
+        members.error = ApiException.NetworkConnection()
+        val recreated = archiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(original, recreated.content())
+        assertTrue(recreated.uiState.value.isOffline)
+    }
+
+    @Test
+    fun initialOfflineWithoutProfileShowsCalendarWithoutInventingMemberData() = runTest {
+        val repository = FakeArchiveRepository().apply { error = ApiException.NetworkConnection() }
+        val members = FakeMemberRepository().apply { error = ApiException.NetworkConnection() }
+        val viewModel = archiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(null, viewModel.content().profile)
+        assertEquals(YearMonth.now(), viewModel.content().month)
+        assertTrue(viewModel.content().calendarDays.isEmpty())
+        assertTrue(viewModel.content().activityLevels.all { it == MountainActivityLevel.NONE })
+    }
+
+    @Test
+    fun offlineFirstThenOnlineTabReentryThenDisconnectPreservesLoadedData() = runTest {
+        val repository = FakeArchiveRepository { month ->
+            Result.success(listOf(DailyActivitySummary(month.atDay(12), 90, 2, "photo")))
+        }.apply { error = ApiException.NetworkConnection() }
+        val members = FakeMemberRepository().apply { error = ApiException.NetworkConnection() }
+        val offline = archiveViewModel(repository, members, SavedStateHandle())
+        assertEquals(null, offline.content().profile)
+        assertTrue(offline.content().calendarDays.isEmpty())
+        assertEquals(ArchiveSideEffect.NetworkUnavailable, offline.sideEffect.first())
+
+        repository.error = null
+        members.error = null
+        val online = archiveViewModel(repository, members, SavedStateHandle())
+        val loaded = online.content()
+        assertEquals(5, loaded.profile?.workoutCount)
+        assertTrue(loaded.calendarDays.isNotEmpty())
+        assertFalse(online.uiState.value.isOffline)
+
+        online.onConnectionChanged(false)
+        assertEquals(loaded, online.content())
+        assertTrue(online.uiState.value.isOffline)
+        assertEquals(ArchiveSideEffect.NetworkUnavailable, online.sideEffect.first())
+    }
+
+    @Test
     fun slowerCancelledMonthDoesNotOverwriteNewSelection() = runTest {
         val current = YearMonth.now()
         val repository = FakeArchiveRepository { month ->
             if (month == current.minusMonths(1)) withContext(NonCancellable) { delay(100) }
             Result.success(emptyList())
         }
-        val viewModel = ArchiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
+        val viewModel = archiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
 
         viewModel.onPreviousMonthClick()
         runCurrent()
@@ -187,12 +268,12 @@ class ArchiveViewModelTest {
     fun initialOfflineEntryShowsEmptyContentAndCanBeRetried() = runTest {
         val repository = FakeArchiveRepository().apply { error = ApiException.NetworkConnection() }
         val restored = YearMonth.now().minusMonths(1)
-        val viewModel = ArchiveViewModel(
+        val viewModel = archiveViewModel(
             repository,
             FakeMemberRepository(),
             SavedStateHandle(mapOf("selectedMonth" to restored.toString())),
         )
-        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.content().calendarDays.isEmpty())
         assertTrue(viewModel.uiState.value.isOffline)
         assertFalse(viewModel.uiState.value.isRefreshing)
         assertEquals(ArchiveSideEffect.NetworkUnavailable, viewModel.sideEffect.first())
@@ -207,9 +288,9 @@ class ArchiveViewModelTest {
     @Test
     fun initialMemberNetworkFailureAlsoShowsOfflineContent() = runTest {
         val members = FakeMemberRepository().apply { error = ApiException.NetworkConnection() }
-        val viewModel = ArchiveViewModel(FakeArchiveRepository(), members, SavedStateHandle())
+        val viewModel = archiveViewModel(FakeArchiveRepository(), members, SavedStateHandle())
 
-        assertEquals(UiState.Empty, viewModel.uiState.value.content)
+        assertTrue(viewModel.content().calendarDays.isEmpty())
         assertTrue(viewModel.uiState.value.isOffline)
         assertFalse(viewModel.uiState.value.isRefreshing)
         assertEquals(ArchiveSideEffect.NetworkUnavailable, viewModel.sideEffect.first())
@@ -224,7 +305,7 @@ class ArchiveViewModelTest {
     @Test
     fun nonNetworkFailureStillShowsErrorScreen() = runTest {
         val repository = FakeArchiveRepository().apply { error = IllegalStateException() }
-        val viewModel = ArchiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
+        val viewModel = archiveViewModel(repository, FakeMemberRepository(), SavedStateHandle())
 
         assertTrue(viewModel.uiState.value.content is UiState.Failure)
         assertFalse(viewModel.uiState.value.isOffline)
@@ -234,6 +315,11 @@ class ArchiveViewModelTest {
     private fun ArchiveViewModel.content() = (uiState.value.content as UiState.Success<ArchiveContent>).data
 
     private class FakeMemberRepository : MemberRepository {
+        override var cachedSummary: MemberSummary? = null
+        override fun clearCache() {
+            cachedSummary = null
+        }
+
         var callCount = 0
         var totalCount = 5
         var error: Exception? = null
@@ -241,13 +327,24 @@ class ArchiveViewModelTest {
         override suspend fun getMemberSummary(): Result<MemberSummary> {
             callCount++
             error?.let { return Result.failure(it) }
-            return Result.success(MemberSummary("이름", null, YearMonth.now().minusMonths(2).atDay(1), 70, totalCount))
+            return Result.success(
+                MemberSummary("이름", null, YearMonth.now().minusMonths(2).atDay(1), 70, totalCount),
+            ).onSuccess {
+                cachedSummary =
+                    it
+            }
         }
     }
 
     private class FakeArchiveRepository(
         private val load: suspend (YearMonth) -> Result<List<DailyActivitySummary>> = { Result.success(emptyList()) },
     ) : ArchiveRepository {
+        private var cachedMonth: Pair<YearMonth, List<DailyActivitySummary>>? = null
+        override fun getCachedMonthlySummary(month: YearMonth) = cachedMonth?.takeIf { it.first == month }?.second
+        override fun clearCache() {
+            cachedMonth = null
+        }
+
         override suspend fun getDailyRecords(date: java.time.LocalDate) = error("Unused")
         var error: Exception? = null
         val months = mutableListOf<YearMonth>()
@@ -255,7 +352,7 @@ class ArchiveViewModelTest {
         override suspend fun getMonthlySummary(month: YearMonth): Result<List<DailyActivitySummary>> {
             months += month
             error?.let { return Result.failure(it) }
-            return load(month)
+            return load(month).onSuccess { cachedMonth = month to it }
         }
     }
 }

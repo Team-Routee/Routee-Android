@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.archive.repository.ArchiveRepository
+import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
 import com.routee.android.core.data.member.model.MemberSummary
 import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.network.exception.ApiException
@@ -38,6 +39,7 @@ internal class ArchiveViewModel @Inject constructor(
     private val archiveRepository: ArchiveRepository,
     private val memberRepository: MemberRepository,
     private val savedStateHandle: SavedStateHandle,
+    connectivityRepository: ConnectivityRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         ArchiveUiState().let { initial ->
@@ -48,12 +50,21 @@ internal class ArchiveViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
     private val _sideEffect = Channel<ArchiveSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
+    val connection = connectivityRepository.observeConnection()
     private var member: MemberSummary? = null
     private var loadJob: Job? = null
     private var recordsJob: Job? = null
 
     init {
         loadSummary()
+    }
+
+    fun onConnectionChanged(connected: Boolean) {
+        val previous = _uiState.value
+        _uiState.update { it.copy(isOffline = !connected) }
+        if (!connected && !previous.isOffline && previous.content is UiState.Success) {
+            viewModelScope.launch { _sideEffect.send(ArchiveSideEffect.NetworkUnavailable) }
+        }
     }
 
     fun onPreviousMonthClick() {
@@ -68,7 +79,12 @@ internal class ArchiveViewModel @Inject constructor(
 
     fun onRecordChanged() {
         member = null
-        _uiState.update { it.copy(content = UiState.Loading) }
+        memberRepository.clearCache()
+        archiveRepository.clearCache()
+        _uiState.update {
+            val profile = (it.content as? UiState.Success)?.data?.profile
+            it.copy(content = UiState.Success(archiveContent(profile, it.selectedMonth, emptyList())))
+        }
         loadSummary()
     }
 
@@ -160,9 +176,16 @@ internal class ArchiveViewModel @Inject constructor(
                     it.copy(
                         content = when {
                             !isOffline -> UiState.Failure(error)
-                            it.content !is UiState.Success -> UiState.Empty
-                            it.content.data.month == month -> it.content
-                            else -> UiState.Success(archiveContent(it.content.data.profile, month, emptyList()))
+
+                            it.content is UiState.Success && it.content.data.month == month -> it.content
+
+                            else -> UiState.Success(
+                                archiveContent(
+                                    (member ?: memberRepository.cachedSummary)?.toArchiveProfile(),
+                                    month,
+                                    archiveRepository.getCachedMonthlySummary(month).orEmpty(),
+                                ),
+                            )
                         },
                         isRefreshing = false,
                         isOffline = isOffline,

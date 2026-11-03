@@ -28,9 +28,9 @@ import com.routee.android.feature.archive.R
 
 @Composable
 internal fun UserProfile(
-    nickname: String,
-    daysTogether: Int,
-    workoutCount: Int,
+    nickname: String?,
+    daysTogether: Int?,
+    workoutCount: Int?,
     modifier: Modifier = Modifier,
     profileImageUrl: String? = null,
 ) {
@@ -69,7 +69,7 @@ internal fun UserProfile(
                 verticalArrangement = Arrangement.spacedBy(RouteeTheme.spacing.Spacing8),
             ) {
                 Text(
-                    text = nickname,
+                    text = nickname.orEmpty(),
                     color = RouteeTheme.colors.white,
                     style = RouteeTheme.typography.labelSb18,
                     maxLines = 1,
@@ -84,7 +84,8 @@ internal fun UserProfile(
                         contentDescription = null,
                     )
                     Text(
-                        text = stringResource(R.string.user_profile_days_together, daysTogether),
+                        text = daysTogether?.let { stringResource(R.string.user_profile_days_together, it) }
+                            ?: "",
                         color = RouteeTheme.colors.mint300,
                         style = RouteeTheme.typography.labelM14,
                         maxLines = 1,

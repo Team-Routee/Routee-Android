@@ -103,9 +103,14 @@ class ArchiveDailyRecordsViewModelTest {
         assertFalse(viewModel.uiState.value.isLoadingRecords)
     }
 
-    private fun viewModel(repository: ArchiveRepository) = ArchiveViewModel(
+    private fun viewModel(repository: ArchiveRepository) = archiveViewModel(
         repository,
         object : MemberRepository {
+            override var cachedSummary: MemberSummary? = null
+            override fun clearCache() {
+                cachedSummary = null
+            }
+
             override suspend fun getMemberSummary() = Result.success(
                 MemberSummary("이름", null, LocalDate.now().minusMonths(2), 60, 2),
             )
@@ -114,6 +119,12 @@ class ArchiveDailyRecordsViewModelTest {
     )
 
     private class FakeRepository : ArchiveRepository {
+        private var cachedMonth: Pair<YearMonth, List<DailyActivitySummary>>? = null
+        override fun getCachedMonthlySummary(month: YearMonth) = cachedMonth?.takeIf { it.first == month }?.second
+        override fun clearCache() {
+            cachedMonth = null
+        }
+
         var records = emptyList<ArchiveRecord>()
         var summaries = emptyList<DailyActivitySummary>()
         var summaryCalls = 0

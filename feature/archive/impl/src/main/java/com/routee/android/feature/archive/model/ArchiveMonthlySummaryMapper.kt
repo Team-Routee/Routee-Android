@@ -8,7 +8,7 @@ import java.time.YearMonth
 import kotlinx.collections.immutable.toImmutableList
 
 internal fun archiveContent(
-    profile: ArchiveProfile,
+    profile: ArchiveProfile?,
     month: YearMonth,
     summaries: List<DailyActivitySummary>,
 ): ArchiveContent {

@@ -61,6 +61,7 @@ internal fun ArchiveRoute(
     viewModel: ArchiveViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    viewModel.connection.CollectSideEffect(viewModel::onConnectionChanged)
     ResultEffect<ArchiveRecordChanged> { viewModel.onRecordChanged() }
     val messages = LocalRouteeMessageState.current
     val sheetMessages = rememberRouteeMessageState()
@@ -120,56 +121,50 @@ private fun ArchiveScreen(
             }
         }
 
-        UiState.Empty -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
+        UiState.Empty, is UiState.Success -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
+            val data = (content as? UiState.Success)?.data ?: archiveContent(null, uiState.selectedMonth, emptyList())
             PullToRefreshBox(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = onRetryClick,
-                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                modifier = Modifier.fillMaxSize(),
             ) {
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     RouteePageHeader(title = stringResource(R.string.archive_title))
+                    UserProfile(
+                        nickname = data.profile?.nickname,
+                        daysTogether = data.profile?.daysTogether,
+                        workoutCount = data.profile?.workoutCount,
+                        profileImageUrl = data.profile?.imageUrl,
+                        modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    )
+                    Spacer(Modifier.height(22.dp))
+                    RouteeMonthControl(
+                        yearMonth = uiState.selectedMonth,
+                        onPreviousClick = onPreviousMonthClick,
+                        onNextClick = onNextMonthClick,
+                        isPreviousEnabled = uiState.isPreviousMonthEnabled,
+                        isNextEnabled = uiState.isNextMonthEnabled,
+                        size = RouteeMonthControlSize.SM,
+                    )
+                    Spacer(Modifier.height(RouteeTheme.spacing.Spacing6))
+                    MountainMap(
+                        activityLevels = data.activityLevels,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    )
+                    Spacer(Modifier.height(RouteeTheme.spacing.Spacing32))
+                    ArchiveCalendarSection(
+                        month = data.month,
+                        days = data.calendarDays,
+                        onDateClick = onDateClick,
+                        modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
+                    )
+                    Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
                 }
             }
-        }
-
-        is UiState.Success -> RouteeBgEllipse(modifier = modifier.fillMaxSize()) {
-            val data = content.data
-            Column(
-                modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                RouteePageHeader(title = stringResource(R.string.archive_title))
-                UserProfile(
-                    nickname = data.profile.nickname,
-                    daysTogether = data.profile.daysTogether,
-                    workoutCount = data.profile.workoutCount,
-                    profileImageUrl = data.profile.imageUrl,
-                    modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
-                )
-                Spacer(Modifier.height(22.dp))
-                RouteeMonthControl(
-                    yearMonth = uiState.selectedMonth,
-                    onPreviousClick = onPreviousMonthClick,
-                    onNextClick = onNextMonthClick,
-                    isPreviousEnabled = uiState.isPreviousMonthEnabled,
-                    isNextEnabled = uiState.isNextMonthEnabled,
-                    size = RouteeMonthControlSize.SM,
-                )
-                Spacer(Modifier.height(RouteeTheme.spacing.Spacing6))
-                MountainMap(
-                    activityLevels = data.activityLevels,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = RouteeTheme.spacing.Spacing16),
-                )
-                Spacer(Modifier.height(RouteeTheme.spacing.Spacing32))
-                ArchiveCalendarSection(
-                    month = data.month,
-                    days = data.calendarDays,
-                    onDateClick = onDateClick,
-                    modifier = Modifier.padding(horizontal = RouteeTheme.spacing.Spacing16),
-                )
-                Spacer(Modifier.height(routeeNavBarPadding(RouteeTheme.spacing.Spacing16)))
-            }
-            if (uiState.isRefreshing || uiState.isLoadingRecords) RouteeLoadingOverlay()
+            if (uiState.isLoadingRecords) RouteeLoadingOverlay()
             val date = uiState.selectedDate
             if (date != null && uiState.records.size > 1) {
                 RecordBottomSheet(
