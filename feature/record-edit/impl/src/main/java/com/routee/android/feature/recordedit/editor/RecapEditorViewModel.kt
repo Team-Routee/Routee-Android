@@ -195,7 +195,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         viewModelScope.launch {
             if (!connectivityRepository.isConnected()) {
                 isCompleting = false
-                _sideEffect.send(RecapEditorSideEffect.ShowNetworkErrorToast)
+                _sideEffect.send(RecapEditorSideEffect.ShowCompleteNetworkErrorToast)
                 return@launch
             }
             _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }

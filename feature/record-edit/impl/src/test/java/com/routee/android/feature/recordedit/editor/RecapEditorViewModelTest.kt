@@ -242,7 +242,7 @@ class RecapEditorViewModelTest {
 
         viewModel.onCompleteClick()
 
-        assertEquals(RecapEditorSideEffect.ShowNetworkErrorToast, viewModel.sideEffect.first())
+        assertEquals(RecapEditorSideEffect.ShowCompleteNetworkErrorToast, viewModel.sideEffect.first())
         assertNull(withTimeoutOrNull(1_000) { viewModel.sideEffect.first() })
 
         connectivityRepository.connected = true
