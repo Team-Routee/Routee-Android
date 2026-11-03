@@ -1,50 +1,87 @@
 package com.routee.android.core.designsystem.component
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.PointF
-import android.graphics.RectF
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.net.Uri
-import android.os.SystemClock
-import android.view.MotionEvent
-import android.view.ScaleGestureDetector
-import android.widget.FrameLayout
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
+import coil3.imageLoader
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.size.Precision
+import coil3.toBitmap
+import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.designsystem.R
 import com.routee.android.core.designsystem.theme.RouteePreviewTheme
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import java.io.File
-import kotlin.coroutines.resume
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-private const val ROTATION_DEGREES = 90
+private const val QUARTER_TURN_DEGREES = 90f
+private const val MAX_DECODE_SIZE = 4096
 private const val MAX_OUTPUT_SIZE = 2048
+private const val OUTPUT_JPEG_QUALITY = 90
 private const val CROPPED_FILE_PREFIX = "cropped"
+private const val CROPPED_FILE_SUFFIX = ".jpg"
+private const val GUIDELINE_COUNT = 3
+private const val RECENTER_DELAY_MILLIS = 500L
+private const val RECENTER_DURATION_MILLIS = 300
+private val CropAreaHorizontalPadding = 16.dp
+private val CropAreaVerticalPadding = 52.dp
 private val BorderLineThickness = 1.dp
 private val CornerThickness = 5.dp
 private val CornerLength = 15.dp
-private val CornerOffset = (-2).dp
+private val CornerOutset = 1.5.dp
 private val GuidelineThickness = 1.dp
-private const val MIN_PINCH_SCALE = 0.25f
-private const val MAX_PINCH_SCALE = 4f
+private val HandleTouchRadius = 24.dp
 
 /**
  * 자르기 영역 비율
@@ -61,68 +98,58 @@ enum class RouteeCropAspectRatio(
  * [RouteeImageCropper]의 회전, 초기화, 자르기를 호출하는 상태
  */
 @Stable
-class RouteeImageCropperState internal constructor() {
-    internal var cropImageView: CropImageView? = null
-    internal var isImageLoaded: Boolean = false
+class RouteeImageCropperState internal constructor(private val cacheDirectory: File) {
+    internal var bitmap: Bitmap? by mutableStateOf(null)
+    internal var geometry: CropGeometry? by mutableStateOf(null)
     private val mutex = Mutex()
 
     fun rotateLeft() {
-        cropImageView?.rotateImage(-ROTATION_DEGREES)
+        geometry = geometry?.rotated(clockwise = false)
     }
 
     fun rotateRight() {
-        cropImageView?.rotateImage(ROTATION_DEGREES)
+        geometry = geometry?.rotated(clockwise = true)
     }
 
     fun reset() {
-        cropImageView?.resetCropRect()
+        geometry = geometry?.reset()
     }
 
     /**
      * 긴 변 최대 [MAX_OUTPUT_SIZE]px로 잘라 캐시에 저장하고, 성공하면 이전에 자른 파일은 지운다
      */
     suspend fun crop(): Result<Uri> = mutex.withLock {
-        val view = cropImageView ?: return Result.failure(IllegalStateException("CropImageView is not attached"))
-        if (!isImageLoaded || view.imageUri == null) {
-            return Result.failure(IllegalStateException("Image is not loaded"))
-        }
-        val cropResult = suspendCancellableCoroutine { continuation ->
-            view.setOnCropImageCompleteListener { _, result ->
-                view.setOnCropImageCompleteListener(null)
-                val uri = result.uriContent
-                continuation.resume(
-                    if (result.isSuccessful && uri != null) {
-                        Result.success(uri)
-                    } else {
-                        Result.failure(result.error ?: IllegalStateException("Image crop failed"))
-                    },
-                )
+        val source = bitmap ?: return Result.failure(IllegalStateException("Image is not loaded"))
+        val current = geometry ?: return Result.failure(IllegalStateException("Image is not loaded"))
+        suspendRunCatching {
+            withContext(Dispatchers.IO) {
+                val file = File(cacheDirectory, "$CROPPED_FILE_PREFIX${System.currentTimeMillis()}$CROPPED_FILE_SUFFIX")
+                val cropped = source.cropped(current)
+                file.outputStream().use { output ->
+                    check(cropped.compress(Bitmap.CompressFormat.JPEG, OUTPUT_JPEG_QUALITY, output)) {
+                        "Image crop failed"
+                    }
+                }
+                cropped.recycle()
+                cacheDirectory
+                    .listFiles { other -> other.name.startsWith(CROPPED_FILE_PREFIX) && other.name != file.name }
+                    ?.forEach(File::delete)
+                Uri.fromFile(file)
             }
-            continuation.invokeOnCancellation { view.setOnCropImageCompleteListener(null) }
-            view.croppedImageAsync(reqWidth = MAX_OUTPUT_SIZE, reqHeight = MAX_OUTPUT_SIZE)
         }
-        cropResult.onSuccess { uri ->
-            deletePreviousCroppedFiles(directory = view.context.cacheDir, keepFileName = uri.lastPathSegment)
-        }
-    }
-
-    private suspend fun deletePreviousCroppedFiles(
-        directory: File,
-        keepFileName: String?,
-    ) = withContext(Dispatchers.IO) {
-        directory
-            .listFiles { file -> file.name.startsWith(CROPPED_FILE_PREFIX) && file.name != keepFileName }
-            ?.forEach(File::delete)
     }
 }
 
 @Composable
-fun rememberRouteeImageCropperState(): RouteeImageCropperState = remember { RouteeImageCropperState() }
+fun rememberRouteeImageCropperState(): RouteeImageCropperState {
+    val context = LocalContext.current
+    return remember(context) { RouteeImageCropperState(context.cacheDir) }
+}
 
 /**
  * 이미지 자르기 영역 (crop_box)
  *
- * 흰 테두리와 모서리 핸들을 드래그해 영역을 조절하고, 드래그하는 동안 3x3 격자가 표시된다. 회전, 초기화, 자르기는 [state]로 호출
+ * 두 손가락으로 사진을 확대·축소하고 한 손가락으로 옮기며, 흰 테두리와 모서리 핸들을 드래그해 영역을 조절한다. 만지는 동안 3x3 격자가 표시된다. 회전, 초기화, 자르기는 [state]로 호출
  */
 @Composable
 fun RouteeImageCropper(
@@ -131,151 +158,216 @@ fun RouteeImageCropper(
     modifier: Modifier = Modifier,
     state: RouteeImageCropperState = rememberRouteeImageCropperState(),
 ) {
+    val context = LocalContext.current
     val density = LocalDensity.current
     val isPreview = LocalInspectionMode.current
-    val lineColor = RouteeTheme.colors.white.toArgb()
-    val overlayColor = RouteeTheme.colors.black80.toArgb()
-    val options = remember(aspectRatio, density, lineColor, overlayColor) {
-        with(density) {
-            CropImageOptions(
-                guidelines = CropImageView.Guidelines.ON_TOUCH,
-                borderLineThickness = BorderLineThickness.toPx(),
-                borderLineColor = lineColor,
-                borderCornerThickness = CornerThickness.toPx(),
-                borderCornerLength = CornerLength.toPx(),
-                borderCornerOffset = CornerOffset.toPx(),
-                borderCornerColor = lineColor,
-                guidelinesThickness = GuidelineThickness.toPx(),
-                guidelinesColor = lineColor,
-                backgroundColor = overlayColor,
-                fixAspectRatio = true,
-                aspectRatioX = aspectRatio.x,
-                aspectRatioY = aspectRatio.y,
-                showProgressBar = false,
+    val lineColor = RouteeTheme.colors.white
+    val overlayColor = RouteeTheme.colors.black80
+    val paint = remember { Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG) }
+    var isTouching by remember { mutableStateOf(false) }
+
+    val bitmap by produceState(
+        initialValue = if (isPreview) {
+            BitmapFactory.decodeResource(
+                context.resources,
+                R.drawable.img_bg_login,
             )
+        } else {
+            null
+        },
+        imageUri,
+    ) {
+        if (!isPreview) {
+            value = null
+            value = imageUri?.let { context.loadCropBitmap(it) }
         }
     }
 
-    AndroidView(
-        factory = { context ->
-            PinchCropImageLayout(context).also { layout ->
-                state.cropImageView = layout.cropImageView
-                layout.cropImageView.setOnSetImageUriCompleteListener { _, _, error ->
-                    state.isImageLoaded = error == null
-                }
+    BoxWithConstraints(modifier = modifier.clipToBounds()) {
+        val contentBounds = with(density) {
+            Rect(
+                left = CropAreaHorizontalPadding.toPx(),
+                top = CropAreaVerticalPadding.toPx(),
+                right = maxWidth.toPx() - CropAreaHorizontalPadding.toPx(),
+                bottom = maxHeight.toPx() - CropAreaVerticalPadding.toPx(),
+            )
+        }
+        remember(bitmap, contentBounds, aspectRatio) {
+            state.bitmap = bitmap
+            state.geometry = bitmap?.let { image ->
+                CropGeometry.initial(
+                    contentBounds = contentBounds,
+                    aspectRatio = aspectRatio.x.toFloat() / aspectRatio.y,
+                    imageSize = Size(image.width.toFloat(), image.height.toFloat()),
+                )
             }
-        },
-        update = { layout ->
-            val view = layout.cropImageView
-            state.cropImageView = view
-            if (view.tag != options) {
-                view.setImageCropOptions(options)
-                view.tag = options
+        }
+
+        val needsRecenter = !isTouching && state.geometry?.isSettled == false
+        LaunchedEffect(needsRecenter) {
+            if (!needsRecenter) return@LaunchedEffect
+            delay(RECENTER_DELAY_MILLIS)
+            val start = state.geometry ?: return@LaunchedEffect
+            val target = start.recentered()
+            animate(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = tween(RECENTER_DURATION_MILLIS),
+            ) { fraction, _ ->
+                state.geometry = start.interpolatedTo(target, fraction)
             }
-            if (isPreview) {
-                view.setImageBitmap(BitmapFactory.decodeResource(view.resources, R.drawable.img_bg_login))
-                state.isImageLoaded = true
-            } else if (imageUri == null) {
-                view.clearImage()
-                state.isImageLoaded = false
-            } else if (view.imageUri != imageUri) {
-                state.isImageLoaded = false
-                view.setImageUriAsync(imageUri)
+            state.geometry = target
+        }
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(state) {
+                    detectCropGestures(state = state, onTouchChange = { isTouching = it })
+                },
+        ) {
+            val image = state.bitmap ?: return@Canvas
+            val geometry = state.geometry ?: return@Canvas
+            drawIntoCanvas { canvas ->
+                canvas.nativeCanvas.drawBitmap(image, geometry.imageMatrix(image), paint)
             }
-        },
-        onRelease = {
-            state.cropImageView = null
-            state.isImageLoaded = false
-        },
-        modifier = modifier,
+            drawOverlay(geometry = geometry, color = overlayColor)
+            if (isTouching) drawGuidelines(box = geometry.box, color = lineColor)
+            drawBorder(box = geometry.box, color = lineColor)
+            drawCorners(box = geometry.box, color = lineColor)
+        }
+    }
+}
+
+private suspend fun Context.loadCropBitmap(uri: Uri): Bitmap? {
+    val request = ImageRequest.Builder(this)
+        .data(uri)
+        .size(MAX_DECODE_SIZE)
+        .precision(Precision.INEXACT)
+        .allowHardware(false)
+        .memoryCachePolicy(CachePolicy.DISABLED)
+        .build()
+    return imageLoader.execute(request).image?.toBitmap()
+}
+
+private suspend fun PointerInputScope.detectCropGestures(
+    state: RouteeImageCropperState,
+    onTouchChange: (Boolean) -> Unit,
+) = awaitEachGesture {
+    val down = awaitFirstDown(requireUnconsumed = false)
+    onTouchChange(true)
+    val handle = state.geometry?.handleAt(down.position, HandleTouchRadius.toPx())
+    val grabOffset = handle?.let { state.geometry?.handlePosition(it)?.minus(down.position) } ?: Offset.Zero
+    var isResizing = handle != null
+    do {
+        val event = awaitPointerEvent()
+        if (event.changes.count { it.pressed } > 1) isResizing = false
+        val pointer = event.changes.firstOrNull { it.id == down.id && it.pressed }
+        val centroid = event.calculateCentroid()
+        state.geometry = when {
+            isResizing && handle != null && pointer != null ->
+                state.geometry?.resized(handle, pointer.position + grabOffset)
+
+            !isResizing && centroid.isSpecified ->
+                state.geometry?.transformed(centroid, event.calculatePan(), event.calculateZoom())
+
+            else -> state.geometry
+        }
+        event.changes.forEach { it.consume() }
+    } while (event.changes.any { it.pressed })
+    onTouchChange(false)
+}
+
+private fun CropGeometry.imageMatrix(image: Bitmap): Matrix = Matrix().apply {
+    setTranslate(-image.width / 2f, -image.height / 2f)
+    postRotate(quarterTurns * QUARTER_TURN_DEGREES)
+    postScale(scale, scale)
+    postTranslate(center.x, center.y)
+}
+
+private fun Bitmap.cropped(geometry: CropGeometry): Bitmap {
+    val box = geometry.box
+    val sourceWidth = box.width / geometry.scale
+    val sourceHeight = box.height / geometry.scale
+    val outputScale = min(1f, MAX_OUTPUT_SIZE / max(sourceWidth, sourceHeight))
+    val outputWidth = (sourceWidth * outputScale).roundToInt().coerceAtLeast(1)
+    val outputHeight = (sourceHeight * outputScale).roundToInt().coerceAtLeast(1)
+    val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
+    val matrix = geometry.imageMatrix(this).apply {
+        postTranslate(-box.left, -box.top)
+        postScale(outputWidth / box.width, outputHeight / box.height)
+    }
+    Canvas(output).drawBitmap(this, matrix, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+    return output
+}
+
+private fun DrawScope.drawOverlay(
+    geometry: CropGeometry,
+    color: Color,
+) {
+    val photo = geometry.photoRect
+    val box = geometry.box
+    listOf(
+        Rect(photo.left, photo.top, photo.right, box.top),
+        Rect(photo.left, box.bottom, photo.right, photo.bottom),
+        Rect(photo.left, box.top, box.left, box.bottom),
+        Rect(box.right, box.top, photo.right, box.bottom),
+    ).forEach { rect ->
+        drawRect(color = color, topLeft = rect.topLeft, size = rect.size)
+    }
+}
+
+private fun DrawScope.drawGuidelines(
+    box: Rect,
+    color: Color,
+) {
+    val thickness = GuidelineThickness.toPx()
+    for (index in 1 until GUIDELINE_COUNT) {
+        val x = box.left + box.width * index / GUIDELINE_COUNT
+        val y = box.top + box.height * index / GUIDELINE_COUNT
+        drawLine(color, Offset(x, box.top), Offset(x, box.bottom), thickness)
+        drawLine(color, Offset(box.left, y), Offset(box.right, y), thickness)
+    }
+}
+
+private fun DrawScope.drawBorder(
+    box: Rect,
+    color: Color,
+) {
+    val thickness = BorderLineThickness.toPx()
+    drawRect(
+        color = color,
+        topLeft = box.topLeft + Offset(thickness / 2, thickness / 2),
+        size = Size(box.width - thickness, box.height - thickness),
+        style = Stroke(width = thickness),
     )
 }
 
-/**
- * 두 손가락 핀치를 자르기 영역 왼쪽 위·오른쪽 아래 모서리 드래그로 바꿔 [cropImageView]에 전달한다.
- * 가운데를 기준으로 벌리면 영역이 커지고 오므리면 작아지며, 손을 떼면 라이브러리 자동 확대·축소가 사진 배율을 맞춘다
- */
-private class PinchCropImageLayout(context: Context) : FrameLayout(context) {
-    val cropImageView = CropImageView(context)
-
-    private var isMultiTouch = false
-    private var pinchStartRect: RectF? = null
-    private var pinchScale = 1f
-    private var pinchDownTime = 0L
-    private var lastCorner = PointF()
-
-    private val scaleDetector = ScaleGestureDetector(
-        context,
-        object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                val rect = cropImageView.cropWindowRect?.let(::RectF) ?: return false
-                pinchStartRect = rect
-                pinchScale = 1f
-                pinchDownTime = SystemClock.uptimeMillis()
-                return true
-            }
-
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                val rect = pinchStartRect ?: return false
-                pinchScale = (pinchScale * detector.scaleFactor).coerceIn(MIN_PINCH_SCALE, MAX_PINCH_SCALE)
-                val dx = rect.width() * (pinchScale - 1) / 2
-                val dy = rect.height() * (pinchScale - 1) / 2
-                dragCorner(to = PointF(rect.left - dx, rect.top - dy)) { PointF(it.left, it.top) }
-                dragCorner(to = PointF(rect.right + dx, rect.bottom + dy)) { PointF(it.right, it.bottom) }
-                return true
-            }
-
-            override fun onScaleEnd(detector: ScaleGestureDetector) {
-                endPinch()
-            }
-        },
-    ).apply { isQuickScaleEnabled = false }
-
-    init {
-        addView(cropImageView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-    }
-
-    // 자르기 영역이 부모 가로채기를 막아서 onInterceptTouchEvent 대신 여기서 나눈다
-    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) isMultiTouch = false
-        scaleDetector.onTouchEvent(event)
-        if (!isMultiTouch && event.actionMasked == MotionEvent.ACTION_POINTER_DOWN) {
-            isMultiTouch = true
-            val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
-            super.dispatchTouchEvent(cancel)
-            cancel.recycle()
+private fun DrawScope.drawCorners(
+    box: Rect,
+    color: Color,
+) {
+    val thickness = CornerThickness.toPx()
+    val length = CornerLength.toPx()
+    val outset = CornerOutset.toPx()
+    val horizontalSides = listOf(box.left - outset to 1f, box.right + outset to -1f)
+    val verticalSides = listOf(box.top - outset to 1f, box.bottom + outset to -1f)
+    horizontalSides.forEach { (x, xInward) ->
+        verticalSides.forEach { (y, yInward) ->
+            val corner = Offset(x, y)
+            drawLine(
+                color = color,
+                start = corner - Offset(xInward * thickness / 2, 0f),
+                end = corner + Offset(xInward * length, 0f),
+                strokeWidth = thickness,
+            )
+            drawLine(
+                color = color,
+                start = corner - Offset(0f, yInward * thickness / 2),
+                end = corner + Offset(0f, yInward * length),
+                strokeWidth = thickness,
+            )
         }
-        if (!isMultiTouch) return super.dispatchTouchEvent(event)
-        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            endPinch()
-            isMultiTouch = false
-        }
-        return true
-    }
-
-    private fun endPinch() {
-        if (pinchStartRect == null) return
-        dispatchCornerDrag(MotionEvent.ACTION_UP, lastCorner)
-        pinchStartRect = null
-    }
-
-    private fun dragCorner(
-        to: PointF,
-        corner: (RectF) -> PointF,
-    ) {
-        val rect = cropImageView.cropWindowRect ?: return
-        dispatchCornerDrag(MotionEvent.ACTION_DOWN, corner(rect))
-        dispatchCornerDrag(MotionEvent.ACTION_MOVE, to)
-        lastCorner = to
-    }
-
-    private fun dispatchCornerDrag(
-        action: Int,
-        corner: PointF,
-    ) {
-        val event = MotionEvent.obtain(pinchDownTime, SystemClock.uptimeMillis(), action, corner.x, corner.y, 0)
-        cropImageView.dispatchTouchEvent(event)
-        event.recycle()
     }
 }
 
