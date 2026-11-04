@@ -81,7 +81,8 @@ internal data class CropGeometry(
     ): CropGeometry {
         if (zoom == 1f && pan == Offset.Zero) return this
         val newScale = (scale * zoom).coerceIn(coverScale(box), maxScale)
-        val newCenter = centroid + (center - centroid) * (newScale / scale) + pan
+        val previousCentroid = centroid - pan
+        val newCenter = centroid + (center - previousCentroid) * (newScale / scale)
         return copy(scale = newScale, center = newCenter).withPhotoCoveringBox()
     }
 

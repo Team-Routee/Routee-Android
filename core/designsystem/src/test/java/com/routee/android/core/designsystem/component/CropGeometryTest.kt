@@ -64,6 +64,25 @@ class CropGeometryTest {
     }
 
     @Test
+    fun `벌리면서 옮기면 처음 잡은 사진 위치가 손가락을 따라간다`() {
+        val previousCentroid = Offset(600f, 500f)
+        val pan = Offset(20f, 10f)
+
+        val zoomed = geometry.transformed(previousCentroid + pan, pan, zoom = 1.5f)
+
+        assertEquals(
+            (previousCentroid.x - geometry.center.x) / geometry.scale,
+            (previousCentroid.x + pan.x - zoomed.center.x) / zoomed.scale,
+            DELTA,
+        )
+        assertEquals(
+            (previousCentroid.y - geometry.center.y) / geometry.scale,
+            (previousCentroid.y + pan.y - zoomed.center.y) / zoomed.scale,
+            DELTA,
+        )
+    }
+
+    @Test
     fun `사진을 옮겨도 박스 밖으로 사진이 빠지지 않는다`() {
         val panned = geometry.transformed(geometry.box.center, Offset(100000f, 100000f), zoom = 1f)
 
