@@ -102,6 +102,14 @@ class CropGeometryTest {
     }
 
     @Test
+    fun `모서리를 한 축으로만 안쪽으로 끌어도 비율을 유지한 채 줄어든다`() {
+        val resized = geometry.resized(CropHandle.BottomRight, Offset(450f, 1600f))
+
+        assertEquals(450f, resized.box.width, DELTA)
+        assertEquals(800f, resized.box.height, DELTA)
+    }
+
+    @Test
     fun `박스는 최소 크기보다 작아지지 않고 영역 밖으로 커지지 않는다`() {
         val smallest = geometry.resized(CropHandle.BottomRight, Offset(1f, 1f))
         val largest = smallest.resized(CropHandle.BottomRight, Offset(5000f, 5000f))

@@ -99,7 +99,8 @@ internal data class CropGeometry(
         val requested = when {
             handle.xSign == 0 -> heightRatio
             handle.ySign == 0 -> widthRatio
-            else -> max(widthRatio, heightRatio)
+            abs(widthRatio - 1f) >= abs(heightRatio - 1f) -> widthRatio
+            else -> heightRatio
         }
         val minRatio = min(MIN_BOX_RATIO * fullBox.width / box.width, 1f)
         val ratio = requested.coerceIn(minRatio, maxResizeRatio(anchor))
