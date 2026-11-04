@@ -125,12 +125,15 @@ class RouteeImageCropperState internal constructor(private val cacheDirectory: F
             withContext(Dispatchers.IO) {
                 val file = File(cacheDirectory, "$CROPPED_FILE_PREFIX${System.currentTimeMillis()}$CROPPED_FILE_SUFFIX")
                 val cropped = source.cropped(current)
-                file.outputStream().use { output ->
-                    check(cropped.compress(Bitmap.CompressFormat.JPEG, OUTPUT_JPEG_QUALITY, output)) {
-                        "Image crop failed"
+                try {
+                    file.outputStream().use { output ->
+                        check(cropped.compress(Bitmap.CompressFormat.JPEG, OUTPUT_JPEG_QUALITY, output)) {
+                            "Image crop failed"
+                        }
                     }
+                } finally {
+                    cropped.recycle()
                 }
-                cropped.recycle()
                 cacheDirectory
                     .listFiles { other -> other.name.startsWith(CROPPED_FILE_PREFIX) && other.name != file.name }
                     ?.forEach(File::delete)
@@ -192,7 +195,7 @@ fun RouteeImageCropper(
                 bottom = maxHeight.toPx() - CropAreaVerticalPadding.toPx(),
             )
         }
-        remember(bitmap, contentBounds, aspectRatio) {
+        remember(state, bitmap, contentBounds, aspectRatio) {
             state.bitmap = bitmap
             state.geometry = bitmap?.let { image ->
                 CropGeometry.initial(
