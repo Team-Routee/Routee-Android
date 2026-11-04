@@ -7,8 +7,6 @@ internal sealed interface RecapEditorSideEffect {
 
     data object ShowNetworkErrorToast : RecapEditorSideEffect
 
-    data object ShowCompleteNetworkErrorToast : RecapEditorSideEffect
-
     data object OpenGallery : RecapEditorSideEffect
 
     data object CaptureRecap : RecapEditorSideEffect

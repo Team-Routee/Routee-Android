@@ -3,7 +3,6 @@ package com.routee.android.feature.recordedit.editor
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
 import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
@@ -37,7 +36,6 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
     private val recapImageStore: RecapImageStore,
     private val recapRepository: RecapRepository,
-    private val connectivityRepository: ConnectivityRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
     val uiState = _uiState.asStateFlow()
@@ -193,11 +191,6 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         if (isCompleting) return
         isCompleting = true
         viewModelScope.launch {
-            if (!connectivityRepository.isConnected()) {
-                isCompleting = false
-                _sideEffect.send(RecapEditorSideEffect.ShowCompleteNetworkErrorToast)
-                return@launch
-            }
             _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }
             _sideEffect.send(RecapEditorSideEffect.CaptureRecap)
         }
