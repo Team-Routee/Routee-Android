@@ -1,6 +1,7 @@
 package com.routee.android.core.designsystem.component.message
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,10 +64,19 @@ fun RouteeMessageHost(
             contentAlignment = Alignment.BottomCenter,
         ) {
             when (message) {
-                is RouteeMessage.Toast -> RouteeToast(
-                    text = message.text,
-                    modifier = Modifier.toastPosition(state = state, bottomInsets = bottomInsets, gap = gap),
-                )
+                is RouteeMessage.Toast -> {
+                    val lastBottom = remember { ToastBottom() }
+                    RouteeToast(
+                        text = message.text,
+                        modifier = Modifier.toastPosition(
+                            state = state,
+                            bottomInsets = bottomInsets,
+                            gap = gap,
+                            lastBottom = lastBottom,
+                            isExiting = { transition.targetState == EnterExitState.PostExit },
+                        ),
+                    )
+                }
 
                 is RouteeMessage.Snackbar -> RouteeSnackbar(
                     text = message.text,
@@ -83,14 +94,21 @@ fun RouteeMessageHost(
     }
 }
 
+private class ToastBottom {
+    var value: Int? = null
+}
+
 private fun Modifier.toastPosition(
     state: RouteeMessageState,
     bottomInsets: WindowInsets,
     gap: Dp,
+    lastBottom: ToastBottom,
+    isExiting: () -> Boolean,
 ): Modifier = layout { measurable, constraints ->
     val horizontal = ToastHorizontalPadding.roundToPx()
     val anchorBottom = toastAnchorBottom(state.anchors.values, constraints.maxHeight)
-    val bottom = maxOf(anchorBottom, bottomInsets.getBottom(this)) + gap.roundToPx()
+    val currentBottom = maxOf(anchorBottom, bottomInsets.getBottom(this)) + gap.roundToPx()
+    val bottom = lastBottom.value?.takeIf { isExiting() } ?: currentBottom.also { lastBottom.value = it }
     val placeable = measurable.measure(constraints.offset(horizontal = -horizontal * 2, vertical = -bottom))
     layout(placeable.width + horizontal * 2, placeable.height + bottom) {
         placeable.place(horizontal, 0)
