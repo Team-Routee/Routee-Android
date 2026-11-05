@@ -13,7 +13,7 @@ import com.routee.android.core.map.RouteePhotoRouteMap
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.timeline.main.model.TimelineTrack
 
-private val MapHeight = 480.dp
+private val MapHeight = 396.dp
 
 @Composable
 internal fun TimelineRouteMap(

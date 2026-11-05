@@ -92,7 +92,6 @@ private val RecordDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 private val SectionTopSpacing = 52.dp
 private val SectionSpacing = 48.dp
 private val CtaTopSpacing = 40.dp
-private val BottomSpacing = 28.dp
 
 @Composable
 internal fun TimelineRoute(
@@ -357,7 +356,7 @@ private fun TimelineScreen(
                     .padding(
                         start = RouteeTheme.spacing.Spacing16,
                         end = RouteeTheme.spacing.Spacing16,
-                        bottom = BottomSpacing,
+                        bottom = RouteeTheme.spacing.Spacing16,
                     ),
             )
         }
