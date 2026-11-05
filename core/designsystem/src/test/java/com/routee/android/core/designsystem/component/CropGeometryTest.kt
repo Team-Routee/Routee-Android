@@ -102,11 +102,11 @@ class CropGeometryTest {
     }
 
     @Test
-    fun `모서리를 한 축으로만 안쪽으로 끌어도 비율을 유지한 채 줄어든다`() {
+    fun `모서리를 한 축으로만 끌면 두 축 이동의 평균만큼 비율을 유지한 채 줄어든다`() {
         val resized = geometry.resized(CropHandle.BottomRight, Offset(450f, 1600f))
 
-        assertEquals(450f, resized.box.width, DELTA)
-        assertEquals(800f, resized.box.height, DELTA)
+        assertEquals(675f, resized.box.width, DELTA)
+        assertEquals(1200f, resized.box.height, DELTA)
     }
 
     @Test

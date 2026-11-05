@@ -259,8 +259,9 @@ private suspend fun PointerInputScope.detectCropGestures(
 ) = awaitEachGesture {
     val down = awaitFirstDown(requireUnconsumed = false)
     onTouchChange(true)
-    val handle = state.geometry?.handleAt(down.position, HandleTouchRadius.toPx())
-    val grabOffset = handle?.let { state.geometry?.handlePosition(it)?.minus(down.position) } ?: Offset.Zero
+    val start = state.geometry
+    val handle = start?.handleAt(down.position, HandleTouchRadius.toPx())
+    val grabOffset = handle?.let { start.handlePosition(it) - down.position } ?: Offset.Zero
     var isResizing = handle != null
     do {
         val event = awaitPointerEvent()
@@ -269,7 +270,7 @@ private suspend fun PointerInputScope.detectCropGestures(
         val centroid = event.calculateCentroid()
         state.geometry = when {
             isResizing && handle != null && pointer != null ->
-                state.geometry?.resized(handle, pointer.position + grabOffset)
+                start?.resized(handle, pointer.position + grabOffset)
 
             !isResizing && centroid.isSpecified ->
                 state.geometry?.transformed(centroid, event.calculatePan(), event.calculateZoom())
