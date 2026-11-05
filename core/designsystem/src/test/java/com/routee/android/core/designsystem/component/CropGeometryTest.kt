@@ -17,6 +17,7 @@ class CropGeometryTest {
         contentBounds = bounds,
         aspectRatio = 9f / 16f,
         imageSize = Size(4000f, 3000f),
+        minBoxSize = 100f,
     )
 
     @Test
@@ -114,8 +115,9 @@ class CropGeometryTest {
         val smallest = geometry.resized(CropHandle.BottomRight, Offset(1f, 1f))
         val largest = smallest.resized(CropHandle.BottomRight, Offset(5000f, 5000f))
 
-        assertEquals(900f * 0.25f, smallest.box.width, DELTA)
-        assertEquals(bounds, largest.box)
+        assertEquals(100f, smallest.box.width, DELTA)
+        assertEquals(bounds.width, largest.box.width, DELTA)
+        assertEquals(bounds.height, largest.box.height, DELTA)
     }
 
     @Test
@@ -161,6 +163,7 @@ class CropGeometryTest {
             contentBounds = Rect(100f, 100f, 1000f, 1700f),
             aspectRatio = 9f / 16f,
             imageSize = Size(4000f, 3000f),
+            minBoxSize = 100f,
         )
 
         assertEquals(CropHandle.TopLeft, inset.handleAt(Offset(105f, 95f), touchRadius = 24f))

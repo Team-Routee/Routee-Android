@@ -8,8 +8,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-private const val MAX_ZOOM = 8f
-private const val MIN_BOX_RATIO = 0.25f
+private const val MAX_ZOOM = 15f
 private const val QUARTER_TURNS = 4
 
 internal enum class CropHandle(
@@ -30,6 +29,7 @@ internal data class CropGeometry(
     val contentBounds: Rect,
     val aspectRatio: Float,
     val imageSize: Size,
+    val minBoxSize: Float,
     val quarterTurns: Int,
     val box: Rect,
     val scale: Float,
@@ -101,7 +101,7 @@ internal data class CropGeometry(
             handle.ySign == 0 -> widthRatio
             else -> (widthRatio + heightRatio) / 2
         }
-        val minRatio = min(MIN_BOX_RATIO * fullBox.width / box.width, 1f)
+        val minRatio = min(minBoxSize / min(box.width, box.height), 1f)
         val ratio = requested.coerceIn(minRatio, maxResizeRatio(anchor))
         if (ratio == 1f) return this
         return copy(
@@ -151,7 +151,7 @@ internal data class CropGeometry(
             .withPhotoCoveringBox()
     }
 
-    fun reset(): CropGeometry = initial(contentBounds, aspectRatio, imageSize)
+    fun reset(): CropGeometry = initial(contentBounds, aspectRatio, imageSize, minBoxSize)
 
     private fun coverScale(target: Rect): Float = max(
         target.width / rotatedImageSize.width,
@@ -186,12 +186,14 @@ internal data class CropGeometry(
             contentBounds: Rect,
             aspectRatio: Float,
             imageSize: Size,
+            minBoxSize: Float,
         ): CropGeometry {
             val box = fittedBox(contentBounds, aspectRatio)
             return CropGeometry(
                 contentBounds = contentBounds,
                 aspectRatio = aspectRatio,
                 imageSize = imageSize,
+                minBoxSize = minBoxSize,
                 quarterTurns = 0,
                 box = box,
                 scale = max(box.width / imageSize.width, box.height / imageSize.height),

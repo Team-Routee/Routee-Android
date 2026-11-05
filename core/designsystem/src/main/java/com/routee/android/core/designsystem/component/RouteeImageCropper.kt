@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.net.Uri
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -72,8 +73,8 @@ private const val OUTPUT_JPEG_QUALITY = 90
 private const val CROPPED_FILE_PREFIX = "cropped"
 private const val CROPPED_FILE_SUFFIX = ".jpg"
 private const val GUIDELINE_COUNT = 3
-private const val RECENTER_DELAY_MILLIS = 500L
-private const val RECENTER_DURATION_MILLIS = 300
+private const val RECENTER_DELAY_MILLIS = 800L
+private const val RECENTER_DURATION_MILLIS = 500
 private val CropAreaHorizontalPadding = 16.dp
 private val CropAreaVerticalPadding = 52.dp
 private val BorderLineThickness = 1.dp
@@ -82,6 +83,7 @@ private val CornerLength = 15.dp
 private val CornerOutset = 1.5.dp
 private val GuidelineThickness = 1.dp
 private val HandleTouchRadius = 24.dp
+private val MinBoxSize = 42.dp
 
 /**
  * 자르기 영역 비율
@@ -202,6 +204,7 @@ fun RouteeImageCropper(
                     contentBounds = contentBounds,
                     aspectRatio = aspectRatio.x.toFloat() / aspectRatio.y,
                     imageSize = Size(image.width.toFloat(), image.height.toFloat()),
+                    minBoxSize = with(density) { MinBoxSize.toPx() },
                 )
             }
         }
@@ -215,7 +218,7 @@ fun RouteeImageCropper(
             animate(
                 initialValue = 0f,
                 targetValue = 1f,
-                animationSpec = tween(RECENTER_DURATION_MILLIS),
+                animationSpec = tween(RECENTER_DURATION_MILLIS, easing = LinearOutSlowInEasing),
             ) { fraction, _ ->
                 state.geometry = start.interpolatedTo(target, fraction)
             }
