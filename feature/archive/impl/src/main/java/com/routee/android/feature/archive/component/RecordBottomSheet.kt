@@ -211,7 +211,7 @@ private fun RecordListItem(
             modifier = Modifier.weight(1f),
         )
         Image(
-            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_chevron_right_sm_grey),
+            imageVector = ImageVector.vectorResource(DesignSystemR.drawable.ic_chevron_right_sm_white),
             contentDescription = null,
         )
     }
