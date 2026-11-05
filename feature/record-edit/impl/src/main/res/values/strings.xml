@@ -12,7 +12,7 @@
     <string name="record_edit_editor_record_duration">시간</string>
     <string name="record_edit_editor_record_max_elevation">최고 고도</string>
     <string name="record_edit_editor_stop_dialog_title">편집을 중단하시겠습니까?</string>
-    <string name="record_edit_editor_stop_dialog_description">편집 중단 시 변경 사항이 저장되지 않습니다.</string>
+    <string name="record_edit_editor_stop_dialog_description">편집 중단 시 변경 사항이\n저장되지 않습니다.</string>
     <string name="record_edit_editor_dialog_cancel">취소</string>
     <string name="record_edit_editor_dialog_confirm">확인</string>
     <string name="record_edit_editor_reset_a11y">편집 초기화</string>
