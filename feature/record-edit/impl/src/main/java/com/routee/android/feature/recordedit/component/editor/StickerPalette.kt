@@ -9,6 +9,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.preview.PreviewFontSizes
@@ -30,6 +31,7 @@ internal fun StickerPalette(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .pointerInput(Unit) {}
             .background(RouteeTheme.colors.black80)
             .padding(
                 horizontal = RouteeTheme.spacing.Spacing16,
