@@ -10,12 +10,17 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ArchiveRepositoryImplTest {
     @Test
     fun dailyRecordsUseIsoDateAndKeepServerOrderAndMissingThumbnail() = runTest {
@@ -56,6 +61,30 @@ class ArchiveRepositoryImplTest {
             .getMonthlySummary(YearMonth.of(2026, 3))
     }
 
+    @Test
+    fun cacheOnlyRestoresMatchingMonthAndClearRemovesIt() = runTest {
+        val month = YearMonth.of(2026, 3)
+        val repository = ArchiveRepositoryImpl(FakeService(), ApiResponseHandler(Json))
+        val summary = repository.getMonthlySummary(month).getOrThrow()
+        assertEquals(summary, repository.getCachedMonthlySummary(month))
+        assertEquals(null, repository.getCachedMonthlySummary(month.minusMonths(1)))
+        repository.clearCache()
+        assertEquals(null, repository.getCachedMonthlySummary(month))
+    }
+
+    @Test
+    fun clearingWhileRequestIsRunningDoesNotRestoreOldCache() = runTest {
+        val service = FakeService().apply { pending = CompletableDeferred() }
+        val month = YearMonth.of(2026, 3)
+        val repository = ArchiveRepositoryImpl(service, ApiResponseHandler(Json))
+        val request = async { repository.getMonthlySummary(month) }
+        runCurrent()
+        repository.clearCache()
+        service.pending!!.complete(Unit)
+        assertTrue(request.await().isSuccess)
+        assertEquals(null, repository.getCachedMonthlySummary(month))
+    }
+
     private class FakeService(private val error: Exception? = null) : ArchiveService {
         override suspend fun deleteActivity(activityId: Long) = error("Unused")
 
@@ -74,9 +103,11 @@ class ArchiveRepositoryImplTest {
         override suspend fun getRoutes(activityId: Long) = error("Unused")
 
         var requestedMonth: YearMonth? = null
+        var pending: CompletableDeferred<Unit>? = null
 
         override suspend fun getMonthlySummary(year: Int, month: Int): BaseResponse<MonthlyActivitySummaryResponse> {
             error?.let { throw it }
+            pending?.await()
             requestedMonth = YearMonth.of(year, month)
             val response = Json.decodeFromString<MonthlyActivitySummaryResponse>(
                 """{"result":[{"activityDate":"2026-03-12","totalDurationMinutes":61,

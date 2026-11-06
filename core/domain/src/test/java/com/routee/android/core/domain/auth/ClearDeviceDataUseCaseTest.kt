@@ -1,7 +1,12 @@
 package com.routee.android.core.domain.auth
 
+import com.routee.android.core.data.archive.model.ArchiveRecord
+import com.routee.android.core.data.archive.model.DailyActivitySummary
+import com.routee.android.core.data.archive.repository.ArchiveRepository
 import com.routee.android.core.data.image.repository.ImageCacheRepository
 import com.routee.android.core.data.location.model.DeviceLocation
+import com.routee.android.core.data.member.model.MemberSummary
+import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
@@ -13,6 +18,8 @@ import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.FakeWorkoutPhotoRepository
 import java.io.IOException
 import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.runTest
@@ -24,7 +31,30 @@ class ClearDeviceDataUseCaseTest {
     private val records = FakeRecordRepository()
     private val photos = FakeWorkoutPhotoRepository()
     private val imageCache = FakeImageCacheRepository()
-    private val clearDeviceData = ClearDeviceDataUseCase(DiscardWorkoutUseCase(tracking, records, photos), imageCache)
+    private var memberCacheCleared = false
+    private var archiveCacheCleared = false
+    private val clearDeviceData =
+        ClearDeviceDataUseCase(
+            DiscardWorkoutUseCase(tracking, records, photos),
+            imageCache,
+            object : MemberRepository {
+                override val cachedSummary: MemberSummary? = null
+                override fun clearCache() {
+                    memberCacheCleared = true
+                }
+                override suspend fun getMemberSummary(): Result<MemberSummary> = error("Unused")
+            },
+            object : ArchiveRepository {
+                override fun getCachedMonthlySummary(month: YearMonth): List<DailyActivitySummary>? = null
+                override fun clearCache() {
+                    archiveCacheCleared = true
+                }
+                override suspend fun getDailyRecords(date: LocalDate): Result<List<ArchiveRecord>> = error("Unused")
+                override suspend fun getMonthlySummary(
+                    month: YearMonth,
+                ): Result<List<DailyActivitySummary>> = error("Unused")
+            },
+        )
 
     /**
      * GIVEN: 기기에 운동 기록, 사진, 이미지 캐시가 있을 때
@@ -40,6 +70,8 @@ class ClearDeviceDataUseCaseTest {
         assertTrue(records.isCleared)
         assertTrue(photos.isCleared)
         assertTrue(imageCache.isCleared)
+        assertTrue(memberCacheCleared)
+        assertTrue(archiveCacheCleared)
     }
 
     /**
@@ -56,6 +88,8 @@ class ClearDeviceDataUseCaseTest {
         assertTrue(result.isFailure)
         assertTrue(photos.isCleared)
         assertTrue(imageCache.isCleared)
+        assertTrue(memberCacheCleared)
+        assertTrue(archiveCacheCleared)
     }
 
     private class FakeTrackingRepository : WorkoutTrackingRepository {

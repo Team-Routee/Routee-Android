@@ -1,6 +1,8 @@
 package com.routee.android.core.domain.auth
 
+import com.routee.android.core.data.archive.repository.ArchiveRepository
 import com.routee.android.core.data.image.repository.ImageCacheRepository
+import com.routee.android.core.data.member.repository.MemberRepository
 import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import javax.inject.Inject
 
@@ -8,9 +10,13 @@ import javax.inject.Inject
 class ClearDeviceDataUseCase @Inject constructor(
     private val discardWorkout: DiscardWorkoutUseCase,
     private val imageCacheRepository: ImageCacheRepository,
+    private val memberRepository: MemberRepository,
+    private val archiveRepository: ArchiveRepository,
 ) {
     /** 하나가 실패해도 나머지는 지우고, 첫 실패를 돌려줌 */
     suspend operator fun invoke(): Result<Unit> {
+        memberRepository.clearCache()
+        archiveRepository.clearCache()
         val results = listOf(discardWorkout(), imageCacheRepository.clear())
         return results.firstOrNull { it.isFailure } ?: Result.success(Unit)
     }

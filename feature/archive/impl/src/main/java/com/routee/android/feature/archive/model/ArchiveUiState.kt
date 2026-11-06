@@ -39,7 +39,7 @@ internal data class ArchiveProfile(
 
 @Immutable
 internal data class ArchiveContent(
-    val profile: ArchiveProfile,
+    val profile: ArchiveProfile?,
     val month: YearMonth,
     val calendarDays: ImmutableList<CalendarDay>,
     val activityLevels: ImmutableList<MountainActivityLevel>,

@@ -20,7 +20,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
 
 @Composable
 internal fun TotalWorkoutCountChip(
-    workoutCount: Int,
+    workoutCount: Int?,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(RouteeTheme.radius.Radius14)
@@ -50,7 +50,7 @@ internal fun TotalWorkoutCountChip(
             contentDescription = null,
         )
         Text(
-            text = workoutCount.toString(),
+            text = workoutCount?.toString().orEmpty(),
             color = RouteeTheme.colors.white,
             style = RouteeTheme.typography.labelR12,
             maxLines = 1,
