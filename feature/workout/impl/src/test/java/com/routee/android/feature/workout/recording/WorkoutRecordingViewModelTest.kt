@@ -139,6 +139,41 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 앱이 꺼졌다 켜져 기록 화면이 바로 복원됐고 기기에 저장 실패한 기록이 있을 때
+     * WHEN: 화면에 들어오고 카운트다운 끝 신호가 와도
+     * THEN: 복구 모달을 띄우게 운동 메인으로 보내고 새 기록은 시작하지 않는다
+     */
+    @Test
+    fun `복원된 기록 화면은 저장 실패한 기록을 덮어쓰지 않는다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository()
+        val records = FakeWorkoutRecordRepository(record = record().finished(START))
+        val viewModel = viewModel(tracking, records = records)
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(WorkoutRecordingSideEffect.NavigateToHome, viewModel.sideEffect.first())
+        assertNull(tracking.startedRecord)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 앱이 살아 있는 동안 저장에 실패한 기록이 있을 때
+     * WHEN: 운동 기록을 눌러 들어와 카운트다운이 끝나면
+     * THEN: 남은 기록 대신 새 기록을 시작한다
+     */
+    @Test
+    fun `운동 기록을 누르면 저장 실패한 기록 대신 새로 시작한다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val viewModel = viewModel(tracking)
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, tracking.startedRecord?.status)
+        assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 복구 모달에서 이어서 기록을 골라 기록을 일시정지로 불러왔을 때
      * WHEN: 카운트다운이 끝나면
      * THEN: 새 기록 없이 불러온 기록을 기록 중으로 바꾸고 서비스를 켠다

@@ -51,17 +51,31 @@ class UnfinishedWorkoutTest {
     }
 
     /**
-     * GIVEN: 종료했지만 서버 저장을 확인하지 못한 기록일 때
-     * WHEN: 앱에 들어오면
+     * GIVEN: 앱이 살아 있는 동안 종료했지만 서버 저장에 실패한 기록일 때
+     * WHEN: 확인하면
      * THEN: 업로드 대기로 본다
      */
     @Test
-    fun `종료한 기록은 업로드 대기로 본다`() {
+    fun `앱 메모리의 종료한 기록은 업로드 대기로 본다`() {
+        val finished = record().finished(START)
+
+        val result = UnfinishedWorkout.of(current = finished, saved = null, now = START)
+
+        assertEquals(UnfinishedWorkout.PendingUpload(finished), result)
+    }
+
+    /**
+     * GIVEN: 앱이 꺼졌다 켜져 기기에만 종료한 기록이 있을 때
+     * WHEN: 확인하면
+     * THEN: 복구 대상으로 본다
+     */
+    @Test
+    fun `기기에만 있는 종료한 기록은 복구 대상으로 본다`() {
         val finished = record().finished(START)
 
         val result = UnfinishedWorkout.of(current = null, saved = finished, now = START)
 
-        assertEquals(UnfinishedWorkout.PendingUpload(finished), result)
+        assertEquals(UnfinishedWorkout.Recoverable(finished), result)
     }
 
     /**
