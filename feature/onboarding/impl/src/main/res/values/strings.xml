@@ -3,7 +3,7 @@
     <!-- 로그인 -->
     <string name="onboarding_login_google_button">Continue with Google</string>
     <string name="onboarding_login_terms_notice"><![CDATA[계속 진행하면 Routee의 서비스 <a href="%1$s">이용약관에 동의</a>하게 됩니다.<br>개인정보 처리 방식은 <a href="%2$s">개인정보 처리방침</a>에서 확인할 수 있습니다.]]></string>
-    <string name="onboarding_login_exit_toast">한 번 더 누르면 앱이 종료됩니다</string>
+    <string name="onboarding_login_exit_toast">한 번 더 누르면 앱이 종료됩니다.</string>
     <string name="onboarding_login_session_expired_dialog_title">Welcome back to Routee!</string>
     <string name="onboarding_login_session_expired_dialog_description">오랫동안 이용하지 않아\n다시 로그인이 필요해요.</string>
     <string name="onboarding_login_session_expired_dialog_confirm">확인</string>
@@ -28,6 +28,6 @@
     <string name="onboarding_nickname_start_button">시작하기</string>
 
     <!-- 공통 -->
-    <string name="onboarding_network_error_toast">네트워크 연결을 확인해주세요</string>
+    <string name="onboarding_network_error_toast">네트워크 연결을 확인해주세요.</string>
     <string name="onboarding_unknown_error_toast">일시적인 오류가 발생했어요.\n잠시 후 다시 시도해주세요.</string>
 </resources>
