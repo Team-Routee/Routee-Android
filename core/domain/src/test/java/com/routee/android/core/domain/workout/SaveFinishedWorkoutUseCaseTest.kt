@@ -54,17 +54,17 @@ class SaveFinishedWorkoutUseCaseTest {
     /**
      * GIVEN: 찍을 때 못 올린 사진이 있는 종료한 기록일 때
      * WHEN: 저장하면
-     * THEN: 완료 전에 사진을 다시 올리고, 저장 후 기기 사진을 지운다
+     * THEN: 완료 전에 사진을 다시 올리고, 타임라인에 보여주게 기기 사진은 남긴다
      */
     @Test
-    fun `저장하면 못 올린 사진을 다시 올리고 기기 사진을 지운다`() = runTest {
+    fun `저장하면 못 올린 사진을 다시 올리고 기기 사진은 남긴다`() = runTest {
         tracking.state(points = 2)
 
         val result = saveFinishedWorkout(JPEG)
 
         assertEquals(WorkoutSaveResult.Saved, result)
         assertEquals(listOf(7L), photos.syncedActivityIds)
-        assertTrue(photos.isCleared)
+        assertFalse(photos.isCleared)
     }
 
     /**
@@ -82,7 +82,7 @@ class SaveFinishedWorkoutUseCaseTest {
 
         assertEquals(WorkoutSaveResult.PhotosMissing, result)
         assertEquals("map-key", remote.completedKey)
-        assertTrue(photos.isCleared)
+        assertFalse(photos.isCleared)
     }
 
     /**
