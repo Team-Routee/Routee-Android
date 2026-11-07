@@ -5,6 +5,7 @@ import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
@@ -170,6 +171,40 @@ class WorkoutRecordingViewModelTest {
 
         assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, tracking.startedRecord?.status)
         assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 저장 실패한 기록이 남은 채 운동 기록을 눌렀을 때
+     * WHEN: 시작 API가 성공하면
+     * THEN: 카운트다운이 끝나기 전에 기기 기록을 지운다
+     */
+    @Test
+    fun `시작 API가 성공해도 카운트다운이 끝나기 전에 저장 실패한 기록을 지운다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val records = FakeWorkoutRecordRepository()
+        val viewModel = viewModel(tracking, records = records)
+
+        assertTrue(tracking.isCleared)
+        assertTrue(records.isCleared)
+        assertNull(tracking.startedRecord)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 저장 실패한 기록이 남은 채 운동 기록을 눌렀을 때
+     * WHEN: 시작 API가 실패하면
+     * THEN: 시작 실패를 알리고 기기 기록은 지운다
+     */
+    @Test
+    fun `시작 API가 실패해도 저장 실패한 기록을 지운다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val records = FakeWorkoutRecordRepository()
+        val viewModel = viewModel(tracking, FakeWorkoutRemoteRepository(createError = IOException()), records = records)
+
+        assertEquals(WorkoutRecordingSideEffect.StartFailed, viewModel.sideEffect.first())
+        assertTrue(tracking.isCleared)
+        assertTrue(records.isCleared)
         viewModel.close()
     }
 
@@ -700,6 +735,7 @@ class WorkoutRecordingViewModelTest {
         key = key,
         trackingRepository = tracking,
         getUnfinishedWorkout = GetUnfinishedWorkoutUseCase(tracking, records, clock),
+        discardWorkout = DiscardWorkoutUseCase(tracking, records, photos),
         remoteRepository = remote,
         saveFinishedWorkout = SaveFinishedWorkoutUseCase(
             trackingRepository = tracking,

@@ -13,6 +13,7 @@ import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
@@ -66,6 +67,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     @Assisted private val key: WorkoutRecordingNavKey,
     private val trackingRepository: WorkoutTrackingRepository,
     private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
+    private val discardWorkout: DiscardWorkoutUseCase,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
     private val resolveWorkoutPhotoPoint: ResolveWorkoutPhotoPointUseCase,
@@ -386,8 +388,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         continueRecording()
     }
 
+    // 운동 기록을 누르면 시작 API 결과와 상관없이 기기에 남은 기록을 지움
     private fun createWorkout() {
         startedWorkout = viewModelScope.async {
+            discardWorkout().onFailure { Timber.e(it, "이전 운동 기록 삭제 실패") }
             remoteRepository.createWorkout(WorkoutType.HIKING, startedAt).onFailure {
                 Timber.e(it, "운동 시작 API 실패")
                 _sideEffect.send(WorkoutRecordingSideEffect.StartFailed)
