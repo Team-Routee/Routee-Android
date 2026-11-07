@@ -57,6 +57,7 @@ internal class FakePhotoTrackingRepository(
     )
     override val state: StateFlow<WorkoutTrackingState> = _state
     val added = mutableListOf<DeviceLocation>()
+    var savedRoute: Pair<Long, List<TrackPoint>>? = null
 
     override suspend fun start(
         workout: StartedWorkout,
@@ -79,6 +80,11 @@ internal class FakePhotoTrackingRepository(
     override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
     override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
+
+    override suspend fun markSaved(): Result<Unit> = Result.success(Unit)
+
+    override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? =
+        savedRoute?.takeIf { it.first == activityId }?.second
 
     override suspend fun clear(): Result<Unit> = Result.success(Unit)
 
