@@ -6,7 +6,7 @@ import java.io.File
 import java.time.Instant
 import kotlinx.coroutines.flow.StateFlow
 
-/** 진행 중인 운동의 사진, 기기에서 먼저 바꾸고 [syncPhotos]로 서버에 반영 */
+/** 진행 중인 운동의 사진, 업로드와 장소명은 기기에서 먼저 바꾸고 [syncPhotos]로 서버에 반영 */
 interface WorkoutPhotoRepository {
     /** 지금 기록의 사진, 찍은 순서 */
     val photos: StateFlow<List<WorkoutPhoto>>
@@ -38,13 +38,13 @@ interface WorkoutPhotoRepository {
         title: String,
     )
 
-    /** 사진 삭제, 다음 [syncPhotos] 때 기기 파일과 서버 사진도 지움 */
-    fun removePhoto(photoId: String)
+    /** 사진 삭제, 서버에서 지운 뒤 기기에서 지움. 실패하면 사진은 그대로 */
+    suspend fun deletePhoto(photoId: String): Result<Unit>
 
     /** 앱이 다시 켜져 비어 있으면 기기에 저장한 사진으로, 그것도 없으면 서버에 올린 사진으로 채움. 이미 있으면 그대로 */
     suspend fun restore(activityId: Long): Result<Unit>
 
-    /** 못 올린 사진 업로드, 바뀐 장소명 수정, 지운 사진 삭제를 서버에 반영. 끝까지 못 올린 사진 수 반환 */
+    /** 못 올린 사진 업로드, 바뀐 장소명 수정을 서버에 반영. 끝까지 못 올린 사진 수 반환 */
     suspend fun syncPhotos(activityId: Long): Int
 
     /** 기기의 사진 전체 삭제 */

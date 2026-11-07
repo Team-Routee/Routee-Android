@@ -657,10 +657,10 @@ class WorkoutRecordingViewModelTest {
     /**
      * GIVEN: 사진 2장이 있는 기록 중일 때
      * WHEN: 모달에서 삭제하고 스낵바가 시간이 지나 닫히면
-     * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 삭제를 확정한다
+     * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 서버에서 지운다
      */
     @Test
-    fun `삭제하면 바로 빼고 스낵바가 닫히면 확정한다`() = runTest {
+    fun `삭제하면 바로 빼고 스낵바가 닫히면 지운다`() = runTest {
         val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"), photo("b"))) }
         val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
         viewModel.onPhotoMarkerClick("a")
@@ -700,6 +700,29 @@ class WorkoutRecordingViewModelTest {
 
         assertEquals(1, viewModel.uiState.value.photoCount)
         assertEquals(1, photos.photos.value.size)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 서버 삭제가 실패할 때
+     * WHEN: 삭제 스낵바가 닫히면
+     * THEN: 사진과 개수를 되돌린다
+     */
+    @Test
+    fun `서버 삭제가 실패하면 사진을 되돌린다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply {
+            setPhotos(listOf(photo("a")))
+            deleteError = IOException()
+        }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+        viewModel.onPhotoDeleteClick()
+
+        viewModel.onPhotoDeleteSnackbarClose("a", isUndone = false)
+
+        assertEquals(1, viewModel.uiState.value.photoCount)
+        assertEquals(1, photos.photos.value.size)
+        assertFalse(viewModel.uiState.value.isPhotoDeletePending)
         viewModel.close()
     }
 

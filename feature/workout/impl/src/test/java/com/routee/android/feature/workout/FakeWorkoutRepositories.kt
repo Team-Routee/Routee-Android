@@ -178,6 +178,7 @@ internal class FakeWorkoutPhotoRepository(
     private val missingCount: Int = 0,
     private val serverPhotos: List<WorkoutPhoto> = emptyList(),
 ) : WorkoutPhotoRepository {
+    var deleteError: Throwable? = null
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos
     val discarded = mutableListOf<File>()
@@ -229,8 +230,10 @@ internal class FakeWorkoutPhotoRepository(
         _photos.value = _photos.value.map { if (it.id == photoId) it.copy(title = title) else it }
     }
 
-    override fun removePhoto(photoId: String) {
+    override suspend fun deletePhoto(photoId: String): Result<Unit> {
+        deleteError?.let { return Result.failure(it) }
         _photos.value = _photos.value.filterNot { it.id == photoId }
+        return Result.success(Unit)
     }
 
     override suspend fun syncPhotos(activityId: Long): Int = missingCount

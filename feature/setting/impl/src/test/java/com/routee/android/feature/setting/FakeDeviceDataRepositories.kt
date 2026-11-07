@@ -101,7 +101,7 @@ internal class FakeWorkoutPhotoRepository : WorkoutPhotoRepository {
         title: String,
     ) = Unit
 
-    override fun removePhoto(photoId: String) = Unit
+    override suspend fun deletePhoto(photoId: String): Result<Unit> = Result.success(Unit)
 
     override suspend fun syncPhotos(activityId: Long): Int = 0
 

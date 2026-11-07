@@ -150,6 +150,59 @@ class WorkoutPhotoRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 서버에 올린 사진이 있을 때
+     * WHEN: 사진을 지우면
+     * THEN: 서버와 기기에서 모두 지운다
+     */
+    @Test
+    fun `올린 사진을 지우면 서버와 기기에서 지운다`() = runTest {
+        dao.rows += photoRow(id = "a", timelineId = 3)
+        repository.restore(ACTIVITY_ID).getOrThrow()
+
+        repository.deletePhoto("a").getOrThrow()
+
+        assertEquals(listOf(3L), timelinePhotos.deletedTimelineIds)
+        assertTrue(repository.photos.value.isEmpty())
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    /**
+     * GIVEN: 서버 삭제가 실패할 때
+     * WHEN: 올린 사진을 지우면
+     * THEN: 실패를 돌려주고 사진은 그대로 둔다
+     */
+    @Test
+    fun `서버 삭제가 실패하면 사진을 그대로 둔다`() = runTest {
+        dao.rows += photoRow(id = "a", timelineId = 3)
+        timelinePhotos.deleteError = IOException()
+        repository.restore(ACTIVITY_ID).getOrThrow()
+
+        assertTrue(repository.deletePhoto("a").isFailure)
+
+        assertEquals("a", repository.photos.value.single().id)
+        assertEquals("a", dao.rows.single().id)
+    }
+
+    /**
+     * GIVEN: 아직 못 올린 사진을 지웠을 때
+     * WHEN: 사진을 반영하면
+     * THEN: 서버를 부르지 않고, 지운 사진을 다시 불러오거나 올리지 않는다
+     */
+    @Test
+    fun `못 올린 사진을 지우면 다시 불러오지 않는다`() = runTest {
+        dao.rows += photoRow(id = "a")
+        repository.restore(ACTIVITY_ID).getOrThrow()
+
+        repository.deletePhoto("a").getOrThrow()
+        repository.syncPhotos(ACTIVITY_ID)
+
+        assertTrue(timelinePhotos.deletedTimelineIds.isEmpty())
+        assertTrue(timelinePhotos.uploadedIds.isEmpty())
+        assertTrue(repository.photos.value.isEmpty())
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    /**
      * GIVEN: 기기에 저장한 사진이 있을 때
      * WHEN: 사진을 모두 지우면
      * THEN: 저장한 사진도 지운다
