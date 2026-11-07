@@ -32,6 +32,8 @@ import java.io.IOException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -171,6 +173,28 @@ class WorkoutRecordingViewModelTest {
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
         assertEquals(WorkoutMode.PAUSED, viewModel.uiState.value.mode)
         assertEquals(WorkoutRecordingSideEffect.ShowResumeFailed, viewModel.sideEffect.first())
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 복구로 들어왔는데 기기 기록을 읽지 못할 때
+     * WHEN: 화면에 들어오고 카운트다운 끝 신호가 와도
+     * THEN: 새 기록 없이 기기 기록을 남기고 복원 실패를 알린 뒤 운동 메인으로 보낸다
+     */
+    @Test
+    fun `복구로 들어왔는데 기기 기록을 읽지 못하면 새 기록 없이 운동 메인으로 보낸다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository()
+        val records = FakeWorkoutRecordRepository(getError = IOException())
+        val viewModel = viewModel(tracking, records = records, key = WorkoutRecordingNavKey(isRecovering = true))
+
+        viewModel.onCountdownFinish()
+
+        assertFalse(records.isCleared)
+        assertNull(tracking.startedRecord)
+        assertEquals(
+            listOf(WorkoutRecordingSideEffect.ShowRestoreFailed, WorkoutRecordingSideEffect.NavigateToHome),
+            viewModel.sideEffect.take(2).toList(),
+        )
         viewModel.close()
     }
 

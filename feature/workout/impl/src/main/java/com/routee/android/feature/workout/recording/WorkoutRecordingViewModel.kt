@@ -329,6 +329,11 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
             val unfinished = getUnfinishedWorkout().getOrElse {
                 Timber.e(it, "운동 기록 복원 실패")
                 _sideEffect.send(WorkoutRecordingSideEffect.ShowRestoreFailed)
+                // 이어서 기록할 기록을 읽지 못하면 새 기록 없이 운동 메인으로
+                if (key.isRecovering) {
+                    _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+                    return@launch
+                }
                 UnfinishedWorkout.None
             }
             when (unfinished) {
