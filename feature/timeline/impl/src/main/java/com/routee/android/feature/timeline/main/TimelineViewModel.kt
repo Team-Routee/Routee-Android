@@ -8,10 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
-import com.routee.android.core.data.recap.repository.RecapRepository
-import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
-import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.timeline.GetTimelinePhotosUseCase
+import com.routee.android.core.domain.timeline.GetTimelineTrackUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -19,7 +17,6 @@ import com.routee.android.feature.timeline.component.RoutePoint
 import com.routee.android.feature.timeline.main.model.TimelineDraft
 import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineSideEffect
-import com.routee.android.feature.timeline.main.model.TimelineTrack
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import com.routee.android.feature.timeline.main.model.toRequestFailure
 import com.routee.android.feature.timeline.main.model.toTimelineTrack
@@ -44,9 +41,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     private val galleryImageStore: GalleryImageStore,
     private val recordSaver: TimelineRecordSaver,
     private val archiveDetailRepository: ArchiveDetailRepository,
-    private val recapRepository: RecapRepository,
-    private val workoutPhotoRepository: WorkoutPhotoRepository,
-    private val workoutTrackingRepository: WorkoutTrackingRepository,
+    private val getTimelineTrack: GetTimelineTrackUseCase,
     private val getTimelinePhotos: GetTimelinePhotosUseCase,
 ) : ViewModel() {
     val activityId = key.activityId
@@ -113,26 +108,16 @@ internal class TimelineViewModel @AssistedInject constructor(
         },
     )
 
-    // 종료 때 저장한 경로가 기기에 있으면 서버를 부르지 않음
     private fun loadTrack() {
-        val deviceRoute = workoutTrackingRepository.getSavedTrackPoints(activityId)
-        if (deviceRoute != null) {
-            showTrack(deviceRoute.toTimelineTrack(workoutPhotoRepository.photos.value, activityId))
-            return
-        }
         viewModelScope.launch {
-            recapRepository.getActivityTrack(activityId)
-                .onSuccess { track -> showTrack(track.toTimelineTrack()) }
+            getTimelineTrack(activityId)
+                .onSuccess { track -> _uiState.update { it.copy(track = UiState.Success(track.toTimelineTrack())) } }
                 .onFailure { error ->
                     Timber.e(error, "경로 조회 실패")
                     _uiState.update { it.copy(track = UiState.Failure(error)) }
                     _sideEffect.send(TimelineSideEffect.TrackLoadFailed(error.toRequestFailure()))
                 }
         }
-    }
-
-    private fun showTrack(track: TimelineTrack) {
-        _uiState.update { it.copy(track = UiState.Success(track)) }
     }
 
     private fun loadPhotos() {
