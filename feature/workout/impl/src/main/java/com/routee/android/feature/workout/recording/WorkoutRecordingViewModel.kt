@@ -13,6 +13,7 @@ import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
 import com.routee.android.core.domain.workout.AddWorkoutPhotoResult
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
@@ -66,6 +67,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     @Assisted private val key: WorkoutRecordingNavKey,
     private val trackingRepository: WorkoutTrackingRepository,
     private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
+    private val discardWorkout: DiscardWorkoutUseCase,
     private val remoteRepository: WorkoutRemoteRepository,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
     private val resolveWorkoutPhotoPoint: ResolveWorkoutPhotoPointUseCase,
@@ -96,6 +98,9 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
 
     // 삭제 스낵바가 떠 있는 사진, 스낵바가 닫히면 삭제 확정
     private val pendingDeletePhotoId = MutableStateFlow<String?>(null)
+
+    // 서버 삭제를 기다리는 사진, 실패하면 다시 보임
+    private val deletingPhotoIds = MutableStateFlow<Set<String>>(emptySet())
 
     init {
         moveToLastLocation()
@@ -218,7 +223,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         syncPhotos()
     }
 
-    /** 사진 모달에서 삭제, 지도와 개수에서 바로 빼고 스낵바가 닫히면 확정 */
+    /** 사진 모달에서 삭제, 지도와 개수에서 바로 빼고 스낵바가 닫히면 서버에서 지움 */
     fun onPhotoDeleteClick() {
         val photo = _uiState.value.openedPhoto ?: return
         confirmPhotoDelete()
@@ -296,11 +301,6 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         viewModelScope.launch { _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome) }
     }
 
-    // 스낵바가 결과 없이 닫혀도 화면을 떠날 때 확정
-    override fun onCleared() {
-        confirmPhotoDelete()
-    }
-
     private suspend fun finishWorkout() {
         trackingRepository.finish().onFailure {
             Timber.e(it, "운동 종료 실패")
@@ -329,6 +329,11 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
             val unfinished = getUnfinishedWorkout().getOrElse {
                 Timber.e(it, "운동 기록 복원 실패")
                 _sideEffect.send(WorkoutRecordingSideEffect.ShowRestoreFailed)
+                // 이어서 기록할 기록을 읽지 못하면 새 기록 없이 운동 메인으로
+                if (key.isRecovering) {
+                    _sideEffect.send(WorkoutRecordingSideEffect.NavigateToHome)
+                    return@launch
+                }
                 UnfinishedWorkout.None
             }
             when (unfinished) {
@@ -344,7 +349,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         }
     }
 
-    // 앱이 다시 켜져 사진 목록이 비었으면 서버에 올린 사진으로 마커와 개수 복구, 복구면 카운트다운 동안
+    // 앱이 다시 켜져 사진 목록이 비었으면 기기에 저장한 사진으로 마커와 개수 복구, 없으면 서버에서. 복구면 카운트다운 동안
     private fun restorePhotos() {
         val activityId = trackingRepository.state.value.record?.activityId ?: return
         viewModelScope.launch { photoRepository.restore(activityId).onFailure { Timber.e(it, "운동 사진 복구 실패") } }
@@ -381,8 +386,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         continueRecording()
     }
 
+    // 운동 기록을 누르면 시작 API 결과와 상관없이 기기에 남은 기록을 지움
     private fun createWorkout() {
         startedWorkout = viewModelScope.async {
+            discardWorkout().onFailure { Timber.e(it, "이전 운동 기록 삭제 실패") }
             remoteRepository.createWorkout(WorkoutType.HIKING, startedAt).onFailure {
                 Timber.e(it, "운동 시작 API 실패")
                 _sideEffect.send(WorkoutRecordingSideEffect.StartFailed)
@@ -401,8 +408,9 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
                 trackingRepository.state.map { it.record?.activityId }.distinctUntilChanged(),
                 photoRepository.photos,
                 pendingDeletePhotoId,
-            ) { activityId, photos, pendingDeleteId ->
-                photos.filter { it.activityId == activityId && it.id != pendingDeleteId }
+                deletingPhotoIds,
+            ) { activityId, photos, pendingDeleteId, deletingIds ->
+                photos.filter { it.activityId == activityId && it.id != pendingDeleteId && it.id !in deletingIds }
             }
                 .collect { photos ->
                     _uiState.update { it.copy(photos = photos.map { photo -> photo.toMapPhoto() }.toImmutableList()) }
@@ -424,10 +432,14 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
 
     private fun confirmPhotoDelete() {
         val photoId = pendingDeletePhotoId.value ?: return
-        photoRepository.removePhoto(photoId)
+        deletingPhotoIds.update { it + photoId }
         pendingDeletePhotoId.value = null
         _uiState.update { it.copy(isPhotoDeletePending = false) }
-        syncPhotos()
+        viewModelScope.launch {
+            // TODO P1 기획: 사진 삭제 실패 안내 (지금은 사진만 다시 보임)
+            photoRepository.deletePhoto(photoId).onFailure { Timber.e(it, "사진 삭제 실패") }
+            deletingPhotoIds.update { it - photoId }
+        }
     }
 
     private fun syncPhotos() {

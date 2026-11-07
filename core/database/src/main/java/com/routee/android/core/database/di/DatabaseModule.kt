@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.routee.android.core.database.RouteeDatabase
 import com.routee.android.core.database.dao.WorkoutDao
+import com.routee.android.core.database.dao.WorkoutPhotoDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +25,7 @@ internal object DatabaseModule {
 
     @Provides
     fun provideWorkoutDao(database: RouteeDatabase): WorkoutDao = database.workoutDao()
+
+    @Provides
+    fun provideWorkoutPhotoDao(database: RouteeDatabase): WorkoutPhotoDao = database.workoutPhotoDao()
 }

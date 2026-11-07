@@ -1,11 +1,9 @@
 package com.routee.android.core.data.timeline.repository
 
 import android.content.Context
-import android.graphics.Bitmap
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.timeline.remote.service.TimelineMapImageService
 import com.routee.android.core.data.upload.PresignedImageUploader
-import com.routee.android.core.data.upload.UPLOAD_JPEG_QUALITY
 import com.routee.android.core.data.upload.remote.dto.request.ImageUrlRequest
 import com.routee.android.core.data.workout.exception.mapWorkoutException
 import com.routee.android.core.network.extension.mapApiException
@@ -22,28 +20,15 @@ internal class TimelineMapImageRepositoryImpl @Inject constructor(
     private val uploader: PresignedImageUploader,
     private val apiResponseHandler: ApiResponseHandler,
 ) : TimelineMapImageRepository {
-    override suspend fun uploadMapImage(activityId: Long, bitmap: Bitmap): Result<String> = suspendRunCatching {
-        val imageFile = withContext(Dispatchers.IO) {
-            File.createTempFile("routee_map_", ".jpg", context.cacheDir).also { file ->
-                try {
-                    file.outputStream().use { output ->
-                        check(bitmap.compress(Bitmap.CompressFormat.JPEG, UPLOAD_JPEG_QUALITY, output))
-                    }
-                } catch (error: Exception) {
-                    file.delete()
-                    throw error
-                }
-            }
-        }
+    override suspend fun uploadMapImage(activityId: Long, jpeg: ByteArray): Result<String> = suspendRunCatching {
+        val imageFile = File(context.cacheDir, "$activityId.jpg")
         try {
+            withContext(Dispatchers.IO) { imageFile.writeBytes(jpeg) }
             uploadFile(activityId, imageFile).getOrThrow()
         } finally {
             imageFile.delete()
         }
     }
-
-    override suspend fun uploadMapImage(activityId: Long, imageFile: File): Result<String> =
-        uploadFile(activityId, imageFile)
 
     private suspend fun uploadFile(activityId: Long, imageFile: File): Result<String> {
         val url = apiResponseHandler.safeApiCall {

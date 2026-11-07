@@ -93,7 +93,7 @@ internal class WorkoutMainViewModel @Inject constructor(
     // 위치 서비스가 꺼져 있으면 켜기 전까지 시작하지 않음
     fun onRecordClick() {
         when {
-            uiState.value.locationPermission != LocationPermission.GRANTED -> showLocationPermissionDialog()
+            !uiState.value.isLocationGranted -> showLocationPermissionDialog()
 
             !uiState.value.isLocationServiceEnabled ->
                 _uiState.update { it.copy(isLocationServiceDialogVisible = true) }
@@ -146,7 +146,7 @@ internal class WorkoutMainViewModel @Inject constructor(
     }
 
     fun onMyLocationClick() {
-        if (uiState.value.locationPermission == LocationPermission.GRANTED) {
+        if (uiState.value.isLocationGranted) {
             viewModelScope.launch { _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null)) }
         } else {
             showLocationPermissionDialog()
@@ -282,7 +282,7 @@ internal class WorkoutMainViewModel @Inject constructor(
                 _sideEffect.send(WorkoutMainSideEffect.ShowRecoverySaveFailed)
             }
         }
-        if (_uiState.value.locationPermission == LocationPermission.GRANTED) {
+        if (_uiState.value.isLocationGranted) {
             _sideEffect.send(WorkoutMainSideEffect.FollowMyLocation(from = null))
         }
     }

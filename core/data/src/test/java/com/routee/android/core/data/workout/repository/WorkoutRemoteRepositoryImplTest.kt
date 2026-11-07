@@ -189,8 +189,6 @@ class WorkoutRemoteRepositoryImplTest {
         distanceMeters = 1_234.6,
         maxElevationMeters = 116.4,
         endedAt = endedAt,
-        mapImageObjectKey = null,
-        mapImagePath = null,
     )
 
     private fun point(

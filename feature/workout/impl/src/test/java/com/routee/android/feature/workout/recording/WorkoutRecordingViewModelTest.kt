@@ -5,6 +5,7 @@ import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.domain.workout.AddWorkoutPhotoUseCase
+import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
@@ -32,6 +33,8 @@ import java.io.IOException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -137,6 +140,75 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 앱이 꺼졌다 켜져 기록 화면이 바로 복원됐고 기기에 저장 실패한 기록이 있을 때
+     * WHEN: 화면에 들어오고 카운트다운 끝 신호가 와도
+     * THEN: 복구 모달을 띄우게 운동 메인으로 보내고 새 기록은 시작하지 않는다
+     */
+    @Test
+    fun `복원된 기록 화면은 저장 실패한 기록을 덮어쓰지 않는다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository()
+        val records = FakeWorkoutRecordRepository(record = record().finished(START))
+        val viewModel = viewModel(tracking, records = records)
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(WorkoutRecordingSideEffect.NavigateToHome, viewModel.sideEffect.first())
+        assertNull(tracking.startedRecord)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 앱이 살아 있는 동안 저장에 실패한 기록이 있을 때
+     * WHEN: 운동 기록을 눌러 들어와 카운트다운이 끝나면
+     * THEN: 남은 기록 대신 새 기록을 시작한다
+     */
+    @Test
+    fun `운동 기록을 누르면 저장 실패한 기록 대신 새로 시작한다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val viewModel = viewModel(tracking)
+
+        viewModel.onCountdownFinish()
+
+        assertEquals(WorkoutStatus.ACTIVITY_IN_PROGRESS, tracking.startedRecord?.status)
+        assertEquals(WorkoutMode.RECORDING, viewModel.uiState.value.mode)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 저장 실패한 기록이 남은 채 운동 기록을 눌렀을 때
+     * WHEN: 시작 API가 성공하면
+     * THEN: 카운트다운이 끝나기 전에 기기 기록을 지운다
+     */
+    @Test
+    fun `시작 API가 성공해도 카운트다운이 끝나기 전에 저장 실패한 기록을 지운다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val records = FakeWorkoutRecordRepository()
+        val viewModel = viewModel(tracking, records = records)
+
+        assertTrue(tracking.isCleared)
+        assertTrue(records.isCleared)
+        assertNull(tracking.startedRecord)
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 저장 실패한 기록이 남은 채 운동 기록을 눌렀을 때
+     * WHEN: 시작 API가 실패하면
+     * THEN: 시작 실패를 알리고 기기 기록은 지운다
+     */
+    @Test
+    fun `시작 API가 실패해도 저장 실패한 기록을 지운다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository(record().finished(START))
+        val records = FakeWorkoutRecordRepository()
+        val viewModel = viewModel(tracking, FakeWorkoutRemoteRepository(createError = IOException()), records = records)
+
+        assertEquals(WorkoutRecordingSideEffect.StartFailed, viewModel.sideEffect.first())
+        assertTrue(tracking.isCleared)
+        assertTrue(records.isCleared)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 복구 모달에서 이어서 기록을 골라 기록을 일시정지로 불러왔을 때
      * WHEN: 카운트다운이 끝나면
      * THEN: 새 기록 없이 불러온 기록을 기록 중으로 바꾸고 서비스를 켠다
@@ -171,6 +243,28 @@ class WorkoutRecordingViewModelTest {
         assertEquals(WorkoutStatus.ACTIVITY_PAUSED, tracking.state.value.record?.status)
         assertEquals(WorkoutMode.PAUSED, viewModel.uiState.value.mode)
         assertEquals(WorkoutRecordingSideEffect.ShowResumeFailed, viewModel.sideEffect.first())
+        viewModel.close()
+    }
+
+    /**
+     * GIVEN: 복구로 들어왔는데 기기 기록을 읽지 못할 때
+     * WHEN: 화면에 들어오고 카운트다운 끝 신호가 와도
+     * THEN: 새 기록 없이 기기 기록을 남기고 복원 실패를 알린 뒤 운동 메인으로 보낸다
+     */
+    @Test
+    fun `복구로 들어왔는데 기기 기록을 읽지 못하면 새 기록 없이 운동 메인으로 보낸다`() = runTest {
+        val tracking = FakeWorkoutTrackingRepository()
+        val records = FakeWorkoutRecordRepository(getError = IOException())
+        val viewModel = viewModel(tracking, records = records, key = WorkoutRecordingNavKey(isRecovering = true))
+
+        viewModel.onCountdownFinish()
+
+        assertFalse(records.isCleared)
+        assertNull(tracking.startedRecord)
+        assertEquals(
+            listOf(WorkoutRecordingSideEffect.ShowRestoreFailed, WorkoutRecordingSideEffect.NavigateToHome),
+            viewModel.sideEffect.take(2).toList(),
+        )
         viewModel.close()
     }
 
@@ -563,10 +657,10 @@ class WorkoutRecordingViewModelTest {
     /**
      * GIVEN: 사진 2장이 있는 기록 중일 때
      * WHEN: 모달에서 삭제하고 스낵바가 시간이 지나 닫히면
-     * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 삭제를 확정한다
+     * THEN: 지도와 개수에서 바로 빼고, 스낵바가 닫히면 서버에서 지운다
      */
     @Test
-    fun `삭제하면 바로 빼고 스낵바가 닫히면 확정한다`() = runTest {
+    fun `삭제하면 바로 빼고 스낵바가 닫히면 지운다`() = runTest {
         val photos = FakeWorkoutPhotoRepository().apply { setPhotos(listOf(photo("a"), photo("b"))) }
         val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
         viewModel.onPhotoMarkerClick("a")
@@ -610,6 +704,29 @@ class WorkoutRecordingViewModelTest {
     }
 
     /**
+     * GIVEN: 서버 삭제가 실패할 때
+     * WHEN: 삭제 스낵바가 닫히면
+     * THEN: 사진과 개수를 되돌린다
+     */
+    @Test
+    fun `서버 삭제가 실패하면 사진을 되돌린다`() = runTest {
+        val photos = FakeWorkoutPhotoRepository().apply {
+            setPhotos(listOf(photo("a")))
+            deleteError = IOException()
+        }
+        val viewModel = viewModel(FakeWorkoutTrackingRepository(record()), photos = photos)
+        viewModel.onPhotoMarkerClick("a")
+        viewModel.onPhotoDeleteClick()
+
+        viewModel.onPhotoDeleteSnackbarClose("a", isUndone = false)
+
+        assertEquals(1, viewModel.uiState.value.photoCount)
+        assertEquals(1, photos.photos.value.size)
+        assertFalse(viewModel.uiState.value.isPhotoDeletePending)
+        viewModel.close()
+    }
+
+    /**
      * GIVEN: 사진을 삭제해 스낵바가 떠 있을 때
      * WHEN: 카메라 버튼을 누르면
      * THEN: 카메라를 열지 않는다
@@ -641,10 +758,10 @@ class WorkoutRecordingViewModelTest {
         key = key,
         trackingRepository = tracking,
         getUnfinishedWorkout = GetUnfinishedWorkoutUseCase(tracking, records, clock),
+        discardWorkout = DiscardWorkoutUseCase(tracking, records, photos),
         remoteRepository = remote,
         saveFinishedWorkout = SaveFinishedWorkoutUseCase(
             trackingRepository = tracking,
-            recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
             photoRepository = photos,
