@@ -9,7 +9,7 @@ import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.data.recap.repository.RecapRepository
-import com.routee.android.core.data.workout.repository.WorkoutPhotoRepository
+import com.routee.android.core.domain.timeline.GetTimelinePhotosUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -19,7 +19,6 @@ import com.routee.android.feature.timeline.main.model.TimelineRequestResult
 import com.routee.android.feature.timeline.main.model.TimelineSideEffect
 import com.routee.android.feature.timeline.main.model.TimelineUiState
 import com.routee.android.feature.timeline.main.model.toRequestFailure
-import com.routee.android.feature.timeline.main.model.toTimelinePhotos
 import com.routee.android.feature.timeline.main.model.toTimelineTrack
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -43,7 +42,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     private val recordSaver: TimelineRecordSaver,
     private val archiveDetailRepository: ArchiveDetailRepository,
     private val recapRepository: RecapRepository,
-    private val workoutPhotoRepository: WorkoutPhotoRepository,
+    private val getTimelinePhotos: GetTimelinePhotosUseCase,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -121,16 +120,10 @@ internal class TimelineViewModel @AssistedInject constructor(
         }
     }
 
-    // 종료 때 올린 사진이 기기에 있으면 서버를 부르지 않음
     private fun loadPhotos() {
-        val devicePhotos = workoutPhotoRepository.photos.value.toTimelinePhotos(activityId)
-        if (devicePhotos.isNotEmpty()) {
-            showPhotos(devicePhotos)
-            return
-        }
         viewModelScope.launch {
             // TODO P1 기획: 사진 목록 조회 실패 안내 (지금은 사진 섹션, 나의 루트 초기 목록 없이 진행)
-            archiveDetailRepository.getPhotos(activityId)
+            getTimelinePhotos(activityId)
                 .onSuccess(::showPhotos)
                 .onFailure { error ->
                     Timber.e(error, "사진 조회 실패")
