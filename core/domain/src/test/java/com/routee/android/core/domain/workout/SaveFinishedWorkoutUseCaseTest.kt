@@ -184,6 +184,7 @@ class SaveFinishedWorkoutUseCaseTest {
         private val _state = MutableStateFlow(WorkoutTrackingState())
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isCleared = false
+        var isSaved = false
 
         fun state(
             points: Int,
@@ -209,6 +210,14 @@ class SaveFinishedWorkoutUseCaseTest {
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
+
+        override suspend fun markSaved(): Result<Unit> {
+            isSaved = true
+            _state.value = WorkoutTrackingState()
+            return Result.success(Unit)
+        }
+
+        override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? = null
 
         override suspend fun clear(): Result<Unit> {
             isCleared = true

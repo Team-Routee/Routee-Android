@@ -2,6 +2,7 @@ package com.routee.android.core.data.workout.repository
 
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.StartedWorkout
+import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
 import java.time.Instant
@@ -45,6 +46,12 @@ interface WorkoutTrackingRepository {
      */
     suspend fun finish(endedAt: Instant? = null): Result<Unit>
 
-    /** 저장을 마쳤거나 저장할 수 없는 기록 삭제, 상태 비움 */
+    /** 서버에 저장한 기록 삭제, 경로는 다음 [start]나 [clear] 전까지 메모리에 남김 */
+    suspend fun markSaved(): Result<Unit>
+
+    /** [markSaved]로 남긴 [activityId] 기록의 경로, 없으면 null */
+    fun getSavedTrackPoints(activityId: Long): List<TrackPoint>?
+
+    /** 저장할 수 없거나 버리는 기록 삭제, 남긴 경로도 비움 */
     suspend fun clear(): Result<Unit>
 }

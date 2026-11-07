@@ -86,6 +86,11 @@ internal class FakeWorkoutTrackingRepository(
         return Result.success(Unit)
     }
 
+    // 저장을 마쳐도 기기 기록은 지움
+    override suspend fun markSaved(): Result<Unit> = clear()
+
+    override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? = null
+
     override suspend fun clear(): Result<Unit> {
         isCleared = true
         _state.value = WorkoutTrackingState()

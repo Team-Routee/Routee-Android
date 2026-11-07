@@ -80,6 +80,10 @@ internal class FakePhotoTrackingRepository(
 
     override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
+    override suspend fun markSaved(): Result<Unit> = Result.success(Unit)
+
+    override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? = null
+
     override suspend fun clear(): Result<Unit> = Result.success(Unit)
 
     private companion object {
