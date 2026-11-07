@@ -101,12 +101,12 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     // 올리는 중이면 끝난 뒤에 지움
     override suspend fun deletePhoto(photoId: String): Result<Unit> = syncMutex.withLock {
-        suspendRunCatching {
+        suspendRunCatching<Unit> {
             val photo = _photos.value.find { it.id == photoId } ?: return@suspendRunCatching
             photo.timelineId?.let { timelinePhotoRepository.deletePhoto(photo.activityId, it).getOrThrow() }
             _photos.update { photos -> photos.filterNot { it.id == photoId } }
-            photo.filePath?.let { localDataSource.delete(it) }
             savePhotos(photo.activityId)
+            photo.filePath?.let { localDataSource.delete(it) }
         }
     }
 
