@@ -12,4 +12,8 @@ internal data class TimelineUiState(
     val isTitleEditing: Boolean = false,
     val track: UiState<TimelineTrack> = UiState.Loading,
     val photos: UiState<List<ArchivePhoto>> = UiState.Loading,
-)
+) {
+    // 불러오는 중이거나 사진이 있으면 사진 섹션 표시
+    val hasPhotoSection: Boolean
+        get() = photos is UiState.Loading || (photos as? UiState.Success)?.data?.isNotEmpty() == true
+}

@@ -23,6 +23,17 @@ internal data class WorkoutMainUiState(
     // 진입 때 남은 기록 확인 중이면 true, 새 기록이 남은 기록과 겹치지 않게 운동 기록 비활성화
     val isCheckingUnfinishedWorkout: Boolean = true,
 ) {
+    val isLocationGranted: Boolean
+        get() = locationPermission == LocationPermission.GRANTED
+
+    // 종료 후 저장 캡처에는 내 위치를 넣지 않음
+    val isMyLocationVisible: Boolean
+        get() = isLocationGranted && !isRecoverySaving
+
+    // 위치 서비스가 꺼져 있으면 이전 주소를 보여주지 않음
+    val visibleAddress: String?
+        get() = address.takeIf { isLocationServiceEnabled }
+
     // 위치 권한, 위치 서비스 안내 모달이 닫히거나 처리가 실패하면 다시 보여줌
     val isRecoveryDialogVisible: Boolean
         get() = recovery != null && !isLocationGuideDialogVisible && !isRecoveryInProgress

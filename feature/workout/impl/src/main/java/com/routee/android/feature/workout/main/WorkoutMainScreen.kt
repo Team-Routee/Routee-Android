@@ -133,23 +133,17 @@ internal fun WorkoutMainRoute(
     }
 
     if (uiState.recovery != null) {
-        LaunchedEffect(Unit) {
-            WorkoutTrackingService.stop(context)
-            WorkoutPauseAlarm.cancel(context)
-            WorkoutPauseNotification.cancel(context)
-        }
+        LaunchedEffect(Unit) { stopWorkoutTracking(context) }
     }
 
     uiState.recoveryCaptureRoute?.let { route ->
         LaunchedEffect(route) { viewModel.onRecoveryMapCaptured(mapState.captureRouteJpeg(route)) }
     }
 
-    val isLocationGranted = uiState.locationPermission == LocationPermission.GRANTED
     WorkoutMainScreen(
         uiState = uiState,
         mapState = mapState,
-        // 종료 후 저장 캡처에는 내 위치를 넣지 않음
-        myLocation = if (isLocationGranted && !uiState.isRecoverySaving) viewModel.myLocation else null,
+        myLocation = if (uiState.isMyLocationVisible) viewModel.myLocation else null,
         onMyLocationClick = viewModel::onMyLocationClick,
         onRecordClick = viewModel::onRecordClick,
     )
@@ -239,6 +233,13 @@ private fun WorkoutRecoveryDialog(
 // 예: 03/03 오전 3:33
 private val RecoveryTimeFormatter = DateTimeFormatter.ofPattern("MM/dd a h:mm", Locale.KOREAN)
 
+// 복구 모달이 뜨면 이전 기록의 위치 기록과 2시간 알람, 알림을 멈춤
+private fun stopWorkoutTracking(context: Context) {
+    WorkoutTrackingService.stop(context)
+    WorkoutPauseAlarm.cancel(context)
+    WorkoutPauseNotification.cancel(context)
+}
+
 private val LOCATION_PERMISSIONS = arrayOf(
     Manifest.permission.ACCESS_FINE_LOCATION,
     Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -282,14 +283,10 @@ private fun WorkoutMainScreen(
                 modifier = Modifier.padding(vertical = RouteeTheme.spacing.Spacing14),
             )
             LocationChip(
-                text = when {
-                    uiState.locationPermission != LocationPermission.GRANTED ->
-                        stringResource(R.string.workout_main_location_permission_required)
-
-                    !uiState.isLocationServiceEnabled || uiState.address == null ->
-                        stringResource(R.string.workout_main_location_checking)
-
-                    else -> uiState.address
+                text = if (uiState.isLocationGranted) {
+                    uiState.visibleAddress ?: stringResource(R.string.workout_main_location_checking)
+                } else {
+                    stringResource(R.string.workout_main_location_permission_required)
                 },
             )
         }
