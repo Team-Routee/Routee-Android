@@ -14,8 +14,8 @@
 | Path under `core/database/.../` | Example |
 | --- | --- |
 | (root) | `RouteeDatabase` (one Room DB for the app, internal) |
-| `dao/` | `WorkoutDao` |
-| `entity/` | `WorkoutEntity`, `TrackPointEntity` |
+| `dao/` | `WorkoutDao`, `WorkoutPhotoDao` |
+| `entity/` | `WorkoutEntity`, `TrackPointEntity`, `WorkoutPhotoEntity` |
 
 Hilt modules live in `core/data/.../di/` and `core/database/.../di/`.
 
