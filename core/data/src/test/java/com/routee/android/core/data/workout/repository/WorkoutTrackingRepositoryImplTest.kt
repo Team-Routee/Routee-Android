@@ -293,6 +293,58 @@ class WorkoutTrackingRepositoryImplTest {
         assertNull(repository.state.value.record)
     }
 
+    /**
+     * GIVEN: 경로 좌표를 기록하고 종료한 기록일 때
+     * WHEN: 저장을 마쳤다고 표시하면
+     * THEN: 기기 기록과 상태는 비우고 경로는 그 기록 ID로만 남긴다
+     */
+    @Test
+    fun `저장을 마치면 기기 기록은 지우고 경로는 남긴다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        clock.now = START.plusSeconds(1)
+        repository.addTrackPoint(location(latitude = 37.0, seconds = 1))
+        repository.finish()
+
+        repository.markSaved()
+
+        assertNull(recordRepository.getRecord().getOrThrow())
+        assertNull(repository.state.value.record)
+        assertEquals(listOf(1), repository.getSavedTrackPoints(ACTIVITY_ID)?.map { it.pointIndex })
+        assertNull(repository.getSavedTrackPoints(ACTIVITY_ID + 1))
+    }
+
+    /**
+     * GIVEN: 저장을 마쳐 경로를 남긴 뒤
+     * WHEN: 다음 기록을 시작하면
+     * THEN: 남긴 경로를 지운다
+     */
+    @Test
+    fun `다음 기록을 시작하면 남긴 경로를 지운다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        repository.finish()
+        repository.markSaved()
+
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+
+        assertNull(repository.getSavedTrackPoints(ACTIVITY_ID))
+    }
+
+    /**
+     * GIVEN: 저장을 마쳐 경로를 남긴 뒤
+     * WHEN: 기록을 지우면
+     * THEN: 남긴 경로도 지운다
+     */
+    @Test
+    fun `기록을 지우면 남긴 경로도 지운다`() = runTest {
+        repository.start(STARTED_WORKOUT, WorkoutType.HIKING, START)
+        repository.finish()
+        repository.markSaved()
+
+        repository.clear()
+
+        assertNull(repository.getSavedTrackPoints(ACTIVITY_ID))
+    }
+
     private fun record() = WorkoutRecord(
         activityId = ACTIVITY_ID,
         title = "2026.10.22 기록",

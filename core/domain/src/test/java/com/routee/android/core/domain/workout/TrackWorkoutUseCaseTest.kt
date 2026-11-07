@@ -3,6 +3,7 @@ package com.routee.android.core.domain.workout
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
+import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
@@ -179,6 +180,10 @@ class TrackWorkoutUseCaseTest {
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
+
+        override suspend fun markSaved(): Result<Unit> = Result.success(Unit)
+
+        override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? = null
 
         override suspend fun clear(): Result<Unit> = Result.success(Unit)
 

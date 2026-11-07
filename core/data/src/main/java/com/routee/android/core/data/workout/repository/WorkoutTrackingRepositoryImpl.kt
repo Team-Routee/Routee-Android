@@ -3,6 +3,7 @@ package com.routee.android.core.data.workout.repository
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.workout.model.StartedWorkout
+import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
@@ -25,6 +26,8 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
     private val _state = MutableStateFlow(WorkoutTrackingState())
     override val state: StateFlow<WorkoutTrackingState> = _state.asStateFlow()
 
+    @Volatile
+    private var savedRoute: SavedRoute? = null
     private val mutex = Mutex()
 
     override suspend fun start(
@@ -33,7 +36,10 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         startedAt: Instant,
     ): Result<Unit> = mutex.withLock {
         val record = WorkoutRecord.started(workout, type, startedAt, clock.instant())
-        recordRepository.startRecord(record).onSuccess { _state.value = WorkoutTrackingState(record = record) }
+        recordRepository.startRecord(record).onSuccess {
+            _state.value = WorkoutTrackingState(record = record)
+            savedRoute = null
+        }
     }
 
     override suspend fun pause(): Result<Unit> = updateStatus { it.paused(clock.instant()) }
@@ -82,7 +88,18 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         recordRepository.saveRecord(finished).onSuccess { _state.value = _state.value.copy(record = finished) }
     }
 
+    override suspend fun markSaved(): Result<Unit> = mutex.withLock {
+        val current = _state.value
+        val record = current.record ?: return@withLock Result.success(Unit)
+        savedRoute = SavedRoute(record.activityId, current.trackPoints)
+        recordRepository.deleteRecord(record.activityId).onSuccess { _state.value = WorkoutTrackingState() }
+    }
+
+    override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? =
+        savedRoute?.takeIf { it.activityId == activityId }?.trackPoints
+
     override suspend fun clear(): Result<Unit> = mutex.withLock {
+        savedRoute = null
         val record = _state.value.record ?: return@withLock Result.success(Unit)
         recordRepository.deleteRecord(record.activityId).onSuccess { _state.value = WorkoutTrackingState() }
     }
@@ -104,3 +121,9 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         const val NO_RECORD = "진행 중인 기록이 없음"
     }
 }
+
+// 서버에 저장한 기록의 경로
+private class SavedRoute(
+    val activityId: Long,
+    val trackPoints: List<TrackPoint>,
+)
