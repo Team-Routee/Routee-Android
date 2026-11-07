@@ -9,9 +9,12 @@ import com.routee.android.core.data.timeline.model.TimelinePhotoStatus
 import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.repository.TimelinePhotoRepository
 import com.routee.android.core.data.workout.local.WorkoutPhotoLocalDataSource
+import com.routee.android.core.data.workout.local.toEntity
+import com.routee.android.core.data.workout.local.toModel
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutPhoto
 import com.routee.android.core.data.workout.model.toServerElevation
+import com.routee.android.core.database.dao.WorkoutPhotoDao
 import java.io.File
 import java.time.Instant
 import java.util.UUID
@@ -29,6 +32,7 @@ import kotlinx.coroutines.sync.withLock
 @Singleton
 internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val localDataSource: WorkoutPhotoLocalDataSource,
+    private val photoDao: WorkoutPhotoDao,
     private val timelinePhotoRepository: TimelinePhotoRepository,
     private val recapRepository: RecapRepository,
     private val archiveDetailRepository: ArchiveDetailRepository,
@@ -41,6 +45,9 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     // 기기에서 지울 사진 파일, 올리는 중일 수 있어 동기화 때 지움
     private val removedFiles = MutableStateFlow<Set<String>>(emptySet())
+
+    // 기기에 저장한 사진을 이미 불러온 기록, 지운 사진을 다시 불러오지 않게 앱 실행마다 한 번만
+    private var loadedActivityId: Long? = null
     private val mutex = Mutex()
     private val syncMutex = Mutex()
 
@@ -53,6 +60,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         takenAt: Instant,
         title: String,
     ): Result<WorkoutPhoto> = suspendRunCatching {
+        loadSavedPhotos(activityId)
         val id = UUID.randomUUID().toString()
         val path = localDataSource.compress(activityId, id, original)
         val photo = WorkoutPhoto(
@@ -67,11 +75,13 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             clearOthers(activityId)
             _photos.value += photo
         }
+        savePhotos(activityId)
         photo
     }
 
-    // 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
+    // 기기에 저장한 사진이 없을 때만 서버에서. 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
     override suspend fun restore(activityId: Long): Result<Unit> = suspendRunCatching {
+        loadSavedPhotos(activityId)
         if (_photos.value.any { it.activityId == activityId }) return@suspendRunCatching
         val photos = coroutineScope {
             val track = async { recapRepository.getActivityTrack(activityId) }
@@ -107,12 +117,17 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun syncPhotos(activityId: Long): Int = syncMutex.withLock {
-        deleteRemovedFiles()
-        uploadPending(activityId)
-        updateTitles(activityId)
-        deleteRemoved(activityId)
-        _photos.value.count { it.activityId == activityId && it.timelineId == null }
+    override suspend fun syncPhotos(activityId: Long): Int {
+        loadSavedPhotos(activityId)
+        savePhotos(activityId)
+        return syncMutex.withLock {
+            deleteRemovedFiles()
+            uploadPending(activityId)
+            updateTitles(activityId)
+            deleteRemoved(activityId)
+            savePhotos(activityId)
+            _photos.value.count { it.activityId == activityId && it.timelineId == null }
+        }
     }
 
     override suspend fun clear(): Result<Unit> = suspendRunCatching {
@@ -121,7 +136,32 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             _photos.value = emptyList()
             removedTimelines.value = emptySet()
             removedFiles.value = emptySet()
+            loadedActivityId = null
             localDataSource.clear()
+            photoDao.clearPhotos()
+        }
+    }
+
+    // 앱이 꺼졌다 켜졌으면 기기에 저장한 사진을 불러옴
+    private suspend fun loadSavedPhotos(activityId: Long) {
+        mutex.withLock {
+            if (loadedActivityId == activityId) return
+            loadedActivityId = activityId
+            if (_photos.value.any { it.activityId == activityId }) return
+            val saved = suspendRunCatching { photoDao.getPhotos(activityId) }.getOrDefault(emptyList())
+            if (saved.isEmpty()) return
+            clearOthers(activityId)
+            _photos.value = saved.map { it.toModel() }
+        }
+    }
+
+    // 앱이 꺼져도 남게 기기에 저장, 실패해도 메모리 사진으로 계속
+    private suspend fun savePhotos(activityId: Long) {
+        suspendRunCatching {
+            mutex.withLock {
+                val photos = _photos.value.filter { it.activityId == activityId }.map { it.toEntity() }
+                photoDao.replacePhotos(activityId, photos)
+            }
         }
     }
 

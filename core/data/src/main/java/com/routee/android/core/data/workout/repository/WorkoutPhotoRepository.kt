@@ -41,12 +41,12 @@ interface WorkoutPhotoRepository {
     /** 사진 삭제, 다음 [syncPhotos] 때 기기 파일과 서버 사진도 지움 */
     fun removePhoto(photoId: String)
 
-    /** 앱이 다시 켜져 비어 있으면 서버에 올린 사진으로 채움, 이미 있으면 그대로 */
+    /** 앱이 다시 켜져 비어 있으면 기기에 저장한 사진으로, 그것도 없으면 서버에 올린 사진으로 채움. 이미 있으면 그대로 */
     suspend fun restore(activityId: Long): Result<Unit>
 
     /** 못 올린 사진 업로드, 바뀐 장소명 수정, 지운 사진 삭제를 서버에 반영. 끝까지 못 올린 사진 수 반환 */
     suspend fun syncPhotos(activityId: Long): Int
 
-    /** 저장을 마쳤거나 저장할 수 없는 기록의 사진 삭제 */
+    /** 기기의 사진 전체 삭제 */
     suspend fun clear(): Result<Unit>
 }

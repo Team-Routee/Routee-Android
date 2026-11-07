@@ -13,6 +13,8 @@ import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.model.TimelinePhotoUploadResult
 import com.routee.android.core.data.timeline.repository.TimelinePhotoRepository
 import com.routee.android.core.data.workout.local.WorkoutPhotoLocalDataSource
+import com.routee.android.core.database.dao.WorkoutPhotoDao
+import com.routee.android.core.database.entity.WorkoutPhotoEntity
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -28,9 +30,12 @@ class WorkoutPhotoRepositoryImplTest {
     private val recap = FakeRecapRepository()
     private val archive = FakeArchiveDetailRepository()
     private val directory: File = Files.createTempDirectory("workout_photo").toFile()
+    private val dao = FakeWorkoutPhotoDao()
+    private val timelinePhotos = FakeTimelinePhotoRepository()
     private val repository = WorkoutPhotoRepositoryImpl(
         localDataSource = WorkoutPhotoLocalDataSource { directory },
-        timelinePhotoRepository = FakeTimelinePhotoRepository(),
+        photoDao = dao,
+        timelinePhotoRepository = timelinePhotos,
         recapRepository = recap,
         archiveDetailRepository = archive,
     )
@@ -98,6 +103,102 @@ class WorkoutPhotoRepositoryImplTest {
 
         assertTrue(repository.restore(ACTIVITY_ID).isFailure)
         assertTrue(repository.photos.value.isEmpty())
+    }
+
+    /**
+     * GIVEN: 앱이 다시 켜졌고 기기에 저장한 사진이 있을 때
+     * WHEN: 복구하면
+     * THEN: 서버를 부르지 않고 기기 사진으로 채운다
+     */
+    @Test
+    fun `기기에 저장한 사진이 있으면 서버를 부르지 않는다`() = runTest {
+        dao.rows += photoRow(id = "a", timelineId = 3)
+
+        repository.restore(ACTIVITY_ID).getOrThrow()
+
+        assertEquals(0, recap.trackCallCount)
+        assertEquals("a.jpg", repository.photos.value.single().filePath)
+    }
+
+    /**
+     * GIVEN: 앱이 다시 켜졌고 기기에 못 올린 사진이 있을 때
+     * WHEN: 사진을 반영하면
+     * THEN: 다시 올리고 타임라인 등록 결과를 기기에 저장한다
+     */
+    @Test
+    fun `앱이 다시 켜져도 못 올린 사진을 다시 올린다`() = runTest {
+        dao.rows += photoRow(id = "a")
+
+        val missing = repository.syncPhotos(ACTIVITY_ID)
+
+        assertEquals(0, missing)
+        assertEquals(listOf("a"), timelinePhotos.uploadedIds)
+        assertEquals(UPLOADED_TIMELINE_ID, dao.rows.single().timelineId)
+    }
+
+    /**
+     * GIVEN: 앱이 다시 켜졌고 기기에 못 올린 사진이 있을 때
+     * WHEN: 다시 올려도 실패하면
+     * THEN: 못 올린 사진으로 센다
+     */
+    @Test
+    fun `다시 올려도 실패하면 못 올린 사진으로 센다`() = runTest {
+        dao.rows += photoRow(id = "a")
+        timelinePhotos.uploadError = IOException()
+
+        assertEquals(1, repository.syncPhotos(ACTIVITY_ID))
+    }
+
+    /**
+     * GIVEN: 기기에 저장한 사진이 있을 때
+     * WHEN: 사진을 모두 지우면
+     * THEN: 저장한 사진도 지운다
+     */
+    @Test
+    fun `사진을 지우면 저장한 사진도 지운다`() = runTest {
+        dao.rows += photoRow(id = "a")
+
+        repository.clear().getOrThrow()
+
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    private fun photoRow(
+        id: String,
+        timelineId: Long? = null,
+    ) = WorkoutPhotoEntity(
+        id = id,
+        workoutId = ACTIVITY_ID,
+        filePath = "$id.jpg",
+        pointIndex = 1,
+        latitude = 37.5,
+        longitude = 127.0,
+        elevation = 0.0,
+        recordedAt = Instant.parse("2026-10-24T01:00:00Z"),
+        takenAt = Instant.parse("2026-10-24T01:00:00Z"),
+        title = "",
+        timelineId = timelineId,
+        serverTitle = null,
+        serverImageUrl = null,
+    )
+
+    private class FakeWorkoutPhotoDao : WorkoutPhotoDao {
+        val rows = mutableListOf<WorkoutPhotoEntity>()
+
+        override suspend fun getPhotos(workoutId: Long): List<WorkoutPhotoEntity> =
+            rows.filter { it.workoutId == workoutId }
+
+        override suspend fun insertPhotos(photos: List<WorkoutPhotoEntity>) {
+            rows += photos
+        }
+
+        override suspend fun deletePhotos(workoutId: Long) {
+            rows.removeAll { it.workoutId == workoutId }
+        }
+
+        override suspend fun clearPhotos() {
+            rows.clear()
+        }
     }
 
     private class FakeRecapRepository : RecapRepository {
@@ -168,10 +269,19 @@ class WorkoutPhotoRepositoryImplTest {
     }
 
     private class FakeTimelinePhotoRepository : TimelinePhotoRepository {
+        val uploadedIds = mutableListOf<String>()
+        val deletedTimelineIds = mutableListOf<Long>()
+        var uploadError: Throwable? = null
+        var deleteError: Throwable? = null
+
         override suspend fun uploadPhotos(
             activityId: Long,
             photos: List<TimelinePhotoUpload>,
-        ): List<TimelinePhotoUploadResult> = emptyList()
+        ): List<TimelinePhotoUploadResult> = photos.map { photo ->
+            uploadedIds += photo.clientId
+            val result = uploadError?.let { Result.failure(it) } ?: Result.success(UPLOADED_TIMELINE_ID)
+            TimelinePhotoUploadResult(clientId = photo.clientId, result = result)
+        }
 
         override suspend fun updateTitle(
             activityId: Long,
@@ -182,12 +292,17 @@ class WorkoutPhotoRepositoryImplTest {
         override suspend fun deletePhoto(
             activityId: Long,
             timelineId: Long,
-        ): Result<Unit> = Result.success(Unit)
+        ): Result<Unit> {
+            deleteError?.let { return Result.failure(it) }
+            deletedTimelineIds += timelineId
+            return Result.success(Unit)
+        }
 
         override suspend fun clearUploadState(activityId: Long) = Unit
     }
 
     private companion object {
         const val ACTIVITY_ID = 1L
+        const val UPLOADED_TIMELINE_ID = 20L
     }
 }

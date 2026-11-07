@@ -1,11 +1,13 @@
 package com.routee.android.core.data.workout.local
 
 import com.routee.android.core.data.workout.model.TrackPoint
+import com.routee.android.core.data.workout.model.WorkoutPhoto
 import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutType
 import com.routee.android.core.database.entity.TrackPointEntity
 import com.routee.android.core.database.entity.WorkoutEntity
+import com.routee.android.core.database.entity.WorkoutPhotoEntity
 
 internal fun WorkoutEntity.toModel() = WorkoutRecord(
     activityId = id,
@@ -56,4 +58,38 @@ internal fun TrackPoint.toEntity(activityId: Long) = TrackPointEntity(
     longitude = longitude,
     elevation = elevation,
     recordedAt = recordedAt,
+)
+
+internal fun WorkoutPhotoEntity.toModel() = WorkoutPhoto(
+    id = id,
+    activityId = workoutId,
+    filePath = filePath,
+    point = TrackPoint(
+        pointIndex = pointIndex,
+        latitude = latitude,
+        longitude = longitude,
+        elevation = elevation,
+        recordedAt = recordedAt,
+    ),
+    takenAt = takenAt,
+    title = title,
+    timelineId = timelineId,
+    serverTitle = serverTitle,
+    serverImageUrl = serverImageUrl,
+)
+
+internal fun WorkoutPhoto.toEntity() = WorkoutPhotoEntity(
+    id = id,
+    workoutId = activityId,
+    filePath = filePath,
+    pointIndex = point.pointIndex,
+    latitude = point.latitude,
+    longitude = point.longitude,
+    elevation = point.elevation,
+    recordedAt = point.recordedAt,
+    takenAt = takenAt,
+    title = title,
+    timelineId = timelineId,
+    serverTitle = serverTitle,
+    serverImageUrl = serverImageUrl,
 )
