@@ -74,8 +74,6 @@ class WorkoutNotificationContentTest {
         distanceMeters = 15_530.0,
         maxElevationMeters = 2_132.4,
         endedAt = null,
-        mapImageObjectKey = null,
-        mapImagePath = null,
     )
 
     private companion object {

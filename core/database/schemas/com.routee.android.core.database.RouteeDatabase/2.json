@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "6399f533e3f64f0719e30b3a2b2cbd67",
+    "identityHash": "bbda0ec20db6f0a8f6debf1b160a0a6c",
     "entities": [
       {
         "tableName": "workout",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `resumed_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, `map_image_object_key` TEXT, `map_image_path` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `type` TEXT NOT NULL, `status` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `duration_millis` INTEGER NOT NULL, `resumed_at` INTEGER, `paused_at` INTEGER, `last_recorded_at` INTEGER NOT NULL, `distance` REAL NOT NULL, `max_elevation` REAL, `ended_at` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -75,16 +75,6 @@
             "fieldPath": "endedAt",
             "columnName": "ended_at",
             "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "mapImageObjectKey",
-            "columnName": "map_image_object_key",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "mapImagePath",
-            "columnName": "map_image_path",
-            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -269,7 +259,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6399f533e3f64f0719e30b3a2b2cbd67')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bbda0ec20db6f0a8f6debf1b160a0a6c')"
     ]
   }
 }

@@ -78,8 +78,6 @@ internal class FakePhotoTrackingRepository(
 
     override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
-    override suspend fun loadPendingUpload(): Result<Unit> = Result.success(Unit)
-
     override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
     override suspend fun clear(): Result<Unit> = Result.success(Unit)
@@ -98,8 +96,6 @@ internal class FakePhotoTrackingRepository(
             distanceMeters = 0.0,
             maxElevationMeters = null,
             endedAt = null,
-            mapImageObjectKey = null,
-            mapImagePath = null,
         )
     }
 }

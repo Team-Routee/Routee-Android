@@ -22,8 +22,6 @@ internal fun WorkoutEntity.toModel() = WorkoutRecord(
     distanceMeters = distance,
     maxElevationMeters = maxElevation,
     endedAt = endedAt,
-    mapImageObjectKey = mapImageObjectKey,
-    mapImagePath = mapImagePath,
 )
 
 internal fun WorkoutRecord.toEntity() = WorkoutEntity(
@@ -39,8 +37,6 @@ internal fun WorkoutRecord.toEntity() = WorkoutEntity(
     distance = distanceMeters,
     maxElevation = maxElevationMeters,
     endedAt = endedAt,
-    mapImageObjectKey = mapImageObjectKey,
-    mapImagePath = mapImagePath,
 )
 
 internal fun TrackPointEntity.toModel() = TrackPoint(

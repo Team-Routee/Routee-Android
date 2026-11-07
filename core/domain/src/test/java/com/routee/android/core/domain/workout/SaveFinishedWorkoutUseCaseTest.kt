@@ -1,6 +1,5 @@
 package com.routee.android.core.domain.workout
 
-import android.graphics.Bitmap
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.timeline.repository.TimelineMapImageRepository
 import com.routee.android.core.data.workout.exception.WorkoutException
@@ -10,10 +9,8 @@ import com.routee.android.core.data.workout.model.WorkoutRecord
 import com.routee.android.core.data.workout.model.WorkoutStatus
 import com.routee.android.core.data.workout.model.WorkoutTrackingState
 import com.routee.android.core.data.workout.model.WorkoutType
-import com.routee.android.core.data.workout.repository.WorkoutRecordRepository
 import com.routee.android.core.data.workout.repository.WorkoutRemoteRepository
 import com.routee.android.core.data.workout.repository.WorkoutTrackingRepository
-import java.io.File
 import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,16 +24,15 @@ import org.junit.Test
 
 class SaveFinishedWorkoutUseCaseTest {
     private val tracking = FakeTrackingRepository()
-    private val records = FakeRecordRepository()
     private val mapImages = FakeMapImageRepository()
     private val remote = FakeRemoteRepository()
     private val photos = FakeWorkoutPhotoRepository()
-    private val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, records, mapImages, remote, photos)
+    private val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, mapImages, remote, photos)
 
     /**
      * GIVEN: 경로 좌표가 2개 이상인 종료한 기록일 때
      * WHEN: 지도 캡처와 함께 저장하면
-     * THEN: 캡처를 기기에 저장해 올리고, 받은 키로 완료한 뒤 기기 기록을 지운다
+     * THEN: 캡처를 올리고, 받은 키로 완료한 뒤 기기 기록을 지운다
      */
     @Test
     fun `저장하면 캡처를 올리고 완료한 뒤 기기 기록을 지운다`() = runTest {
@@ -45,8 +41,7 @@ class SaveFinishedWorkoutUseCaseTest {
         val result = saveFinishedWorkout(JPEG)
 
         assertEquals(WorkoutSaveResult.Saved, result)
-        assertEquals("map/7.jpg", mapImages.uploadedPath)
-        assertEquals("map-key", records.saved?.mapImageObjectKey)
+        assertEquals(JPEG, mapImages.uploadedJpeg)
         assertEquals("map-key", remote.completedKey)
         assertTrue(tracking.isCleared)
     }
@@ -75,7 +70,7 @@ class SaveFinishedWorkoutUseCaseTest {
     @Test
     fun `다시 올려도 실패한 사진은 빼고 저장한다`() = runTest {
         val photos = FakeWorkoutPhotoRepository(missingCount = 1)
-        val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, records, mapImages, remote, photos)
+        val saveFinishedWorkout = SaveFinishedWorkoutUseCase(tracking, mapImages, remote, photos)
         tracking.state(points = 2)
 
         val result = saveFinishedWorkout(JPEG)
@@ -136,12 +131,12 @@ class SaveFinishedWorkoutUseCaseTest {
     }
 
     /**
-     * GIVEN: 지도 캡처에 실패했고 저장해 둔 캡처도 없을 때
+     * GIVEN: 지도 캡처에 실패했을 때
      * WHEN: 저장하면
-     * THEN: 다시 캡처하라고 돌려주고 기기 기록은 남긴다
+     * THEN: 완료하지 않고 기기 기록은 남긴다
      */
     @Test
-    fun `캡처가 없으면 다시 캡처하라고 하고 기기 기록을 남긴다`() = runTest {
+    fun `캡처가 없으면 완료하지 않고 기기 기록을 남긴다`() = runTest {
         tracking.state(points = 2)
 
         val result = saveFinishedWorkout(null)
@@ -149,39 +144,6 @@ class SaveFinishedWorkoutUseCaseTest {
         assertEquals(WorkoutSaveResult.MapImageMissing, result)
         assertNull(remote.completedKey)
         assertFalse(tracking.isCleared)
-    }
-
-    /**
-     * GIVEN: 앱이 다시 켜져 상태는 비었고 기기에 지도 키를 올려 둔 업로드 대기 기록이 있을 때
-     * WHEN: 캡처 없이 저장하면
-     * THEN: 기기 기록을 불러와 지도는 다시 올리지 않고 그 키로 완료한 뒤 지운다
-     */
-    @Test
-    fun `저장해 둔 지도 키가 있으면 다시 올리지 않고 완료한다`() = runTest {
-        tracking.pending = pendingState(RECORD.copy(mapImageObjectKey = "saved-key", mapImagePath = "map/7.jpg"))
-
-        val result = saveFinishedWorkout(null)
-
-        assertEquals(WorkoutSaveResult.Saved, result)
-        assertNull(mapImages.uploadedPath)
-        assertEquals("saved-key", remote.completedKey)
-        assertTrue(tracking.isCleared)
-    }
-
-    /**
-     * GIVEN: 지도 키는 없고 캡처 파일만 남은 업로드 대기 기록일 때
-     * WHEN: 캡처 없이 저장하면
-     * THEN: 남은 캡처 파일을 올려 완료한다
-     */
-    @Test
-    fun `저장해 둔 캡처 파일이 있으면 그 파일을 올려 완료한다`() = runTest {
-        tracking.pending = pendingState(RECORD.copy(mapImagePath = "map/7.jpg"))
-
-        val result = saveFinishedWorkout(null)
-
-        assertEquals(WorkoutSaveResult.Saved, result)
-        assertEquals("map/7.jpg", mapImages.uploadedPath)
-        assertEquals("map-key", remote.completedKey)
     }
 
     /**
@@ -218,16 +180,10 @@ class SaveFinishedWorkoutUseCaseTest {
         assertTrue(tracking.isCleared)
     }
 
-    private fun pendingState(record: WorkoutRecord) =
-        WorkoutTrackingState(record = record, trackPoints = (1..2).map(::point))
-
     private class FakeTrackingRepository : WorkoutTrackingRepository {
         private val _state = MutableStateFlow(WorkoutTrackingState())
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isCleared = false
-
-        // 기기에 남은 업로드 대기 기록, 불러오면 상태가 됨
-        var pending: WorkoutTrackingState? = null
 
         fun state(
             points: Int,
@@ -252,11 +208,6 @@ class SaveFinishedWorkoutUseCaseTest {
 
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
-        override suspend fun loadPendingUpload(): Result<Unit> {
-            pending?.let { _state.value = it }
-            return Result.success(Unit)
-        }
-
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
         override suspend fun clear(): Result<Unit> {
@@ -266,50 +217,16 @@ class SaveFinishedWorkoutUseCaseTest {
         }
     }
 
-    private class FakeRecordRepository : WorkoutRecordRepository {
-        var saved: WorkoutRecord? = null
-
-        override suspend fun getRecord(): Result<WorkoutRecord?> = Result.success(saved)
-
-        override suspend fun startRecord(record: WorkoutRecord): Result<Unit> = Result.success(Unit)
-
-        override suspend fun saveRecord(record: WorkoutRecord): Result<Unit> {
-            saved = record
-            return Result.success(Unit)
-        }
-
-        override suspend fun saveTrackPoint(
-            record: WorkoutRecord,
-            point: TrackPoint,
-        ): Result<Unit> = Result.success(Unit)
-
-        override suspend fun getTrackPoints(activityId: Long): Result<List<TrackPoint>> = Result.success(emptyList())
-
-        override suspend fun saveMapImage(
-            record: WorkoutRecord,
-            jpeg: ByteArray,
-        ): Result<WorkoutRecord> = Result.success(record.copy(mapImagePath = "map/${record.activityId}.jpg"))
-
-        override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
-
-        override suspend fun clearRecords(): Result<Unit> = Result.success(Unit)
-    }
-
     private class FakeMapImageRepository : TimelineMapImageRepository {
-        var uploadedPath: String? = null
+        var uploadedJpeg: ByteArray? = null
         var error: Throwable? = null
 
         override suspend fun uploadMapImage(
             activityId: Long,
-            bitmap: Bitmap,
-        ): Result<String> = Result.failure(UnsupportedOperationException())
-
-        override suspend fun uploadMapImage(
-            activityId: Long,
-            imageFile: File,
+            jpeg: ByteArray,
         ): Result<String> {
             error?.let { return Result.failure(it) }
-            uploadedPath = imageFile.path
+            uploadedJpeg = jpeg
             return Result.success("map-key")
         }
     }
@@ -360,8 +277,6 @@ class SaveFinishedWorkoutUseCaseTest {
             distanceMeters = 100.0,
             maxElevationMeters = null,
             endedAt = START.plusSeconds(60),
-            mapImageObjectKey = null,
-            mapImagePath = null,
         )
 
         fun point(index: Int) = TrackPoint(

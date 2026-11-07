@@ -762,7 +762,6 @@ class WorkoutRecordingViewModelTest {
         remoteRepository = remote,
         saveFinishedWorkout = SaveFinishedWorkoutUseCase(
             trackingRepository = tracking,
-            recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = remote,
             photoRepository = photos,

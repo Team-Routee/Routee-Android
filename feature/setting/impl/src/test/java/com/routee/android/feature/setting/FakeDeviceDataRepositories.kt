@@ -43,8 +43,6 @@ internal class FakeWorkoutTrackingRepository : WorkoutTrackingRepository {
 
     override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
-    override suspend fun loadPendingUpload(): Result<Unit> = Result.success(Unit)
-
     override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
 
     override suspend fun clear(): Result<Unit> = Result.success(Unit)
@@ -65,11 +63,6 @@ internal class FakeWorkoutRecordRepository : WorkoutRecordRepository {
     ): Result<Unit> = Result.success(Unit)
 
     override suspend fun getTrackPoints(activityId: Long): Result<List<TrackPoint>> = Result.success(emptyList())
-
-    override suspend fun saveMapImage(
-        record: WorkoutRecord,
-        jpeg: ByteArray,
-    ): Result<WorkoutRecord> = Result.success(record)
 
     override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
 

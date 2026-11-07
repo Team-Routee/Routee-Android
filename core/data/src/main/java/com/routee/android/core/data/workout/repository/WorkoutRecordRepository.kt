@@ -7,7 +7,7 @@ import com.routee.android.core.data.workout.model.WorkoutRecord
 interface WorkoutRecordRepository {
     suspend fun getRecord(): Result<WorkoutRecord?>
 
-    /** 새 기록 시작, 남아 있던 기록과 지도 캡처는 삭제 */
+    /** 새 기록 시작, 남아 있던 기록은 삭제 */
     suspend fun startRecord(record: WorkoutRecord): Result<Unit>
 
     suspend fun saveRecord(record: WorkoutRecord): Result<Unit>
@@ -20,13 +20,7 @@ interface WorkoutRecordRepository {
 
     suspend fun getTrackPoints(activityId: Long): Result<List<TrackPoint>>
 
-    /** 지도 캡처 저장, 파일 경로를 넣은 기록 반환 */
-    suspend fun saveMapImage(
-        record: WorkoutRecord,
-        jpeg: ByteArray,
-    ): Result<WorkoutRecord>
-
-    /** 기록, 경로 좌표, 지도 캡처 삭제 */
+    /** 기록, 경로 좌표 삭제 */
     suspend fun deleteRecord(activityId: Long): Result<Unit>
 
     suspend fun clearRecords(): Result<Unit>

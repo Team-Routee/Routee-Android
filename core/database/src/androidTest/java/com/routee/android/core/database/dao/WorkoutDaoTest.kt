@@ -132,8 +132,6 @@ class WorkoutDaoTest {
         distance = 0.0,
         maxElevation = null,
         endedAt = null,
-        mapImageObjectKey = null,
-        mapImagePath = null,
     )
 
     private fun point(

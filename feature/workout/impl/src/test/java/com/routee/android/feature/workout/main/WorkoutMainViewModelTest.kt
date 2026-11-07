@@ -515,7 +515,6 @@ class WorkoutMainViewModelTest {
         getUnfinishedWorkout = GetUnfinishedWorkoutUseCase(tracking, records, clock),
         saveFinishedWorkout = SaveFinishedWorkoutUseCase(
             trackingRepository = tracking,
-            recordRepository = records,
             mapImageRepository = FakeMapImageRepository(),
             remoteRepository = FakeWorkoutRemoteRepository(),
             photoRepository = FakeWorkoutPhotoRepository(),

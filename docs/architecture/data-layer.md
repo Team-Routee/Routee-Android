@@ -8,7 +8,7 @@
 | `exception/` | `AuthException` |
 | `remote/service/` | `AuthService` |
 | `remote/dto/request\|response/` | `LoginRequest`, `TokenResponse` |
-| `local/` | `TokenLocalDataSource`, `WorkoutMapImageLocalDataSource`, `WorkoutEntityMapper` |
+| `local/` | `TokenLocalDataSource`, `WorkoutPhotoLocalDataSource`, `WorkoutEntityMapper` |
 | `repository/` | `AuthRepository`, `AuthRepositoryImpl` |
 
 | Path under `core/database/.../` | Example |
