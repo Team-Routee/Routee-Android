@@ -40,7 +40,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos.asStateFlow()
 
-    // 기기에 저장한 사진을 이미 불러온 기록, 지운 사진을 다시 불러오지 않게 앱 실행마다 한 번만
+    // 기기에 저장한 사진을 읽은 기록, 지운 사진을 다시 불러오지 않게 앱 실행마다 한 번만. 읽기 전에는 기기에 저장하지 않음
     private var loadedActivityId: Long? = null
     private val mutex = Mutex()
     private val syncMutex = Mutex()
@@ -75,7 +75,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
 
     // 기기에 저장한 사진이 없을 때만 서버에서. 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
     override suspend fun restore(activityId: Long): Result<Unit> = suspendRunCatching {
-        loadSavedPhotos(activityId)
+        check(loadSavedPhotos(activityId)) { "기기 사진 읽기 실패" }
         if (_photos.value.any { it.activityId == activityId }) return@suspendRunCatching
         val photos = coroutineScope {
             val track = async { recapRepository.getActivityTrack(activityId) }
@@ -131,23 +131,25 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         }
     }
 
-    // 앱이 꺼졌다 켜졌으면 기기에 저장한 사진을 불러옴
-    private suspend fun loadSavedPhotos(activityId: Long) {
-        mutex.withLock {
-            if (loadedActivityId == activityId) return
-            loadedActivityId = activityId
-            if (_photos.value.any { it.activityId == activityId }) return
-            val saved = suspendRunCatching { photoDao.getPhotos(activityId) }.getOrDefault(emptyList())
-            if (saved.isEmpty()) return
+    // 앱이 꺼졌다 켜졌으면 기기에 저장한 사진을 불러옴, 그 사이 찍은 사진은 합침. 못 읽으면 false, 다음에 다시 읽음
+    private suspend fun loadSavedPhotos(activityId: Long): Boolean = mutex.withLock {
+        if (loadedActivityId == activityId) return@withLock true
+        val saved = suspendRunCatching { photoDao.getPhotos(activityId) }.getOrElse { return@withLock false }
+        loadedActivityId = activityId
+        val current = _photos.value.filter { it.activityId == activityId }
+        val missing = saved.map { it.toModel() }.filter { photo -> current.none { it.id == photo.id } }
+        if (missing.isNotEmpty()) {
             clearOthers(activityId)
-            _photos.value = saved.map { it.toModel() }
+            _photos.value = (current + missing).sortedBy { it.takenAt }
         }
+        true
     }
 
     // 앱이 꺼져도 남게 기기에 저장, 실패해도 메모리 사진으로 계속
     private suspend fun savePhotos(activityId: Long) {
         suspendRunCatching {
             mutex.withLock {
+                if (loadedActivityId != activityId) return@withLock
                 val photos = _photos.value.filter { it.activityId == activityId }.map { it.toEntity() }
                 photoDao.replacePhotos(activityId, photos)
             }

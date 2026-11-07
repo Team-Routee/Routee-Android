@@ -121,6 +121,28 @@ class WorkoutPhotoRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 앱이 다시 켜졌고 기기에 저장한 사진을 읽지 못할 때
+     * WHEN: 복구하고 사진을 반영한 뒤 다시 복구하면
+     * THEN: 서버로 채우거나 기기 사진을 덮어쓰지 않고, 다음 복구 때 다시 읽는다
+     */
+    @Test
+    fun `기기 사진을 못 읽으면 덮어쓰지 않고 다음에 다시 읽는다`() = runTest {
+        dao.rows += photoRow(id = "a")
+        dao.readError = IOException()
+
+        assertTrue(repository.restore(ACTIVITY_ID).isFailure)
+        repository.syncPhotos(ACTIVITY_ID)
+
+        assertEquals(0, recap.trackCallCount)
+        assertEquals("a", dao.rows.single().id)
+
+        dao.readError = null
+        repository.restore(ACTIVITY_ID).getOrThrow()
+
+        assertEquals("a", repository.photos.value.single().id)
+    }
+
+    /**
      * GIVEN: 앱이 다시 켜졌고 기기에 못 올린 사진이 있을 때
      * WHEN: 사진을 반영하면
      * THEN: 다시 올리고 타임라인 등록 결과를 기기에 저장한다
@@ -237,9 +259,12 @@ class WorkoutPhotoRepositoryImplTest {
 
     private class FakeWorkoutPhotoDao : WorkoutPhotoDao {
         val rows = mutableListOf<WorkoutPhotoEntity>()
+        var readError: Throwable? = null
 
-        override suspend fun getPhotos(workoutId: Long): List<WorkoutPhotoEntity> =
-            rows.filter { it.workoutId == workoutId }
+        override suspend fun getPhotos(workoutId: Long): List<WorkoutPhotoEntity> {
+            readError?.let { throw it }
+            return rows.filter { it.workoutId == workoutId }
+        }
 
         override suspend fun insertPhotos(photos: List<WorkoutPhotoEntity>) {
             rows += photos
