@@ -31,8 +31,8 @@ class SaveFinishedWorkoutUseCase @Inject constructor(
         val missingPhotoCount = photoRepository.syncPhotos(record.activityId)
         remoteRepository.completeWorkout(record, state.trackPoints, objectKey)
             .getOrElse { return failed(it) }
-        // 타임라인이 서버를 다시 부르지 않게 사진은 남김, 다음 운동 시작이나 로그아웃 때 지움
-        trackingRepository.clear()
+        // 타임라인에 쓰게 경로와 사진은 남김
+        trackingRepository.markSaved()
         return if (missingPhotoCount > 0) WorkoutSaveResult.PhotosMissing else WorkoutSaveResult.Saved
     }
 

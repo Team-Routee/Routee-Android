@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
-import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.domain.timeline.GetTimelinePhotosUseCase
+import com.routee.android.core.domain.timeline.GetTimelineTrackUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -41,7 +41,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     private val galleryImageStore: GalleryImageStore,
     private val recordSaver: TimelineRecordSaver,
     private val archiveDetailRepository: ArchiveDetailRepository,
-    private val recapRepository: RecapRepository,
+    private val getTimelineTrack: GetTimelineTrackUseCase,
     private val getTimelinePhotos: GetTimelinePhotosUseCase,
 ) : ViewModel() {
     val activityId = key.activityId
@@ -110,7 +110,7 @@ internal class TimelineViewModel @AssistedInject constructor(
 
     private fun loadTrack() {
         viewModelScope.launch {
-            recapRepository.getActivityTrack(activityId)
+            getTimelineTrack(activityId)
                 .onSuccess { track -> _uiState.update { it.copy(track = UiState.Success(track.toTimelineTrack())) } }
                 .onFailure { error ->
                     Timber.e(error, "경로 조회 실패")

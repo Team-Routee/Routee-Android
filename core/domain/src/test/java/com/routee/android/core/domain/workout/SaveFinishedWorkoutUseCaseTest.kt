@@ -32,10 +32,10 @@ class SaveFinishedWorkoutUseCaseTest {
     /**
      * GIVEN: 경로 좌표가 2개 이상인 종료한 기록일 때
      * WHEN: 지도 캡처와 함께 저장하면
-     * THEN: 캡처를 올리고, 받은 키로 완료한 뒤 기기 기록을 지운다
+     * THEN: 캡처를 올리고, 받은 키로 완료한 뒤 타임라인에 쓸 경로만 남기고 기기 기록을 지운다
      */
     @Test
-    fun `저장하면 캡처를 올리고 완료한 뒤 기기 기록을 지운다`() = runTest {
+    fun `저장하면 캡처를 올리고 완료한 뒤 경로만 남기고 기기 기록을 지운다`() = runTest {
         tracking.state(points = 2)
 
         val result = saveFinishedWorkout(JPEG)
@@ -43,7 +43,8 @@ class SaveFinishedWorkoutUseCaseTest {
         assertEquals(WorkoutSaveResult.Saved, result)
         assertEquals(JPEG, mapImages.uploadedJpeg)
         assertEquals("map-key", remote.completedKey)
-        assertTrue(tracking.isCleared)
+        assertTrue(tracking.isSaved)
+        assertFalse(tracking.isCleared)
     }
 
     /**
@@ -184,6 +185,7 @@ class SaveFinishedWorkoutUseCaseTest {
         private val _state = MutableStateFlow(WorkoutTrackingState())
         override val state: StateFlow<WorkoutTrackingState> = _state
         var isCleared = false
+        var isSaved = false
 
         fun state(
             points: Int,
@@ -209,6 +211,14 @@ class SaveFinishedWorkoutUseCaseTest {
         override suspend fun recover(): Result<Unit> = Result.success(Unit)
 
         override suspend fun finish(endedAt: Instant?): Result<Unit> = Result.success(Unit)
+
+        override suspend fun markSaved(): Result<Unit> {
+            isSaved = true
+            _state.value = WorkoutTrackingState()
+            return Result.success(Unit)
+        }
+
+        override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? = null
 
         override suspend fun clear(): Result<Unit> {
             isCleared = true
