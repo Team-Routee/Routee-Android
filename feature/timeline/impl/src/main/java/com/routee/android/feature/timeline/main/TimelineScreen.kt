@@ -134,7 +134,6 @@ internal fun TimelineRoute(
     val defaultTitle = stringResource(R.string.timeline_default_record_title, recordDate)
     val focusManager = LocalFocusManager.current
     val photos = uiState.photos
-    val hasPhotoSection = photos is UiState.Loading || (photos as? UiState.Success)?.data?.isNotEmpty() == true
     fun finishTitleEdit() {
         viewModel.onTitleEditFinish()
         focusManager.clearFocus()
@@ -188,7 +187,7 @@ internal fun TimelineRoute(
         },
         modifier = modifier,
         routeMap = { TimelineRouteMap(track = uiState.track) },
-        photoSection = if (hasPhotoSection) {
+        photoSection = if (uiState.hasPhotoSection) {
             {
                 TimelinePhotoSection(
                     photos = photos,

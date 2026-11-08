@@ -9,6 +9,7 @@ import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
 import com.routee.android.core.data.photo.GalleryImageStore
 import com.routee.android.core.data.recap.repository.RecapRepository
+import com.routee.android.core.domain.timeline.GetTimelinePhotosUseCase
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.core.ui.UiState
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -41,6 +42,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     private val recordSaver: TimelineRecordSaver,
     private val archiveDetailRepository: ArchiveDetailRepository,
     private val recapRepository: RecapRepository,
+    private val getTimelinePhotos: GetTimelinePhotosUseCase,
 ) : ViewModel() {
     val activityId = key.activityId
     val endedAtEpochMillis = key.endedAtEpochMillis
@@ -121,7 +123,7 @@ internal class TimelineViewModel @AssistedInject constructor(
     private fun loadPhotos() {
         viewModelScope.launch {
             // TODO P1 기획: 사진 목록 조회 실패 안내 (지금은 사진 섹션, 나의 루트 초기 목록 없이 진행)
-            archiveDetailRepository.getPhotos(activityId)
+            getTimelinePhotos(activityId)
                 .onSuccess(::showPhotos)
                 .onFailure { error ->
                     Timber.e(error, "사진 조회 실패")

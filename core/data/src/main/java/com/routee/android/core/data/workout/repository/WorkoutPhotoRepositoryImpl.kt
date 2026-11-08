@@ -1,5 +1,6 @@
 package com.routee.android.core.data.workout.repository
 
+import com.routee.android.core.common.di.ApplicationScope
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
@@ -9,14 +10,18 @@ import com.routee.android.core.data.timeline.model.TimelinePhotoStatus
 import com.routee.android.core.data.timeline.model.TimelinePhotoUpload
 import com.routee.android.core.data.timeline.repository.TimelinePhotoRepository
 import com.routee.android.core.data.workout.local.WorkoutPhotoLocalDataSource
+import com.routee.android.core.data.workout.local.toEntity
+import com.routee.android.core.data.workout.local.toModel
 import com.routee.android.core.data.workout.model.TrackPoint
 import com.routee.android.core.data.workout.model.WorkoutPhoto
 import com.routee.android.core.data.workout.model.toServerElevation
+import com.routee.android.core.database.dao.WorkoutPhotoDao
 import java.io.File
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,18 +34,17 @@ import kotlinx.coroutines.sync.withLock
 @Singleton
 internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val localDataSource: WorkoutPhotoLocalDataSource,
+    private val photoDao: WorkoutPhotoDao,
     private val timelinePhotoRepository: TimelinePhotoRepository,
     private val recapRepository: RecapRepository,
     private val archiveDetailRepository: ArchiveDetailRepository,
+    @param:ApplicationScope private val externalScope: CoroutineScope,
 ) : WorkoutPhotoRepository {
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos.asStateFlow()
 
-    // 서버에서 지울 사진 (activityId, timelineId)
-    private val removedTimelines = MutableStateFlow<Set<Pair<Long, Long>>>(emptySet())
-
-    // 기기에서 지울 사진 파일, 올리는 중일 수 있어 동기화 때 지움
-    private val removedFiles = MutableStateFlow<Set<String>>(emptySet())
+    // 기기에 저장한 사진을 읽은 기록, 지운 사진을 다시 불러오지 않게 앱 실행마다 한 번만. 읽기 전에는 기기에 저장하지 않음
+    private var loadedActivityId: Long? = null
     private val mutex = Mutex()
     private val syncMutex = Mutex()
 
@@ -53,6 +57,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         takenAt: Instant,
         title: String,
     ): Result<WorkoutPhoto> = suspendRunCatching {
+        loadSavedPhotos(activityId)
         val id = UUID.randomUUID().toString()
         val path = localDataSource.compress(activityId, id, original)
         val photo = WorkoutPhoto(
@@ -67,11 +72,13 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             clearOthers(activityId)
             _photos.value += photo
         }
+        savePhotos(activityId)
         photo
     }
 
-    // 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
+    // 기기에 저장한 사진이 없을 때만 서버에서. 좌표는 경로 조회의 마커, 장소명과 큰 이미지는 타임라인 사진 목록에서. 목록을 못 받으면 썸네일과 빈 장소명
     override suspend fun restore(activityId: Long): Result<Unit> = suspendRunCatching {
+        check(loadSavedPhotos(activityId)) { "기기 사진 읽기 실패" }
         if (_photos.value.any { it.activityId == activityId }) return@suspendRunCatching
         val photos = coroutineScope {
             val track = async { recapRepository.getActivityTrack(activityId) }
@@ -95,33 +102,62 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         _photos.update { photos -> photos.map { if (it.id == photoId) it.copy(title = title) else it } }
     }
 
-    override fun removePhoto(photoId: String) {
-        var removed: WorkoutPhoto? = null
-        _photos.update { photos ->
-            removed = photos.find { it.id == photoId }
-            photos.filterNot { it.id == photoId }
+    // 서버와 기기가 어긋나지 않게 화면이 닫혀도 끝까지, 올리는 중이면 끝난 뒤에 지움
+    override suspend fun deletePhoto(photoId: String): Result<Unit> = externalScope.async {
+        syncMutex.withLock {
+            suspendRunCatching<Unit> {
+                val photo = _photos.value.find { it.id == photoId } ?: return@suspendRunCatching
+                photo.timelineId?.let { timelinePhotoRepository.deletePhoto(photo.activityId, it).getOrThrow() }
+                mutex.withLock { _photos.update { photos -> photos.filterNot { it.id == photoId } } }
+                savePhotos(photo.activityId)
+                photo.filePath?.let { localDataSource.delete(it) }
+            }
         }
-        removed?.let { photo ->
-            photo.filePath?.let { path -> removedFiles.update { it + path } }
-            photo.timelineId?.let { markRemoved(photo.activityId, it) }
-        }
-    }
+    }.await()
 
-    override suspend fun syncPhotos(activityId: Long): Int = syncMutex.withLock {
-        deleteRemovedFiles()
-        uploadPending(activityId)
-        updateTitles(activityId)
-        deleteRemoved(activityId)
-        _photos.value.count { it.activityId == activityId && it.timelineId == null }
+    override suspend fun syncPhotos(activityId: Long): Int {
+        loadSavedPhotos(activityId)
+        savePhotos(activityId)
+        return syncMutex.withLock {
+            uploadPending(activityId)
+            updateTitles(activityId)
+            savePhotos(activityId)
+            _photos.value.count { it.activityId == activityId && it.timelineId == null }
+        }
     }
 
     override suspend fun clear(): Result<Unit> = suspendRunCatching {
         mutex.withLock {
             _photos.value.map { it.activityId }.distinct().forEach { timelinePhotoRepository.clearUploadState(it) }
             _photos.value = emptyList()
-            removedTimelines.value = emptySet()
-            removedFiles.value = emptySet()
+            loadedActivityId = null
             localDataSource.clear()
+            photoDao.clearPhotos()
+        }
+    }
+
+    // 앱이 꺼졌다 켜졌으면 기기에 저장한 사진을 불러옴, 그 사이 찍은 사진은 합침. 못 읽으면 false, 다음에 다시 읽음
+    private suspend fun loadSavedPhotos(activityId: Long): Boolean = mutex.withLock {
+        if (loadedActivityId == activityId) return@withLock true
+        val saved = suspendRunCatching { photoDao.getPhotos(activityId) }.getOrElse { return@withLock false }
+        loadedActivityId = activityId
+        val current = _photos.value.filter { it.activityId == activityId }
+        val missing = saved.map { it.toModel() }.filter { photo -> current.none { it.id == photo.id } }
+        if (missing.isNotEmpty()) {
+            clearOthers(activityId)
+            _photos.value = (current + missing).sortedBy { it.takenAt }
+        }
+        true
+    }
+
+    // 앱이 꺼져도 남게 기기에 저장, 실패해도 메모리 사진으로 계속
+    private suspend fun savePhotos(activityId: Long) {
+        suspendRunCatching {
+            mutex.withLock {
+                if (loadedActivityId != activityId) return@withLock
+                val photos = _photos.value.filter { it.activityId == activityId }.map { it.toEntity() }
+                photoDao.replacePhotos(activityId, photos)
+            }
         }
     }
 
@@ -138,9 +174,6 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
                 timelineIds[photo.id]?.let { photo.copy(timelineId = it, serverTitle = sentTitles[photo.id]) } ?: photo
             }
         }
-        // 올리는 동안 지운 사진은 서버에서도 지움
-        val remaining = _photos.value.map { it.id }.toSet()
-        timelineIds.filterKeys { it !in remaining }.values.forEach { markRemoved(activityId, it) }
     }
 
     // 서버는 빈 장소명으로 수정하지 않음
@@ -157,35 +190,13 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             }
     }
 
-    private suspend fun deleteRemovedFiles() {
-        val paths = removedFiles.value
-        paths.forEach { localDataSource.delete(it) }
-        removedFiles.update { it - paths }
-    }
-
-    private suspend fun deleteRemoved(activityId: Long) {
-        removedTimelines.value.filter { it.first == activityId }.forEach { removed ->
-            timelinePhotoRepository.deletePhoto(activityId, removed.second).onSuccess {
-                removedTimelines.update { it - removed }
-            }
-        }
-    }
-
-    // 이전 기록에서 남은 사진, 업로드 상태, 지울 사진 정리
+    // 이전 기록에서 남은 사진, 업로드 상태 정리
     private suspend fun clearOthers(activityId: Long) {
         val others = _photos.value.map { it.activityId }.distinct().filter { it != activityId }
         if (others.isEmpty()) return
         localDataSource.deleteOthers(activityId)
         others.forEach { timelinePhotoRepository.clearUploadState(it) }
-        removedTimelines.update { removed -> removed.filterTo(mutableSetOf()) { it.first == activityId } }
         _photos.update { photos -> photos.filter { it.activityId == activityId } }
-    }
-
-    private fun markRemoved(
-        activityId: Long,
-        timelineId: Long,
-    ) {
-        removedTimelines.update { it + (activityId to timelineId) }
     }
 }
 

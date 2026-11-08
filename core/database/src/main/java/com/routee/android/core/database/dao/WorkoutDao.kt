@@ -37,7 +37,7 @@ interface WorkoutDao {
         return updateWorkout(workout)
     }
 
-    /** 기존 기록과 경로 좌표를 모두 지우고 새 기록 저장 */
+    /** 기존 기록, 경로 좌표, 사진을 모두 지우고 새 기록 저장 */
     @Transaction
     suspend fun replaceWorkout(workout: WorkoutEntity) {
         deleteWorkouts()
@@ -48,11 +48,11 @@ interface WorkoutDao {
     @Query("SELECT * FROM track_point WHERE workout_id = :workoutId ORDER BY point_index")
     suspend fun getTrackPoints(workoutId: Long): List<TrackPointEntity>
 
-    /** 기록 삭제, 경로 좌표도 같이 삭제 */
+    /** 기록 삭제, 경로 좌표와 사진도 같이 삭제 */
     @Query("DELETE FROM workout WHERE id = :workoutId")
     suspend fun deleteWorkout(workoutId: Long)
 
-    /** 모든 기록과 경로 좌표 삭제 */
+    /** 모든 기록, 경로 좌표, 사진 삭제 */
     @Query("DELETE FROM workout")
     suspend fun deleteWorkouts()
 }

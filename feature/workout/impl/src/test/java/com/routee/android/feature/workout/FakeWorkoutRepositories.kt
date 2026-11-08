@@ -1,6 +1,5 @@
 package com.routee.android.feature.workout
 
-import android.graphics.Bitmap
 import com.routee.android.core.data.geocoding.repository.ReverseGeocodingRepository
 import com.routee.android.core.data.location.model.DeviceLocation
 import com.routee.android.core.data.location.repository.LocationRepository
@@ -82,13 +81,6 @@ internal class FakeWorkoutTrackingRepository(
         return Result.success(Unit)
     }
 
-    override suspend fun loadPendingUpload(): Result<Unit> {
-        if (_state.value.record?.isTracking != true && savedRecord?.status == WorkoutStatus.PENDING_UPLOAD) {
-            _state.value = WorkoutTrackingState(record = savedRecord, trackPoints = savedTrackPoints)
-        }
-        return Result.success(Unit)
-    }
-
     override suspend fun finish(endedAt: Instant?): Result<Unit> {
         _state.value = _state.value.copy(record = _state.value.record?.finished(START, endedAt ?: START))
         return Result.success(Unit)
@@ -149,11 +141,6 @@ internal class FakeWorkoutRecordRepository(
 
     override suspend fun getTrackPoints(activityId: Long): Result<List<TrackPoint>> = Result.success(emptyList())
 
-    override suspend fun saveMapImage(
-        record: WorkoutRecord,
-        jpeg: ByteArray,
-    ): Result<WorkoutRecord> = Result.success(record.copy(mapImagePath = "map/${record.activityId}.jpg"))
-
     override suspend fun deleteRecord(activityId: Long): Result<Unit> = Result.success(Unit)
 
     override suspend fun clearRecords(): Result<Unit> {
@@ -165,12 +152,7 @@ internal class FakeWorkoutRecordRepository(
 internal class FakeMapImageRepository : TimelineMapImageRepository {
     override suspend fun uploadMapImage(
         activityId: Long,
-        bitmap: Bitmap,
-    ): Result<String> = Result.success("map-key")
-
-    override suspend fun uploadMapImage(
-        activityId: Long,
-        imageFile: File,
+        jpeg: ByteArray,
     ): Result<String> = Result.success("map-key")
 }
 
@@ -178,6 +160,7 @@ internal class FakeWorkoutPhotoRepository(
     private val missingCount: Int = 0,
     private val serverPhotos: List<WorkoutPhoto> = emptyList(),
 ) : WorkoutPhotoRepository {
+    var deleteError: Throwable? = null
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos
     val discarded = mutableListOf<File>()
@@ -229,8 +212,10 @@ internal class FakeWorkoutPhotoRepository(
         _photos.value = _photos.value.map { if (it.id == photoId) it.copy(title = title) else it }
     }
 
-    override fun removePhoto(photoId: String) {
+    override suspend fun deletePhoto(photoId: String): Result<Unit> {
+        deleteError?.let { return Result.failure(it) }
         _photos.value = _photos.value.filterNot { it.id == photoId }
+        return Result.success(Unit)
     }
 
     override suspend fun syncPhotos(activityId: Long): Int = missingCount
@@ -296,8 +281,6 @@ internal fun record(status: WorkoutStatus = WorkoutStatus.ACTIVITY_IN_PROGRESS) 
     distanceMeters = 1_234.4,
     maxElevationMeters = 302.6,
     endedAt = null,
-    mapImageObjectKey = null,
-    mapImagePath = null,
 )
 
 internal fun photo(id: String) = WorkoutPhoto(

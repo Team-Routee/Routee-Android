@@ -170,8 +170,6 @@ class WorkoutTrackingStateTest {
             distanceMeters = 0.0,
             maxElevationMeters = null,
             endedAt = null,
-            mapImageObjectKey = null,
-            mapImagePath = null,
         ),
     )
 

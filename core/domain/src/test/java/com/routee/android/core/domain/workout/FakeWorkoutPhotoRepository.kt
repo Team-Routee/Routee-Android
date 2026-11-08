@@ -55,8 +55,9 @@ internal class FakeWorkoutPhotoRepository(
         _photos.value = _photos.value.map { if (it.id == photoId) it.copy(title = title) else it }
     }
 
-    override fun removePhoto(photoId: String) {
+    override suspend fun deletePhoto(photoId: String): Result<Unit> {
         _photos.value = _photos.value.filterNot { it.id == photoId }
+        return Result.success(Unit)
     }
 
     override suspend fun syncPhotos(activityId: Long): Int {

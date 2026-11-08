@@ -16,8 +16,6 @@ val WORKOUT_PAUSE_LIMIT: Duration = Duration.ofHours(2)
  * @param pausedAt           일시정지 시각, 2시간 규칙 판단
  * @param lastRecordedAt     마지막 위치 기록 시각, 복구 안내와 종료 후 저장 기준
  * @param endedAt            종료 시각, 저장에 실패한 기록을 복구해 다시 종료할 때도 사용
- * @param mapImageObjectKey  지도 이미지 업로드 결과, 있으면 업로드 생략
- * @param mapImagePath       지도 캡처 파일 경로
  */
 data class WorkoutRecord(
     val activityId: Long,
@@ -32,8 +30,6 @@ data class WorkoutRecord(
     val distanceMeters: Double,
     val maxElevationMeters: Double?,
     val endedAt: Instant?,
-    val mapImageObjectKey: String?,
-    val mapImagePath: String?,
 ) {
     /** 기록 중이거나 일시정지 중, 종료 후 저장 확인 전이면 false */
     val isTracking: Boolean
@@ -90,16 +86,11 @@ data class WorkoutRecord(
 
     /**
      * 복구 안내에서 고를 때까지 일시정지로 둠, 꺼져 있던 시간은 뺌 (durationMillis = 마지막 기록 시각까지, pausedAt = now)
-     * 저장에 실패한 종료 기록은 운동 시간과 종료 시각은 그대로 두고 일시정지로 되돌림, 지도는 다시 캡처
+     * 저장에 실패한 종료 기록은 운동 시간과 종료 시각은 그대로 두고 일시정지로 되돌림
      */
     fun recovered(now: Instant): WorkoutRecord {
         if (status == WorkoutStatus.PENDING_UPLOAD) {
-            return copy(
-                status = WorkoutStatus.ACTIVITY_PAUSED,
-                pausedAt = now,
-                mapImageObjectKey = null,
-                mapImagePath = null,
-            )
+            return copy(status = WorkoutStatus.ACTIVITY_PAUSED, pausedAt = now)
         }
         return copy(
             status = WorkoutStatus.ACTIVITY_PAUSED,
@@ -151,8 +142,6 @@ data class WorkoutRecord(
             distanceMeters = 0.0,
             maxElevationMeters = null,
             endedAt = null,
-            mapImageObjectKey = null,
-            mapImagePath = null,
         )
     }
 }
