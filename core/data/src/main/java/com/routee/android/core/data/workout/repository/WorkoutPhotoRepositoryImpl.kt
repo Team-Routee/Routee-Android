@@ -1,5 +1,6 @@
 package com.routee.android.core.data.workout.repository
 
+import com.routee.android.core.common.di.ApplicationScope
 import com.routee.android.core.common.util.suspendRunCatching
 import com.routee.android.core.data.archive.model.ArchivePhoto
 import com.routee.android.core.data.archive.repository.ArchiveDetailRepository
@@ -20,6 +21,7 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
     private val timelinePhotoRepository: TimelinePhotoRepository,
     private val recapRepository: RecapRepository,
     private val archiveDetailRepository: ArchiveDetailRepository,
+    @param:ApplicationScope private val externalScope: CoroutineScope,
 ) : WorkoutPhotoRepository {
     private val _photos = MutableStateFlow<List<WorkoutPhoto>>(emptyList())
     override val photos: StateFlow<List<WorkoutPhoto>> = _photos.asStateFlow()
@@ -99,16 +102,18 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
         _photos.update { photos -> photos.map { if (it.id == photoId) it.copy(title = title) else it } }
     }
 
-    // 올리는 중이면 끝난 뒤에 지움
-    override suspend fun deletePhoto(photoId: String): Result<Unit> = syncMutex.withLock {
-        suspendRunCatching<Unit> {
-            val photo = _photos.value.find { it.id == photoId } ?: return@suspendRunCatching
-            photo.timelineId?.let { timelinePhotoRepository.deletePhoto(photo.activityId, it).getOrThrow() }
-            _photos.update { photos -> photos.filterNot { it.id == photoId } }
-            savePhotos(photo.activityId)
-            photo.filePath?.let { localDataSource.delete(it) }
+    // 서버와 기기가 어긋나지 않게 화면이 닫혀도 끝까지, 올리는 중이면 끝난 뒤에 지움
+    override suspend fun deletePhoto(photoId: String): Result<Unit> = externalScope.async {
+        syncMutex.withLock {
+            suspendRunCatching<Unit> {
+                val photo = _photos.value.find { it.id == photoId } ?: return@suspendRunCatching
+                photo.timelineId?.let { timelinePhotoRepository.deletePhoto(photo.activityId, it).getOrThrow() }
+                _photos.update { photos -> photos.filterNot { it.id == photoId } }
+                savePhotos(photo.activityId)
+                photo.filePath?.let { localDataSource.delete(it) }
+            }
         }
-    }
+    }.await()
 
     override suspend fun syncPhotos(activityId: Long): Int {
         loadSavedPhotos(activityId)

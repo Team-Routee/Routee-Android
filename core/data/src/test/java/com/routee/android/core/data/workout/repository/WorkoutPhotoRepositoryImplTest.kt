@@ -20,6 +20,11 @@ import java.io.IOException
 import java.nio.file.Files
 import java.time.Instant
 import java.time.YearMonth
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,6 +43,7 @@ class WorkoutPhotoRepositoryImplTest {
         timelinePhotoRepository = timelinePhotos,
         recapRepository = recap,
         archiveDetailRepository = archive,
+        externalScope = CoroutineScope(UnconfinedTestDispatcher()),
     )
 
     /**
@@ -206,6 +212,28 @@ class WorkoutPhotoRepositoryImplTest {
     }
 
     /**
+     * GIVEN: 서버 삭제 응답을 기다리는 중일 때
+     * WHEN: 화면이 닫혀 지우던 쪽이 취소되면
+     * THEN: 삭제는 끝까지 진행해 서버와 기기에서 모두 지운다
+     */
+    @Test
+    fun `화면이 닫혀도 확정한 삭제는 끝까지 한다`() = runTest {
+        dao.rows += photoRow(id = "a", timelineId = 3)
+        repository.restore(ACTIVITY_ID).getOrThrow()
+        val serverResponse = CompletableDeferred<Unit>()
+        timelinePhotos.deleteResponse = serverResponse
+
+        val deleting = launch { repository.deletePhoto("a") }
+        runCurrent()
+        deleting.cancel()
+        serverResponse.complete(Unit)
+
+        assertEquals(listOf(3L), timelinePhotos.deletedTimelineIds)
+        assertTrue(repository.photos.value.isEmpty())
+        assertTrue(dao.rows.isEmpty())
+    }
+
+    /**
      * GIVEN: 아직 못 올린 사진을 지웠을 때
      * WHEN: 사진을 반영하면
      * THEN: 서버를 부르지 않고, 지운 사진을 다시 불러오거나 올리지 않는다
@@ -351,6 +379,7 @@ class WorkoutPhotoRepositoryImplTest {
         val deletedTimelineIds = mutableListOf<Long>()
         var uploadError: Throwable? = null
         var deleteError: Throwable? = null
+        var deleteResponse: CompletableDeferred<Unit>? = null
 
         override suspend fun uploadPhotos(
             activityId: Long,
@@ -371,6 +400,7 @@ class WorkoutPhotoRepositoryImplTest {
             activityId: Long,
             timelineId: Long,
         ): Result<Unit> {
+            deleteResponse?.await()
             deleteError?.let { return Result.failure(it) }
             deletedTimelineIds += timelineId
             return Result.success(Unit)
