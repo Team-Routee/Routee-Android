@@ -108,7 +108,7 @@ internal class WorkoutPhotoRepositoryImpl @Inject constructor(
             suspendRunCatching<Unit> {
                 val photo = _photos.value.find { it.id == photoId } ?: return@suspendRunCatching
                 photo.timelineId?.let { timelinePhotoRepository.deletePhoto(photo.activityId, it).getOrThrow() }
-                _photos.update { photos -> photos.filterNot { it.id == photoId } }
+                mutex.withLock { _photos.update { photos -> photos.filterNot { it.id == photoId } } }
                 savePhotos(photo.activityId)
                 photo.filePath?.let { localDataSource.delete(it) }
             }
