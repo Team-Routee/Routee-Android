@@ -6,4 +6,15 @@
     <string name="tab_archive">아카이브</string>
     <string name="tab_setting">설정</string>
     <string name="tab_exit_toast">한 번 더 누르면 앱이 종료됩니다.</string>
+
+    <!-- 업데이트, 점검 안내 -->
+    <string name="app_notice_maintenance_title">서비스 점검 중이에요</string>
+    <string name="app_notice_maintenance_description">더 나은 루티를 위해 점검하고 있어요.\n잠시 후 다시 이용해주세요.</string>
+    <string name="app_notice_force_update_title">업데이트가 필요해요</string>
+    <string name="app_notice_force_update_description">더 안정적인 루티를 위해\n최신 버전으로 업데이트해주세요.</string>
+    <string name="app_notice_optional_update_title">새로운 버전이 나왔어요</string>
+    <string name="app_notice_optional_update_description">업데이트하고 더 편해진\n루티를 만나보세요.</string>
+    <string name="app_notice_update">업데이트</string>
+    <string name="app_notice_later">나중에</string>
+    <string name="app_notice_confirm">확인</string>
 </resources>

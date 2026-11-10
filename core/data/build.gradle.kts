@@ -26,9 +26,12 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.play.services.location)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.core.location.altitude)
     implementation(libs.androidx.exifinterface)
     implementation(libs.coil)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.config)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
