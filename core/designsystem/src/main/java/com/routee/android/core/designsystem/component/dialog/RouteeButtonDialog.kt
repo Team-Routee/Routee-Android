@@ -27,6 +27,7 @@ import com.routee.android.core.designsystem.theme.RouteeTheme
  * @param onButtonClick     버튼 탭 시 호출. 닫기는 호출하는 쪽에서
  * @param onDismissRequest  뒤로가기, 바깥 영역 탭 시 호출
  * @param description       제목 아래 설명. null 이면 숨김
+ * @param dismissOnDimClick false 이면 바깥 영역 탭 무시
  */
 @Composable
 fun RouteeOneButtonDialog(
@@ -36,11 +37,13 @@ fun RouteeOneButtonDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
+    dismissOnDimClick: Boolean = true,
 ) {
     RouteeDialogContainer(
         onDismissRequest = onDismissRequest,
         contentPadding = PaddingValues(RouteeTheme.spacing.Spacing24),
         modifier = modifier,
+        dismissOnDimClick = dismissOnDimClick,
     ) {
         OneButtonDialogContent(
             title = title,
@@ -64,6 +67,7 @@ fun RouteeOneButtonDialog(
  * @param description              제목 아래 설명. null 이면 숨김
  * @param leftButtonContentColor   왼쪽 버튼 글자색
  * @param rightButtonContentColor  오른쪽 버튼 글자색
+ * @param dismissOnDimClick        false 이면 바깥 영역 탭 무시
  */
 @Composable
 fun RouteeTwoButtonDialog(
@@ -76,11 +80,13 @@ fun RouteeTwoButtonDialog(
     description: String? = null,
     leftButtonContentColor: Color = RouteeTheme.colors.white,
     rightButtonContentColor: Color = RouteeTheme.colors.statusError,
+    dismissOnDimClick: Boolean = true,
 ) {
     RouteeDialogContainer(
         onDismissRequest = onDismissRequest,
         contentPadding = PaddingValues(RouteeTheme.spacing.Spacing24),
         modifier = modifier,
+        dismissOnDimClick = dismissOnDimClick,
     ) {
         TwoButtonDialogContent(
             title = title,
