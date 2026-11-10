@@ -3,6 +3,7 @@ import com.routee.android.buildlogic.extension.requireLocalProperty
 plugins {
     alias(libs.plugins.routee.android.application.compose)
     alias(libs.plugins.routee.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -14,8 +15,8 @@ android {
 
     defaultConfig {
         applicationId = "com.routee.android"
-        versionCode = libs.versions.versionCode.get().toInt()
         versionName = libs.versions.versionName.get()
+        versionCode = versionCodeOf(libs.versions.versionName.get(), libs.versions.versionBuild.get().toInt())
         manifestPlaceholders["naverMapClientId"] = requireLocalProperty("naver.map.client.id")
     }
 
@@ -51,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.data)
     implementation(projects.core.designsystem)
     implementation(projects.core.domain)
     implementation(projects.core.network)
@@ -75,8 +77,18 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.timber)
     testImplementation(libs.junit)
     androidTestImplementation(libs.bundles.android.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+fun versionCodeOf(versionName: String, build: Int): Int {
+    val parts = versionName.split(".").map { it.toInt() }
+    require(parts.size == 3 && parts.drop(1).all { it < 100 } && build < 100) {
+        "versionName은 x.y.z, y, z, versionBuild는 99 이하: $versionName, $build"
+    }
+    val (major, minor, patch) = parts
+    return major * 1_000_000 + minor * 10_000 + patch * 100 + build
 }

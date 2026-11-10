@@ -52,6 +52,35 @@ jobs:
             echo "naver.map.client.id=unused"
           } > local.properties
 
+      - name: Create CI Firebase config
+        run: |
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": { "project_number": "000000000000", "project_id": "routee-ci" },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": { "package_name": "com.routee.android" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "unused" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              },
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000001",
+                  "android_client_info": { "package_name": "com.routee.android.debug" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "unused" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
       - name: Lint
         run: ./gradlew ktlintCheck
 

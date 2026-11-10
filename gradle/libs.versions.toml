@@ -4,8 +4,8 @@ compileSdk = "37"
 minSdk = "26"
 targetSdk = "37"
 jvmTarget = "17"
-versionCode = "1"
-versionName = "1.0"
+versionName = "1.0.0"
+versionBuild = "0"
 
 # Build
 agp = "9.4.1"
@@ -48,6 +48,10 @@ androidxHilt = "1.4.0"
 
 # Logging
 timber = "5.0.1"
+
+# Firebase
+googleServices = "4.5.0"
+firebaseBom = "35.1.0"
 
 # Kotlin
 kotlinxCollectionsImmutable = "0.5.2"
@@ -96,6 +100,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 # Kotlinx
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 # Network
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -132,6 +137,10 @@ lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", versio
 naver-map-sdk = { group = "com.naver.maps", name = "map-sdk", version.ref = "naverMap" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 androidx-core-location-altitude = { group = "androidx.core", name = "core-location-altitude", version.ref = "coreLocationAltitude" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-config = { group = "com.google.firebase", name = "firebase-config" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
@@ -186,6 +195,7 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 room = { id = "androidx.room", version.ref = "room" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
 # build-logic
 routee-android-application = { id = "routee.android.application", version = "unspecified" }
