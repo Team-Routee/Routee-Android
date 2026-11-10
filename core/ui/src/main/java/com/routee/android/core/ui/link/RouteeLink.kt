@@ -11,4 +11,6 @@ enum class RouteeLink(val url: String) {
     KAKAO_CHANNEL_APP("kakaoplus://plusfriend/home/_ExkxgSX"),
     KAKAO_CHANNEL("https://pf.kakao.com/_ExkxgSX"),
     CONTACT_EMAIL("mailto:routee.ask@gmail.com"),
+    PLAY_STORE_APP("market://details?id=com.routee.android"),
+    PLAY_STORE("https://play.google.com/store/apps/details?id=com.routee.android"),
 }
