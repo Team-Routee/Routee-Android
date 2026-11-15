@@ -30,7 +30,7 @@ internal class WorkoutPhotoLocalDataSource(
         File.createTempFile(CAPTURE_PREFIX, IMAGE_SUFFIX, dir)
     }
 
-    /** 원본을 긴 변 [MAX_EDGE_PX] 이하, 회전 반영해 JPEG 로 압축. 압축 파일 경로 반환 */
+    /** 원본을 긴 변 [MAX_EDGE_PX] 이하(줄일 때 [MIN_EDGE_PX] 이상 유지), 회전 반영해 JPEG 로 압축. 압축 파일 경로 반환 */
     suspend fun compress(
         activityId: Long,
         photoId: String,
@@ -78,7 +78,7 @@ internal class WorkoutPhotoLocalDataSource(
         check(bounds.outWidth > 0 && bounds.outHeight > 0) { "사진을 읽을 수 없음" }
 
         var sampleSize = 1
-        while (max(bounds.outWidth, bounds.outHeight) / (sampleSize * 2) >= MAX_EDGE_PX) sampleSize *= 2
+        while (max(bounds.outWidth, bounds.outHeight) / (sampleSize * 2) >= MIN_EDGE_PX) sampleSize *= 2
         val decoded = checkNotNull(
             BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sampleSize }),
         ) { "사진을 읽을 수 없음" }
@@ -102,6 +102,7 @@ internal class WorkoutPhotoLocalDataSource(
         const val CAPTURE_DIRECTORY = "capture"
         const val CAPTURE_PREFIX = "capture_"
         const val IMAGE_SUFFIX = ".jpg"
+        const val MIN_EDGE_PX = 1440
         const val MAX_EDGE_PX = 2048
     }
 }

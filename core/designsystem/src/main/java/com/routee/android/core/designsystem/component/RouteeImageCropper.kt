@@ -68,7 +68,6 @@ import kotlinx.coroutines.withContext
 
 private const val QUARTER_TURN_DEGREES = 90f
 private const val MAX_DECODE_SIZE = 4096
-private const val MAX_OUTPUT_SIZE = 2048
 private const val OUTPUT_JPEG_QUALITY = 90
 private const val CROPPED_FILE_PREFIX = "cropped"
 private const val CROPPED_FILE_SUFFIX = ".jpg"
@@ -84,6 +83,14 @@ private val CornerOutset = 1.5.dp
 private val GuidelineThickness = 1.dp
 private val HandleTouchRadius = 24.dp
 private val MinBoxSize = 42.dp
+
+/**
+ * [RouteeImageCropper] 기본값
+ */
+object RouteeImageCropperDefaults {
+    /** 자른 이미지 긴 변 최대 px */
+    const val MAX_OUTPUT_SIZE = 2048
+}
 
 /**
  * 자르기 영역 비율
@@ -118,15 +125,15 @@ class RouteeImageCropperState internal constructor(private val cacheDirectory: F
     }
 
     /**
-     * 긴 변 최대 [MAX_OUTPUT_SIZE]px로 잘라 캐시에 저장하고, 성공하면 이전에 자른 파일은 지운다
+     * 긴 변 최대 [maxOutputSize]px로 잘라 캐시에 저장하고, 성공하면 이전에 자른 파일은 지운다
      */
-    suspend fun crop(): Result<Uri> = mutex.withLock {
+    suspend fun crop(maxOutputSize: Int = RouteeImageCropperDefaults.MAX_OUTPUT_SIZE): Result<Uri> = mutex.withLock {
         val source = bitmap ?: return Result.failure(IllegalStateException("Image is not loaded"))
         val current = geometry ?: return Result.failure(IllegalStateException("Image is not loaded"))
         suspendRunCatching {
             withContext(Dispatchers.IO) {
                 val file = File(cacheDirectory, "$CROPPED_FILE_PREFIX${System.currentTimeMillis()}$CROPPED_FILE_SUFFIX")
-                val cropped = source.cropped(current)
+                val cropped = source.cropped(current, maxOutputSize)
                 try {
                     file.outputStream().use { output ->
                         check(cropped.compress(Bitmap.CompressFormat.JPEG, OUTPUT_JPEG_QUALITY, output)) {
@@ -292,11 +299,14 @@ private fun CropGeometry.imageMatrix(image: Bitmap): Matrix = Matrix().apply {
     postTranslate(center.x, center.y)
 }
 
-private fun Bitmap.cropped(geometry: CropGeometry): Bitmap {
+private fun Bitmap.cropped(
+    geometry: CropGeometry,
+    maxOutputSize: Int,
+): Bitmap {
     val box = geometry.box
     val sourceWidth = box.width / geometry.scale
     val sourceHeight = box.height / geometry.scale
-    val outputScale = min(1f, MAX_OUTPUT_SIZE / max(sourceWidth, sourceHeight))
+    val outputScale = min(1f, maxOutputSize / max(sourceWidth, sourceHeight))
     val outputWidth = (sourceWidth * outputScale).roundToInt().coerceAtLeast(1)
     val outputHeight = (sourceHeight * outputScale).roundToInt().coerceAtLeast(1)
     val output = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)

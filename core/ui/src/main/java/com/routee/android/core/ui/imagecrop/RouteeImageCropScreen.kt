@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.routee.android.core.designsystem.component.RouteeBgEllipse
 import com.routee.android.core.designsystem.component.RouteeCropAspectRatio
 import com.routee.android.core.designsystem.component.RouteeImageCropper
+import com.routee.android.core.designsystem.component.RouteeImageCropperDefaults
 import com.routee.android.core.designsystem.component.RouteeImageRotationController
 import com.routee.android.core.designsystem.component.RouteePageNavBar
 import com.routee.android.core.designsystem.component.rememberRouteeImageCropperState
@@ -45,6 +46,7 @@ import kotlinx.coroutines.launch
  * @param onBackClick     ◁ 탭 시 호출
  * @param onCropComplete  확인 후 자르기에 성공하면 자른 이미지 주소로 호출
  * @param onCropFailure   확인 후 자르기에 실패하면 호출
+ * @param maxOutputSize   자른 이미지 긴 변 최대 px
  */
 @Composable
 fun RouteeImageCropScreen(
@@ -54,6 +56,7 @@ fun RouteeImageCropScreen(
     onCropComplete: (Uri) -> Unit,
     onCropFailure: (Throwable) -> Unit,
     modifier: Modifier = Modifier,
+    maxOutputSize: Int = RouteeImageCropperDefaults.MAX_OUTPUT_SIZE,
 ) {
     val cropperState = rememberRouteeImageCropperState()
     val coroutineScope = rememberCoroutineScope()
@@ -79,7 +82,7 @@ fun RouteeImageCropScreen(
                             .noRippleClickable(enabled = !isCropping, role = Role.Button) {
                                 isCropping = true
                                 coroutineScope.launch {
-                                    cropperState.crop()
+                                    cropperState.crop(maxOutputSize)
                                         .onSuccess { currentOnCropComplete(it) }
                                         .onFailure { currentOnCropFailure(it) }
                                     isCropping = false

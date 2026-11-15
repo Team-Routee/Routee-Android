@@ -9,6 +9,8 @@ import com.routee.android.core.designsystem.component.RouteeCropAspectRatio
 import com.routee.android.core.ui.imagecrop.RouteeImageCropScreen
 import timber.log.Timber
 
+private const val PROFILE_IMAGE_MAX_SIZE = 640
+
 /**
  * 프로필 사진 자르기 (RT-SET-002-4)
  *
@@ -39,5 +41,6 @@ internal fun ProfileImageCropRoute(
             onNavigateBack()
         },
         onCropFailure = { Timber.e(it) },
+        maxOutputSize = PROFILE_IMAGE_MAX_SIZE,
     )
 }

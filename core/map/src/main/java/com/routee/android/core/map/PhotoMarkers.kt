@@ -21,6 +21,7 @@ import coil3.SingletonImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
+import coil3.size.Scale
 import coil3.toBitmap
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.map.model.MapMarker
@@ -67,6 +68,7 @@ fun rememberPhotoMarkers(photos: List<MapPhoto>): List<MapMarker> {
                             ImageRequest.Builder(context)
                                 .data(photo.imageUrl)
                                 .size(size)
+                                .scale(Scale.FILL)
                                 .allowHardware(false)
                                 .build(),
                         )
