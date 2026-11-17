@@ -82,7 +82,7 @@ dependencies {
     implementation(libs.timber)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.crashlytics.ndk)
     testImplementation(libs.junit)
     androidTestImplementation(libs.bundles.android.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
