@@ -36,6 +36,7 @@ import com.routee.android.feature.setting.navigation.settingEntries
 import com.routee.android.feature.timeline.navigation.timelineEntries
 import com.routee.android.feature.workout.api.WorkoutMainNavKey
 import com.routee.android.feature.workout.navigation.workoutEntries
+import com.routee.android.navigation.ScreenViewTracker
 import com.routee.android.navigation.rememberRouteeTabSceneDecorator
 import kotlinx.coroutines.flow.Flow
 
@@ -47,6 +48,7 @@ internal fun RouteeApp(
 ) {
     val backStack = rememberNavBackStack(startKey)
     val navigator = rememberRouteeNavigator(backStack, homeKey = WorkoutMainNavKey)
+    ScreenViewTracker(backStack)
 
     sessionExpired.CollectSideEffect {
         navigator.clearAndNavigateTo(LoginNavKey(isSessionExpired = true))

@@ -10,3 +10,9 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# 화면 이동 기록에 쓰는 화면 이름
+-keepnames class * implements androidx.navigation3.runtime.NavKey
+
+# 크래시 리포트 로그에 쓰는 예외 이름
+-keepnames class * extends java.lang.Throwable

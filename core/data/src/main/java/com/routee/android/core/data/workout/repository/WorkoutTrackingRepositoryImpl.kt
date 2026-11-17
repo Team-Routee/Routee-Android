@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 
 @Singleton
 internal class WorkoutTrackingRepositoryImpl @Inject constructor(
@@ -39,6 +40,7 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         recordRepository.startRecord(record).onSuccess {
             _state.value = WorkoutTrackingState(record = record)
             savedRoute = null
+            logStatus("시작", record)
         }
     }
 
@@ -62,6 +64,7 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
             recordRepository.saveRecord(record).getOrThrow()
             val trackPoints = recordRepository.getTrackPoints(record.activityId).getOrThrow()
             _state.value = WorkoutTrackingState(record = record, trackPoints = trackPoints)
+            logStatus("복원", record)
         }
     }
 
@@ -77,6 +80,7 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
                 recordRepository.getTrackPoints(record.activityId).getOrThrow()
             }
             _state.value = WorkoutTrackingState(record = record, trackPoints = trackPoints)
+            logStatus("복구", record)
         }
     }
 
@@ -85,14 +89,20 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
         val now = clock.instant()
         val finished = record.finished(now, endedAt ?: now)
         if (finished == record) return@withLock Result.success(Unit)
-        recordRepository.saveRecord(finished).onSuccess { _state.value = _state.value.copy(record = finished) }
+        recordRepository.saveRecord(finished).onSuccess {
+            _state.value = _state.value.copy(record = finished)
+            logStatus("종료", finished)
+        }
     }
 
     override suspend fun markSaved(): Result<Unit> = mutex.withLock {
         val current = _state.value
         val record = current.record ?: return@withLock Result.success(Unit)
         savedRoute = SavedRoute(record.activityId, current.trackPoints)
-        recordRepository.deleteRecord(record.activityId).onSuccess { _state.value = WorkoutTrackingState() }
+        recordRepository.deleteRecord(record.activityId).onSuccess {
+            _state.value = WorkoutTrackingState()
+            logStatus("저장 완료", record)
+        }
     }
 
     override fun getSavedTrackPoints(activityId: Long): List<TrackPoint>? =
@@ -101,7 +111,10 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
     override suspend fun clear(): Result<Unit> = mutex.withLock {
         savedRoute = null
         val record = _state.value.record ?: return@withLock Result.success(Unit)
-        recordRepository.deleteRecord(record.activityId).onSuccess { _state.value = WorkoutTrackingState() }
+        recordRepository.deleteRecord(record.activityId).onSuccess {
+            _state.value = WorkoutTrackingState()
+            logStatus("삭제", record)
+        }
     }
 
     private suspend fun updateStatus(transform: (WorkoutRecord) -> WorkoutRecord): Result<Unit> {
@@ -111,10 +124,15 @@ internal class WorkoutTrackingRepositoryImpl @Inject constructor(
             if (updated == record) return Result.success(Unit)
             recordRepository.saveRecord(updated).onFailure { return Result.failure(it) }
             _state.value = _state.value.copy(record = updated)
+            logStatus("상태 변경", updated)
             updated
         }
         remoteRepository.updateStatus(changed.activityId, changed.status)
         return Result.success(Unit)
+    }
+
+    private fun logStatus(action: String, record: WorkoutRecord) {
+        Timber.i("운동 기록 $action: ${record.activityId} ${record.status}")
     }
 
     private companion object {
