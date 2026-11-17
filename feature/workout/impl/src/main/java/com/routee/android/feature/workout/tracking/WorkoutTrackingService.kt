@@ -64,12 +64,12 @@ internal class WorkoutTrackingService : Service() {
         when (intent?.action) {
             ACTION_PAUSE -> scope.launch {
                 trackingRepository.restore()
-                trackingRepository.pause()
+                trackingRepository.pause().onFailure { Timber.e(it, "알림 일시정지 실패") }
             }
 
             ACTION_RESUME -> scope.launch {
                 trackingRepository.restore()
-                trackingRepository.resume()
+                trackingRepository.resume().onFailure { Timber.e(it, "알림 다시 시작 실패") }
             }
         }
         if (trackingJob == null) {
