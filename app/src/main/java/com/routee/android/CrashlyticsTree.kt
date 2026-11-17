@@ -20,9 +20,12 @@ internal class CrashlyticsTree : Timber.Tree() {
         }
     }
 
-    // 앱이 이미 처리하는 오류
-    private fun Throwable.isExpected(): Boolean =
-        this is ApiException || this is IOException || this is CancellationException
+    // 앱이 이미 처리하는 오류. 응답 파싱 실패와 빈 data는 버그일 수 있어 보냄
+    private fun Throwable.isExpected(): Boolean = when (this) {
+        is ApiException.Unknown, is ApiException.EmptyData -> false
+        is ApiException, is IOException, is CancellationException -> true
+        else -> false
+    }
 
     private companion object {
         val PRIORITY_LABELS = mapOf(Log.INFO to "I", Log.WARN to "W", Log.ERROR to "E", Log.ASSERT to "A")
