@@ -30,6 +30,11 @@
             android:name="google_analytics_default_allow_ad_personalization_signals"
             android:value="false" />
 
+        <!-- 화면 이동은 ScreenViewTracker에서 기록 -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
+
         <service
             android:name="com.google.android.gms.metadata.ModuleDependencies"
             android:enabled="false"
