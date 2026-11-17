@@ -3,6 +3,7 @@ package com.routee.android.core.network.di
 import com.routee.android.core.network.BuildConfig
 import com.routee.android.core.network.authenticator.TokenAuthenticator
 import com.routee.android.core.network.extension.toPrettyJsonOrSelf
+import com.routee.android.core.network.interceptor.ApiTimingInterceptor
 import com.routee.android.core.network.interceptor.AuthInterceptor
 import com.routee.android.core.network.interceptor.TimeZoneInterceptor
 import com.routee.android.core.network.token.ReissueService
@@ -56,7 +57,9 @@ internal object NetworkModule {
     fun provideNoAuthOkHttpClient(
         timeZoneInterceptor: TimeZoneInterceptor,
         loggingInterceptor: HttpLoggingInterceptor,
+        apiTimingInterceptor: ApiTimingInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(apiTimingInterceptor)
         .addInterceptor(loggingInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .build()
