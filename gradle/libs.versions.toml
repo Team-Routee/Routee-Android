@@ -52,6 +52,7 @@ timber = "5.0.1"
 # Firebase
 googleServices = "4.5.0"
 firebaseBom = "35.1.0"
+firebaseCrashlyticsPlugin = "3.0.8"
 
 # Kotlin
 kotlinxCollectionsImmutable = "0.5.2"
@@ -141,6 +142,8 @@ androidx-core-location-altitude = { group = "androidx.core", name = "core-locati
 # Firebase
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-config = { group = "com.google.firebase", name = "firebase-config" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
@@ -196,6 +199,7 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 room = { id = "androidx.room", version.ref = "room" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 
 # build-logic
 routee-android-application = { id = "routee.android.application", version = "unspecified" }
