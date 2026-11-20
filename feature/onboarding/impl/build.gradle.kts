@@ -21,6 +21,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.analytics)
     implementation(projects.core.common)
     implementation(projects.core.domain)
 

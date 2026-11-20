@@ -5,6 +5,7 @@ import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
+import com.routee.android.feature.onboarding.FakeAnalyticsTracker
 import com.routee.android.feature.onboarding.MainDispatcherRule
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
@@ -24,7 +25,7 @@ class LoginViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private fun createViewModel(key: LoginNavKey = LoginNavKey()) =
-        LoginViewModel(key, FakeAuthRepository(), FakeConnectivityRepository())
+        LoginViewModel(key, FakeAuthRepository(), FakeConnectivityRepository(), FakeAnalyticsTracker())
 
     /**
      * GIVEN: 토큰 재발급까지 실패해 로그인으로 왔을 때
