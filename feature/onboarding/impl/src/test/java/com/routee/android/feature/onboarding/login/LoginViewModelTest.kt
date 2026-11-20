@@ -9,7 +9,9 @@ import com.routee.android.feature.onboarding.MainDispatcherRule
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
 import java.io.IOException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -107,6 +109,8 @@ class LoginViewModelTest {
 
     private class FakeConnectivityRepository : ConnectivityRepository {
         override suspend fun isConnected(): Boolean = true
+
+        override fun observeConnection(): Flow<Boolean> = flowOf(true)
     }
 
     private class FakeAuthRepository : AuthRepository {
