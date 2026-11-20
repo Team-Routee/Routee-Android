@@ -5,11 +5,14 @@ import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
 import com.routee.android.core.data.auth.repository.AuthRepository
 import com.routee.android.core.data.connectivity.repository.ConnectivityRepository
+import com.routee.android.feature.onboarding.FakeAnalyticsTracker
 import com.routee.android.feature.onboarding.MainDispatcherRule
 import com.routee.android.feature.onboarding.api.LoginNavKey
 import com.routee.android.feature.onboarding.login.model.LoginSideEffect
 import java.io.IOException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,7 +25,7 @@ class LoginViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private fun createViewModel(key: LoginNavKey = LoginNavKey()) =
-        LoginViewModel(key, FakeAuthRepository(), FakeConnectivityRepository())
+        LoginViewModel(key, FakeAuthRepository(), FakeConnectivityRepository(), FakeAnalyticsTracker())
 
     /**
      * GIVEN: 토큰 재발급까지 실패해 로그인으로 왔을 때
@@ -107,6 +110,8 @@ class LoginViewModelTest {
 
     private class FakeConnectivityRepository : ConnectivityRepository {
         override suspend fun isConnected(): Boolean = true
+
+        override fun observeConnection(): Flow<Boolean> = flowOf(true)
     }
 
     private class FakeAuthRepository : AuthRepository {

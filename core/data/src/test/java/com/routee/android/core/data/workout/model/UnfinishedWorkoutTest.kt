@@ -28,7 +28,7 @@ class UnfinishedWorkoutTest {
 
         val result = UnfinishedWorkout.of(current = null, saved = saved, now = START)
 
-        assertEquals(UnfinishedWorkout.Recoverable(saved), result)
+        assertEquals(UnfinishedWorkout.Recoverable(saved, isAppRestarted = true), result)
     }
 
     /**
@@ -45,7 +45,7 @@ class UnfinishedWorkoutTest {
             UnfinishedWorkout.of(current = paused, saved = null, now = START.plus(WORKOUT_PAUSE_LIMIT).minusSeconds(1)),
         )
         assertEquals(
-            UnfinishedWorkout.Recoverable(paused),
+            UnfinishedWorkout.Recoverable(paused, isAppRestarted = false),
             UnfinishedWorkout.of(current = paused, saved = null, now = START.plus(WORKOUT_PAUSE_LIMIT)),
         )
     }
@@ -75,7 +75,7 @@ class UnfinishedWorkoutTest {
 
         val result = UnfinishedWorkout.of(current = null, saved = finished, now = START)
 
-        assertEquals(UnfinishedWorkout.Recoverable(finished), result)
+        assertEquals(UnfinishedWorkout.Recoverable(finished, isAppRestarted = true), result)
     }
 
     /**

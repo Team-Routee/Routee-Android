@@ -9,4 +9,7 @@ import kotlinx.serialization.Serializable
  * @param imagePath 워터마크를 합성해 저장한 리캡 이미지 경로
  */
 @Serializable
-data class RecapCompleteNavKey(val imagePath: String) : NavKey
+data class RecapCompleteNavKey(
+    val imagePath: String,
+    val activityId: Long,
+) : NavKey

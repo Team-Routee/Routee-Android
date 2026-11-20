@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.designsystem.theme.RouteeTheme
 import com.routee.android.core.ui.link.RouteeLink
 import com.routee.android.core.ui.link.tryOpenUri
@@ -18,10 +19,14 @@ import com.routee.android.ui.AppNoticeDialog
 import com.routee.android.ui.RouteeApp
 import com.routee.android.util.lockPortraitOnPhone
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
+
+    @Inject
+    lateinit var analyticsTracker: AnalyticsTracker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -37,7 +42,13 @@ class MainActivity : ComponentActivity() {
             val uriHandler = LocalUriHandler.current
             RouteeTheme {
                 if (uiState.appNotice?.blocksApp != true) {
-                    uiState.startKey?.let { RouteeApp(startKey = it, sessionExpired = viewModel.sessionExpired) }
+                    uiState.startKey?.let {
+                        RouteeApp(
+                            startKey = it,
+                            sessionExpired = viewModel.sessionExpired,
+                            onScreenView = analyticsTracker::trackScreenView,
+                        )
+                    }
                 }
                 uiState.appNotice?.let { notice ->
                     AppNoticeDialog(

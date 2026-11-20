@@ -9,8 +9,15 @@ sealed interface UnfinishedWorkout {
     /** 앱이 살아 있는 동안 기록 중이거나 일시정지 2시간 이내, 안내 없이 기록 화면으로 */
     data object Tracking : UnfinishedWorkout
 
-    /** 앱이 꺼졌다 켜졌거나 일시정지가 2시간을 넘음, 이어서 기록과 종료 후 저장을 고르게 함 */
-    data class Recoverable(val record: WorkoutRecord) : UnfinishedWorkout
+    /**
+     * 앱이 꺼졌다 켜졌거나 일시정지가 2시간을 넘음, 이어서 기록과 종료 후 저장을 고르게 함
+     *
+     * @param isAppRestarted true 이면 앱이 꺼졌다 켜짐, false 이면 앱이 켜진 채 일시정지 2시간 초과
+     */
+    data class Recoverable(
+        val record: WorkoutRecord,
+        val isAppRestarted: Boolean,
+    ) : UnfinishedWorkout
 
     /** 앱이 살아 있는 동안 종료했지만 서버 저장에 실패함, [Recoverable]과 같은 복구 안내 */
     data class PendingUpload(val record: WorkoutRecord) : UnfinishedWorkout
@@ -27,9 +34,9 @@ sealed interface UnfinishedWorkout {
         ): UnfinishedWorkout {
             val record = current ?: saved ?: return None
             return when {
-                current == null -> Recoverable(record)
+                current == null -> Recoverable(record, isAppRestarted = true)
                 record.status == WorkoutStatus.PENDING_UPLOAD -> PendingUpload(record)
-                record.isPauseExpiredAt(now) -> Recoverable(record)
+                record.isPauseExpiredAt(now) -> Recoverable(record, isAppRestarted = false)
                 else -> Tracking
             }
         }

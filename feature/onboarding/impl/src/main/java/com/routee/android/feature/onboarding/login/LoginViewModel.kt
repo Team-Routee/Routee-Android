@@ -2,6 +2,9 @@ package com.routee.android.feature.onboarding.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.LoginResult
 import com.routee.android.core.data.auth.model.SocialProvider
@@ -28,6 +31,7 @@ internal class LoginViewModel @AssistedInject constructor(
     @Assisted key: LoginNavKey,
     private val authRepository: AuthRepository,
     private val connectivityRepository: ConnectivityRepository,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState(isSessionExpiredDialogVisible = key.isSessionExpired))
     val uiState = _uiState.asStateFlow()
@@ -75,7 +79,14 @@ internal class LoginViewModel @AssistedInject constructor(
             .onSuccess { result ->
                 val sideEffect = when (result) {
                     LoginResult.Success -> LoginSideEffect.NavigateToHome
-                    is LoginResult.NeedRegister -> LoginSideEffect.NavigateToTerms(result.idToken)
+
+                    is LoginResult.NeedRegister -> {
+                        analyticsTracker.track(
+                            AnalyticsEvent.SIGN_UP_COMPLETED,
+                            mapOf(AnalyticsProperty.LOGIN_PROVIDER to SocialProvider.GOOGLE.name),
+                        )
+                        LoginSideEffect.NavigateToTerms(result.idToken)
+                    }
                 }
                 _sideEffect.send(sideEffect)
             }

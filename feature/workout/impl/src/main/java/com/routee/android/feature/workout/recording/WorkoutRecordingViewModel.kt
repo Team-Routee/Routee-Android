@@ -3,6 +3,9 @@ package com.routee.android.feature.workout.recording
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.workout.model.StartedWorkout
 import com.routee.android.core.data.workout.model.UnfinishedWorkout
@@ -23,6 +26,7 @@ import com.routee.android.feature.workout.api.WorkoutRecordingNavKey
 import com.routee.android.feature.workout.model.observeLocationsFromLast
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
+import com.routee.android.feature.workout.model.trackWorkoutSaveResult
 import com.routee.android.feature.workout.recording.model.TakenPhoto
 import com.routee.android.feature.workout.recording.model.WorkoutMode
 import com.routee.android.feature.workout.recording.model.WorkoutRecordingSideEffect
@@ -75,6 +79,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     private val photoRepository: WorkoutPhotoRepository,
     private val locationRepository: LocationRepository,
     private val clock: Clock,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WorkoutRecordingUiState())
     val uiState: StateFlow<WorkoutRecordingUiState> = _uiState.asStateFlow()
@@ -254,6 +259,9 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     fun onEndLongPress() {
         if (_uiState.value.mode == WorkoutMode.FINISHING) return
         confirmPhotoDelete()
+        trackingRepository.state.value.record?.activityId?.let {
+            analyticsTracker.track(AnalyticsEvent.WORKOUT_RECORDING_ENDED, AnalyticsProperty.workout(it))
+        }
         _uiState.update { it.copy(mode = WorkoutMode.FINISHING) }
         viewModelScope.launch { finishWorkout() }
     }
@@ -262,7 +270,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     fun onMapCaptured(jpeg: ByteArray?) {
         if (_uiState.value.captureRoute == null) return
         _uiState.update { it.copy(captureRoute = null) }
-        viewModelScope.launch { saveResult.complete(saveFinishedWorkout(jpeg)) }
+        viewModelScope.launch {
+            val activityId = trackingRepository.state.value.record?.activityId
+            completeSave(activityId, saveFinishedWorkout(jpeg))
+        }
     }
 
     /** 마무리 애니메이션이 끝나면 저장 결과를 기다려 타임라인 이동, 실패면 기록 등록 실패 모달 */
@@ -304,7 +315,7 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
     private suspend fun finishWorkout() {
         trackingRepository.finish().onFailure {
             Timber.e(it, "운동 종료 실패")
-            saveResult.complete(WorkoutSaveResult.Failed)
+            completeSave(trackingRepository.state.value.record?.activityId, WorkoutSaveResult.Failed)
             return
         }
         val state = trackingRepository.state.value
@@ -355,6 +366,14 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         viewModelScope.launch { photoRepository.restore(activityId).onFailure { Timber.e(it, "운동 사진 복구 실패") } }
     }
 
+    private fun completeSave(
+        activityId: Long?,
+        result: WorkoutSaveResult,
+    ) {
+        activityId?.let { analyticsTracker.trackWorkoutSaveResult(it, result) }
+        saveResult.complete(result)
+    }
+
     private fun continueRecording() {
         val status = trackingRepository.state.value.record?.status ?: return
         _uiState.update { it.copy(mode = status.toMode() ?: it.mode) }
@@ -367,6 +386,10 @@ internal class WorkoutRecordingViewModel @AssistedInject constructor(
         pending.await().onSuccess { workout ->
             trackingRepository.start(workout, WorkoutType.HIKING, startedAt)
                 .onSuccess {
+                    analyticsTracker.track(
+                        AnalyticsEvent.WORKOUT_STARTED,
+                        AnalyticsProperty.workout(workout.activityId),
+                    )
                     _uiState.update { it.copy(mode = WorkoutMode.RECORDING) }
                     _sideEffect.send(WorkoutRecordingSideEffect.StartTrackingService)
                 }.onFailure {

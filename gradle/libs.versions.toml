@@ -54,6 +54,10 @@ googleServices = "4.5.0"
 firebaseBom = "35.1.0"
 firebaseCrashlyticsPlugin = "3.0.8"
 
+# Analytics
+mixpanel = "8.12.0"
+installReferrer = "2.2"
+
 # Kotlin
 kotlinxCollectionsImmutable = "0.5.2"
 
@@ -144,6 +148,10 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-config = { group = "com.google.firebase", name = "firebase-config" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 firebase-crashlytics-ndk = { group = "com.google.firebase", name = "firebase-crashlytics-ndk" }
+
+# Analytics
+mixpanel-android = { group = "com.mixpanel.android", name = "mixpanel-android", version.ref = "mixpanel" }
+installreferrer = { group = "com.android.installreferrer", name = "installreferrer", version.ref = "installReferrer" }
 
 # Logging
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }

@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.analytics)
     implementation(projects.core.data)
     implementation(projects.core.designsystem)
     implementation(projects.core.domain)
@@ -81,7 +82,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.timber)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics.ndk)
     testImplementation(libs.junit)
     androidTestImplementation(libs.bundles.android.test)

@@ -3,6 +3,7 @@
 | Module | Contains |
 | --- | --- |
 | `app` | `MainActivity`, `NavDisplay`, tab bar, entry registration |
+| `core:analytics` | `AnalyticsTracker`, `AnalyticsEvent`. Events to Mixpanel, screen_view to Firebase Analytics. Install referrer `utm_*` as Mixpanel super properties |
 | `core:common` | Kotlin utilities (`suspendRunCatching`), `@ApplicationScope` CoroutineScope |
 | `core:designsystem` | Tokens, `Routee*` components, Modifier extensions, drawables |
 | `core:domain` | UseCases shared by features (`ValidateNicknameUseCase`). May use `core:data` ([domain-layer](domain-layer.md)) |
