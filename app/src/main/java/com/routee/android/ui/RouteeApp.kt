@@ -44,11 +44,12 @@ import kotlinx.coroutines.flow.Flow
 internal fun RouteeApp(
     startKey: NavKey,
     sessionExpired: Flow<Unit>,
+    onScreenView: (screenName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(startKey)
     val navigator = rememberRouteeNavigator(backStack, homeKey = WorkoutMainNavKey)
-    ScreenViewTracker(backStack)
+    ScreenViewTracker(backStack, onScreenView)
 
     sessionExpired.CollectSideEffect {
         navigator.clearAndNavigateTo(LoginNavKey(isSessionExpired = true))
