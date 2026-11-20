@@ -3,6 +3,9 @@ package com.routee.android.feature.recordedit.editor
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.data.recap.exception.RecapException
 import com.routee.android.core.data.recap.repository.RecapRepository
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
@@ -26,6 +29,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,6 +40,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     @Assisted private val key: RecapEditorNavKey,
     private val recapImageStore: RecapImageStore,
     private val recapRepository: RecapRepository,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecapEditorUiState())
     val uiState = _uiState.asStateFlow()
@@ -45,9 +50,12 @@ internal class RecapEditorViewModel @AssistedInject constructor(
 
     private var isCompleting = false
     private var completedImagePath: String? = null
+    private var hasCompleted = false
 
     init {
         loadContent()
+        trackEditorOpened()
+        trackFirstEdit()
     }
 
     fun onRetryClick() {
@@ -215,6 +223,8 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     fun onCompleteAnimationEnd() {
         val imagePath = completedImagePath ?: return
         completedImagePath = null
+        hasCompleted = true
+        trackWithEdit(AnalyticsEvent.RECAP_COMPLETED)
         viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.NavigateToComplete(imagePath)) }
     }
 
@@ -250,7 +260,31 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     }
 
     private fun navigateBack() {
+        if (!hasCompleted) trackWithEdit(AnalyticsEvent.RECAP_ABANDONED)
         viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.NavigateBack) }
+    }
+
+    private fun trackEditorOpened() {
+        analyticsTracker.track(
+            AnalyticsEvent.RECAP_EDITOR_OPENED,
+            AnalyticsProperty.activity(key.activityId) +
+                (AnalyticsProperty.ENTRY_POINT to key.entryPoint.name.lowercase()),
+        )
+    }
+
+    // 편집 화면당 한 번, 처음 변경이 생겼을 때
+    private fun trackFirstEdit() {
+        viewModelScope.launch {
+            _uiState.first { it.hasChanges }
+            analyticsTracker.track(AnalyticsEvent.RECAP_EDITED, AnalyticsProperty.activity(key.activityId))
+        }
+    }
+
+    private fun trackWithEdit(event: AnalyticsEvent) {
+        analyticsTracker.track(
+            event,
+            AnalyticsProperty.activity(key.activityId) + (AnalyticsProperty.HAS_EDIT to _uiState.value.hasChanges),
+        )
     }
 
     @AssistedFactory

@@ -4,6 +4,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.util.viewModelEntry
+import com.routee.android.feature.recordedit.api.RecapEditorEntryPoint
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.api.RecordEditMainNavKey
 import com.routee.android.feature.timeline.api.TimelineNavKey
@@ -23,7 +24,7 @@ fun EntryProviderScope<NavKey>.timelineEntries(navigator: RouteeNavigator) {
                     // 편집 화면에서 나가면 기록 편집 탭 홈, 운동 탭은 초기화
                     TimelineSaveDestination.RecordEdit -> {
                         navigator.clearAndNavigateTo(RecordEditMainNavKey)
-                        navigator.navigateTo(RecapEditorNavKey(key.activityId))
+                        navigator.navigateTo(RecapEditorNavKey(key.activityId, RecapEditorEntryPoint.POST_WORKOUT))
                     }
                 }
             },

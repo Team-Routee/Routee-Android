@@ -6,6 +6,7 @@ import com.routee.android.core.navigation.RouteeNavigator
 import com.routee.android.core.navigation.util.viewModelEntry
 import com.routee.android.feature.recordedit.api.RecapBackgroundCropNavKey
 import com.routee.android.feature.recordedit.api.RecapCompleteNavKey
+import com.routee.android.feature.recordedit.api.RecapEditorEntryPoint
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.api.RecordEditMainNavKey
 import com.routee.android.feature.recordedit.background.RecapBackgroundCropRoute
@@ -18,17 +19,21 @@ import com.routee.android.feature.recordedit.main.RecordEditMainRoute
 fun EntryProviderScope<NavKey>.recordEditEntries(navigator: RouteeNavigator) {
     entry<RecordEditMainNavKey> {
         RecordEditMainRoute(
-            onNavigateToEditor = { activityId -> navigator.navigateTo(RecapEditorNavKey(activityId)) },
+            onNavigateToEditor = { activityId ->
+                navigator.navigateTo(RecapEditorNavKey(activityId, RecapEditorEntryPoint.RECORD_EDIT_TAB))
+            },
             onNavigateToHome = navigator::navigateToHome,
         )
     }
-    viewModelEntry<RecapEditorNavKey, RecapEditorViewModel, RecapEditorViewModel.Factory> { _, viewModel ->
+    viewModelEntry<RecapEditorNavKey, RecapEditorViewModel, RecapEditorViewModel.Factory> { key, viewModel ->
         RecapEditorRoute(
             viewModel = viewModel,
             onNavigateBack = navigator::navigateBack,
             onNavigateToHome = navigator::navigateToHome,
             onNavigateToBackgroundCrop = { imageUri -> navigator.navigateTo(RecapBackgroundCropNavKey(imageUri)) },
-            onNavigateToComplete = { imagePath -> navigator.navigateTo(RecapCompleteNavKey(imagePath)) },
+            onNavigateToComplete = { imagePath ->
+                navigator.navigateTo(RecapCompleteNavKey(imagePath, key.activityId))
+            },
         )
     }
     viewModelEntry<RecapCompleteNavKey, RecapCompleteViewModel, RecapCompleteViewModel.Factory> { _, viewModel ->
