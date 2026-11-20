@@ -10,6 +10,7 @@ import com.routee.android.core.domain.workout.DiscardWorkoutUseCase
 import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.feature.workout.FakeAnalyticsTracker
 import com.routee.android.feature.workout.FakeLocationRepository
 import com.routee.android.feature.workout.FakeMapImageRepository
 import com.routee.android.feature.workout.FakePermissionRepository
@@ -520,6 +521,7 @@ class WorkoutMainViewModelTest {
             photoRepository = FakeWorkoutPhotoRepository(),
         ),
         discardWorkout = DiscardWorkoutUseCase(tracking, records, FakeWorkoutPhotoRepository()),
+        analyticsTracker = FakeAnalyticsTracker(),
     )
 
     private fun pendingTracking(record: WorkoutRecord) = FakeWorkoutTrackingRepository(

@@ -4,6 +4,9 @@ import android.location.Location
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.data.location.repository.LocationRepository
 import com.routee.android.core.data.permission.repository.PermissionRepository
 import com.routee.android.core.data.workout.model.UnfinishedWorkout
@@ -18,9 +21,12 @@ import com.routee.android.feature.workout.main.model.LocationPermission
 import com.routee.android.feature.workout.main.model.WorkoutMainSideEffect
 import com.routee.android.feature.workout.main.model.WorkoutMainUiState
 import com.routee.android.feature.workout.main.model.toRecoveryUiModel
+import com.routee.android.feature.workout.model.WorkoutRecoveryReason
 import com.routee.android.feature.workout.model.observeLocationsFromLast
+import com.routee.android.feature.workout.model.recoveryReason
 import com.routee.android.feature.workout.model.toLocation
 import com.routee.android.feature.workout.model.toMapPoint
+import com.routee.android.feature.workout.model.trackWorkoutSaveResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
@@ -49,6 +55,7 @@ internal class WorkoutMainViewModel @Inject constructor(
     private val getUnfinishedWorkout: GetUnfinishedWorkoutUseCase,
     private val saveFinishedWorkout: SaveFinishedWorkoutUseCase,
     private val discardWorkout: DiscardWorkoutUseCase,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WorkoutMainUiState())
     val uiState: StateFlow<WorkoutMainUiState> = _uiState.asStateFlow()
@@ -142,7 +149,10 @@ internal class WorkoutMainViewModel @Inject constructor(
     fun onRecoveryMapCaptured(jpeg: ByteArray?) {
         if (_uiState.value.recoveryCaptureRoute == null) return
         _uiState.update { it.copy(recoveryCaptureRoute = null) }
-        viewModelScope.launch { showRecoverySaveResult(saveFinishedWorkout(jpeg)) }
+        viewModelScope.launch {
+            val activityId = trackingRepository.state.value.record?.activityId
+            showRecoverySaveResult(activityId, saveFinishedWorkout(jpeg))
+        }
     }
 
     fun onMyLocationClick() {
@@ -223,13 +233,20 @@ internal class WorkoutMainViewModel @Inject constructor(
         when (unfinished) {
             UnfinishedWorkout.None -> Unit
             UnfinishedWorkout.Tracking -> _sideEffect.send(WorkoutMainSideEffect.NavigateToRecording)
-            is UnfinishedWorkout.Recoverable -> showRecovery(unfinished.record)
-            is UnfinishedWorkout.PendingUpload -> showRecovery(unfinished.record)
+            is UnfinishedWorkout.Recoverable -> showRecovery(unfinished.record, unfinished.recoveryReason)
+            is UnfinishedWorkout.PendingUpload -> showRecovery(unfinished.record, WorkoutRecoveryReason.SAVE_FAILED)
         }
     }
 
-    private fun showRecovery(record: WorkoutRecord) {
+    private fun showRecovery(
+        record: WorkoutRecord,
+        reason: WorkoutRecoveryReason,
+    ) {
         _uiState.update { it.copy(recovery = record.toRecoveryUiModel()) }
+        analyticsTracker.track(
+            AnalyticsEvent.WORKOUT_RECOVERY_SHOWN,
+            AnalyticsProperty.workout(record.activityId) + (AnalyticsProperty.RECOVERY_REASON to reason.name),
+        )
     }
 
     private fun continueRecovery() {
@@ -257,7 +274,7 @@ internal class WorkoutMainViewModel @Inject constructor(
                 requestRouteCapture()
             }.onFailure {
                 Timber.e(it, "복구한 기록 종료 실패")
-                showRecoverySaveResult(WorkoutSaveResult.Failed)
+                showRecoverySaveResult(trackingRepository.state.value.record?.activityId, WorkoutSaveResult.Failed)
             }
     }
 
@@ -268,7 +285,11 @@ internal class WorkoutMainViewModel @Inject constructor(
     }
 
     // 경로가 2점 미만이라 저장할 수 없으면 기록 등록 실패 모달, 기기 기록은 이미 지워짐
-    private suspend fun showRecoverySaveResult(result: WorkoutSaveResult) {
+    private suspend fun showRecoverySaveResult(
+        activityId: Long?,
+        result: WorkoutSaveResult,
+    ) {
+        activityId?.let { analyticsTracker.trackWorkoutSaveResult(it, result) }
         _uiState.update { it.copy(isRecoverySaving = false) }
         when (result) {
             WorkoutSaveResult.Saved, WorkoutSaveResult.PhotosMissing -> {
