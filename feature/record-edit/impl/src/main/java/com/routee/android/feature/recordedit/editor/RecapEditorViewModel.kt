@@ -51,6 +51,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     private var isCompleting = false
     private var completedImagePath: String? = null
     private var hasCompleted = false
+    private var completedHasEdit = false
 
     init {
         loadContent()
@@ -198,6 +199,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
     fun onCompleteClick() {
         if (isCompleting) return
         isCompleting = true
+        completedHasEdit = _uiState.value.hasChanges
         viewModelScope.launch {
             _uiState.update { it.copy(selectedTab = null, selectedSticker = null) }
             _sideEffect.send(RecapEditorSideEffect.CaptureRecap)
@@ -224,7 +226,7 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         val imagePath = completedImagePath ?: return
         completedImagePath = null
         hasCompleted = true
-        trackWithEdit(AnalyticsEvent.RECAP_COMPLETED)
+        trackWithEdit(AnalyticsEvent.RECAP_COMPLETED, completedHasEdit)
         viewModelScope.launch { _sideEffect.send(RecapEditorSideEffect.NavigateToComplete(imagePath)) }
     }
 
@@ -280,10 +282,13 @@ internal class RecapEditorViewModel @AssistedInject constructor(
         }
     }
 
-    private fun trackWithEdit(event: AnalyticsEvent) {
+    private fun trackWithEdit(
+        event: AnalyticsEvent,
+        hasEdit: Boolean = _uiState.value.hasChanges,
+    ) {
         analyticsTracker.track(
             event,
-            AnalyticsProperty.activity(key.activityId) + (AnalyticsProperty.HAS_EDIT to _uiState.value.hasChanges),
+            AnalyticsProperty.activity(key.activityId) + (AnalyticsProperty.HAS_EDIT to hasEdit),
         )
     }
 
