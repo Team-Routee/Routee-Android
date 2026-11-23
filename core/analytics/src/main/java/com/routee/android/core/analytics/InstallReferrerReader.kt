@@ -32,8 +32,9 @@ internal class InstallReferrerReader @Inject constructor(
                     if (continuation.isActive) continuation.resume(referrer?.let(::parseUtm).orEmpty())
                 }
 
+                // 연결이 다시 되면 onInstallReferrerSetupFinished가 다시 불림
                 override fun onInstallReferrerServiceDisconnected() {
-                    if (continuation.isActive) continuation.resume(emptyMap())
+                    Timber.w("설치 경로 서비스 연결 끊김")
                 }
             },
         )
