@@ -39,6 +39,7 @@ internal class RecapCompleteViewModel @AssistedInject constructor(
     }
 
     fun onDownloadClick() {
+        if (isSaving) return
         analyticsTracker.track(AnalyticsEvent.RECAP_SAVED, AnalyticsProperty.activity(key.activityId))
         saveToGallery()
     }
