@@ -5,6 +5,9 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.data.auth.exception.AuthException
 import com.routee.android.core.data.auth.model.Agreements
 import com.routee.android.core.data.auth.model.SocialProvider
@@ -33,6 +36,7 @@ internal class NicknameViewModel @AssistedInject constructor(
     @Assisted private val key: NicknameNavKey,
     private val authRepository: AuthRepository,
     private val validateNickname: ValidateNicknameUseCase,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     val nicknameState = TextFieldState()
 
@@ -78,7 +82,13 @@ internal class NicknameViewModel @AssistedInject constructor(
                     marketingConsent = key.marketingConsent,
                 ),
             )
-                .onSuccess { _sideEffect.send(NicknameSideEffect.NavigateToHome) }
+                .onSuccess {
+                    analyticsTracker.track(
+                        AnalyticsEvent.ONBOARDING_COMPLETED,
+                        mapOf(AnalyticsProperty.LOGIN_PROVIDER to SocialProvider.GOOGLE.name),
+                    )
+                    _sideEffect.send(NicknameSideEffect.NavigateToHome)
+                }
                 .onFailure { e ->
                     if (e is AuthException.NetworkUnavailable) {
                         _sideEffect.send(NicknameSideEffect.ShowNetworkErrorToast)

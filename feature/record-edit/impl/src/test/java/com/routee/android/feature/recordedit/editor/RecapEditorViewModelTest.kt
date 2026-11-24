@@ -6,8 +6,10 @@ import com.routee.android.core.data.recap.model.RecapResource
 import com.routee.android.core.data.recap.model.RecapRoute
 import com.routee.android.core.data.recap.model.TrackPoint
 import com.routee.android.core.ui.UiState
+import com.routee.android.feature.recordedit.FakeAnalyticsTracker
 import com.routee.android.feature.recordedit.FakeRecapRepository
 import com.routee.android.feature.recordedit.MainDispatcherRule
+import com.routee.android.feature.recordedit.api.RecapEditorEntryPoint
 import com.routee.android.feature.recordedit.api.RecapEditorNavKey
 import com.routee.android.feature.recordedit.complete.FakeRecapImageStore
 import com.routee.android.feature.recordedit.editor.model.RecapBrightness
@@ -274,9 +276,10 @@ class RecapEditorViewModelTest {
     }
 
     private fun createViewModel() = RecapEditorViewModel(
-        RecapEditorNavKey(activityId = 1L),
+        RecapEditorNavKey(activityId = 1L, entryPoint = RecapEditorEntryPoint.RECORD_EDIT_TAB),
         FakeRecapImageStore(),
         recapRepository,
+        FakeAnalyticsTracker(),
     )
 
     private fun trackPoint(

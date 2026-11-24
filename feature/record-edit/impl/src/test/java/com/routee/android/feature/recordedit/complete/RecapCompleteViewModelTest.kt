@@ -1,5 +1,6 @@
 package com.routee.android.feature.recordedit.complete
 
+import com.routee.android.feature.recordedit.FakeAnalyticsTracker
 import com.routee.android.feature.recordedit.MainDispatcherRule
 import com.routee.android.feature.recordedit.api.RecapCompleteNavKey
 import com.routee.android.feature.recordedit.complete.model.RecapCompleteSideEffect
@@ -44,5 +45,9 @@ class RecapCompleteViewModelTest {
     }
 
     private fun viewModel(repository: RecapImageStore) =
-        RecapCompleteViewModel(RecapCompleteNavKey(FakeRecapImageStore.IMAGE_PATH), repository)
+        RecapCompleteViewModel(
+            RecapCompleteNavKey(FakeRecapImageStore.IMAGE_PATH, activityId = 1L),
+            repository,
+            FakeAnalyticsTracker(),
+        )
 }

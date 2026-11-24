@@ -10,6 +10,7 @@ import com.routee.android.core.domain.workout.GetUnfinishedWorkoutUseCase
 import com.routee.android.core.domain.workout.ResolveWorkoutPhotoPointUseCase
 import com.routee.android.core.domain.workout.SaveFinishedWorkoutUseCase
 import com.routee.android.core.map.model.MapPoint
+import com.routee.android.feature.workout.FakeAnalyticsTracker
 import com.routee.android.feature.workout.FakeLocationRepository
 import com.routee.android.feature.workout.FakeMapImageRepository
 import com.routee.android.feature.workout.FakeWorkoutPhotoRepository
@@ -774,6 +775,7 @@ class WorkoutRecordingViewModelTest {
         photoRepository = photos,
         locationRepository = location,
         clock = clock,
+        analyticsTracker = FakeAnalyticsTracker(),
     )
 
     private fun pausedWithPoints(count: Int) = FakeWorkoutTrackingRepository(

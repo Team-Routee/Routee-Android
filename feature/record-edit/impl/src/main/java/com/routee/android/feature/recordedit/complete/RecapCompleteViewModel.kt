@@ -2,6 +2,9 @@ package com.routee.android.feature.recordedit.complete
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routee.android.core.analytics.AnalyticsEvent
+import com.routee.android.core.analytics.AnalyticsProperty
+import com.routee.android.core.analytics.AnalyticsTracker
 import com.routee.android.core.navigation.util.NavKeyViewModelFactory
 import com.routee.android.feature.recordedit.api.RecapCompleteNavKey
 import com.routee.android.feature.recordedit.complete.model.RecapCompleteSideEffect
@@ -18,6 +21,7 @@ import timber.log.Timber
 internal class RecapCompleteViewModel @AssistedInject constructor(
     @Assisted private val key: RecapCompleteNavKey,
     private val recapImageStore: RecapImageStore,
+    private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
     private val _sideEffect = Channel<RecapCompleteSideEffect>(Channel.BUFFERED)
     val sideEffect = _sideEffect.receiveAsFlow()
@@ -35,10 +39,13 @@ internal class RecapCompleteViewModel @AssistedInject constructor(
     }
 
     fun onDownloadClick() {
+        if (isSaving) return
+        analyticsTracker.track(AnalyticsEvent.RECAP_SAVED, AnalyticsProperty.activity(key.activityId))
         saveToGallery()
     }
 
     fun onShareClick() {
+        analyticsTracker.track(AnalyticsEvent.RECAP_SHARED, AnalyticsProperty.activity(key.activityId))
         sendSideEffect(RecapCompleteSideEffect.ShareImage(recapImageStore.shareUri(key.imagePath)))
     }
 
